@@ -115,7 +115,7 @@ export default function App() {
           ${extraMededeling}
         </div>
 
-        <p style='margin-top: 2rem;'>Met sportieve groeten,<br>Yannick Deraedt<br>Trainer U14 KVE Drongen</p>
+        <p style='margin-top: 2rem;'>Met sportieve groeten,<br>Yannick Deraedt<br>Trainer U16 KVE Drongen</p>
       </div>
     `;
 
