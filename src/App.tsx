@@ -3,11 +3,10 @@ import { useState } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
-  "Jerome Belpaeme", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie", "Nicolas Desaver",
-  "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", "Lander Helderweirt", "Tuur Heyerick",
-  "Jef Lambers", "Andro Martens", "Lukas Onderbeke", "Steffen Opstaele", "Siebe Passchyn",
-  "Viktor Poelman", "Moussa Sabir", "Mauro Savat", "Mattias Smet", "Guillaume Telleir",
-  "Thias Van Holle", "Michiel Van Melkebeke", "Rube Verhille", "Filemon Verstraete", "Yannick Deraedt"
+ "Jesse Agbor", "Elliot Cahen", "Wolf Cappan", "Thor Christiaen", "Rune De Poorter", "Ernest De Wolf",
+  "Yasin El Allaoui", "Matteo Geurs", "Bavo Guns", "Mauro Hautekeete", "Lionel Kembo-Tetani", "Oscar Lambers",
+  "Yassin Lassouani", "Liam Maes", "Victor Matthys", "Felix Minjauw", "Yasin Moustapha",
+  "Kobe Nevejans", "Steyaert Rhune","Elton Tinyih", "Van Hende Xavi", "Vanneste Finn",
 ];
 
 const reasons = [
