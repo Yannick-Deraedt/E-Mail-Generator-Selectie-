@@ -7,7 +7,7 @@ const playerList = [
   "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", "Lander Helderweirt", "Tuur Heyerick",
   "Jef Lambers", "Andro Martens", "Lukas Onderbeke", "Steffen Opstaele", "Siebe Passchyn",
   "Viktor Poelman", "Moussa Sabir", "Mauro Savat", "Mattias Smet", "Guillaume Telleir",
-  "Thias Van Holle", "Michiel Van Melkebeke", "Rube Verhille", "Filemon Verstraete"
+  "Thias Van Holle", "Michiel Van Melkebeke", "Rube Verhille", "Filemon Verstraete", "Yannick Deraedt"
 ];
 
 const reasons = [
