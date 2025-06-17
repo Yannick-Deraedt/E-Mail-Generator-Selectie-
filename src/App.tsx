@@ -84,7 +84,7 @@ export default function App() {
           <ul>
             <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
             <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-            <li><strong>Uur:</strong> ${time || "[uur]"}</li>
+            <li><strong>Start wedstrijd:</strong> ${time || "[Start wedstrijd]"}</li>
             <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
             <li><strong>Adres:</strong> ${address || "[adres]"}</li>
             ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
@@ -133,7 +133,7 @@ export default function App() {
           <input className="w-full p-2 rounded bg-gray-800" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
-          <label className="block mb-1">Uur</label>
+          <label className="block mb-1">Start wedstrijd</label>
           <input className="w-full p-2 rounded bg-gray-800" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
         <div>
