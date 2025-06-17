@@ -1,9 +1,8 @@
-// ✅ Volledige App.tsx met juiste selectie-flow
-// ✅ UI herwerkt: niet-geselecteerde lijst standaard, selectie verplaatst bij checkbox, mobielvriendelijk
-
 import { useState, useEffect } from "react";
 
-const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
+const days = [
+  "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"
+];
 
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
@@ -15,6 +14,7 @@ const playerList = [
 ];
 
 const jerseyNumbers = Array.from({ length: 99 }, (_, i) => (i + 1).toString());
+
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Rust", "Op vakantie",
   "GU15", "Stand-by GU15", "1x getraind", "Schoolverplichtingen",
@@ -31,7 +31,6 @@ export default function App() {
   const [address, setAddress] = useState("");
   const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
   const [gatheringTime, setGatheringTime] = useState("");
-  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
@@ -42,8 +41,10 @@ export default function App() {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
 
+  // Speler selecteren → naar selectie, anders terug naar niet-geselecteerd
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
+    // Verwijder uit niet-geselecteerd
     const updated = { ...nonSelectedReasons };
     delete updated[player];
     setNonSelectedReasons(updated);
@@ -55,6 +56,12 @@ export default function App() {
     setSelectedPlayers(updated);
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
   };
+
+  const setRugnummer = (player: string, nummer: string) =>
+    setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
+
+  const setReason = (player: string, reason: string) =>
+    setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
 
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
@@ -105,17 +112,46 @@ export default function App() {
     <div className="p-4 max-w-4xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
       <div className="grid grid-cols-1 gap-4">
-        <label>Dag<select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black"><option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}</select></label>
-        <label>Type wedstrijd<select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black"><option>Thuiswedstrijd</option><option>Uitwedstrijd</option></select></label>
-        <label>Datum<input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" /></label>
-        <label>Start wedstrijd<input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" /></label>
-        <label>Tegenstander<input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" /></label>
-        <label>Terrein<input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" /></label>
-        <label>Adres<input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" /></label>
-        <label>Verzameltijd<input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" /></label>
-        <label>Verantwoordelijke<select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black"><option value="">Kies een speler</option>{playerList.map(p => <option key={p}>{p}</option>)}</select></label>
-        <label>Opmerking<input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" /></label>
 
+        {/* Invoervelden */}
+        <label>Dag
+          <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black">
+            <option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </label>
+        <label>Type wedstrijd
+          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
+            <option>Thuiswedstrijd</option><option>Uitwedstrijd</option>
+          </select>
+        </label>
+        <label>Datum
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+        <label>Start wedstrijd
+          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+        <label>Tegenstander
+          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+        <label>Terrein
+          <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+        <label>Adres
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+        <label>Verzameltijd
+          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+        <label>Verantwoordelijke
+          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black">
+            <option value="">Kies een speler</option>{playerList.map(p => <option key={p}>{p}</option>)}
+          </select>
+        </label>
+        <label>Opmerking
+          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
+        </label>
+
+        {/* Niet-geselecteerden */}
         <h2 className="text-xl font-bold mt-6">Niet-geselecteerden</h2>
         {playerList.filter(p => !(p in selectedPlayers)).map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
@@ -128,6 +164,7 @@ export default function App() {
           </div>
         ))}
 
+        {/* Geselecteerden */}
         <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
         {Object.keys(selectedPlayers).map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
@@ -141,6 +178,7 @@ export default function App() {
 
         <button onClick={generateEmail} className="mt-4 bg-blue-600 px-4 py-2 rounded">Genereer e-mail</button>
 
+        {/* Preview */}
         <h2 className="text-xl font-bold mt-6 mb-2">Preview</h2>
         <div className="bg-white text-black p-4 rounded" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
