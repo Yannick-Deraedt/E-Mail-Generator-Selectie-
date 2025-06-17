@@ -68,61 +68,70 @@ export default function App() {
   const generateEmail = () => {
     const selected = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
     const selectedText = selected.map(([name, num]) => `
-      <div style="margin-bottom:4px;">
-        <span style="background-color:#e2e6ea;padding:2px 6px;border-radius:4px;margin-right:6px;font-weight:bold;">#${num}</span>${name}
-      </div>
+      <tr>
+        <td style="padding:6px 8px;">
+          <span style="background:#dee2e6;padding:4px 8px;border-radius:4px;font-weight:bold;">#${num}</span>
+        </td>
+        <td style="padding:6px 8px;">${name}</td>
+      </tr>
     `).join("");
 
     const nonSelectedText = playerList
       .filter(p => !(p in selectedPlayers))
-      .map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
+      .map(p => `
+        <tr>
+          <td style="padding:6px 8px;">${p}</td>
+          <td style="padding:6px 8px;">${nonSelectedReasons[p] || "[reden]"}</td>
+        </tr>
+      `).join("");
 
     const extraNote = matchType === "Uitwedstrijd"
-      ? `<p style="background-color: #d0ebff; padding: 8px; border-radius: 5px;">
-          <strong>Carpool:</strong> samenkomst op <strong>Parking KVE</strong>. 
-          Indien het een omweg >15min is, mag je rechtstreeks rijden, maar laat dit weten via de WhatsApp-poll.
-         </p>`
+      ? `<p style="background-color: #d0ebff; padding: 10px; border-left: 4px solid #339af0; border-radius: 4px; margin-top: 1rem;">
+          <strong>Carpool:</strong><br/>
+          We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. 
+          Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. 
+          Laat dit wel weten via de WhatsApp-poll.
+        </p>`
       : "";
 
     const html = `
-      <div style="font-family: Arial, sans-serif; padding: 1rem;">
-        <h2>Beste ouders en spelers van de U15,</h2>
+      <div style="font-family: Arial, sans-serif; padding: 2rem; background-color: #fefefe;">
+        <h2 style="margin-bottom: 1rem;">Beste ouders en spelers van de U15,</h2>
         <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
-        
-        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem; background:#f9f9f9;">
+
+        <div style="margin-top: 1.5rem;">
           <h3>Wedstrijddetails</h3>
           <table style="width:100%;border-collapse:collapse;">
-            <tr><td><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
-            <tr><td><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
-            <tr><td><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
-            <tr><td><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
-            <tr><td><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
-            ${matchType === "Uitwedstrijd" && opponent
-              ? `<tr><td><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
+            <tr><td style="padding:6px;"><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
+            <tr><td style="padding:6px;"><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
+            <tr><td style="padding:6px;"><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
+            <tr><td style="padding:6px;"><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
+            <tr><td style="padding:6px;"><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
+            ${matchType === "Uitwedstrijd" && opponent ? `<tr><td style="padding:6px;"><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
           </table>
         </div>
 
-        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem; background:#f9f9f9;">
+        <div style="margin-top: 1.5rem;">
           <h3>Verzameldetails</h3>
           <table style="width:100%;border-collapse:collapse;">
-            <tr><td><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
-            <tr><td><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
+            <tr><td style="padding:6px;"><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
+            <tr><td style="padding:6px;"><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
           </table>
         </div>
 
         <div style="margin-top:1.5rem;">
           <h3>Selectie</h3>
-          ${selectedText || "Nog geen spelers geselecteerd."}
+          ${selected.length > 0 ? `<table style="width:100%;border-collapse:collapse;">${selectedText}</table>` : "Nog geen spelers geselecteerd."}
         </div>
 
         <div style="margin-top:1.5rem;">
           <h3>Niet geselecteerd</h3>
-          <p>${nonSelectedText || "Geen info beschikbaar."}</p>
+          ${nonSelectedText ? `<table style="width:100%;border-collapse:collapse;"><tr><th style=\"text-align:left;padding:6px;\">Naam</th><th style=\"text-align:left;padding:6px;\">Reden</th></tr>${nonSelectedText}</table>` : "<p>Geen info beschikbaar.</p>"}
         </div>
 
         <div style="margin-top:1.5rem;">
           <h3>Verantwoordelijk voor was, fruit & chocomelk</h3>
-          <p>${responsible || "[naam]"}</p>
+          <p style="font-weight:bold;">${responsible || "[naam]"}</p>
         </div>
 
         <div style="margin-top:1.5rem;">
@@ -138,10 +147,12 @@ export default function App() {
     setPreview(html);
   };
   return (
-    <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
+  <div className="flex flex-col md:flex-row gap-6 p-4 max-w-7xl mx-auto text-white bg-gray-900 min-h-screen">
+    {/* Inputsectie */}
+    <div className="w-full md:w-1/2">
       <h1 className="text-3xl font-bold mb-6">E-mail Generator</h1>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
         <div>
           <label className="block mb-1">Dag</label>
           <select className="w-full p-2 rounded bg-gray-800" value={day} onChange={(e) => setDay(e.target.value)}>
@@ -200,7 +211,7 @@ export default function App() {
           <input type="time" className="w-full p-2 rounded bg-gray-800" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
         </div>
 
-        <div>
+        <div className="md:col-span-2">
           <label className="block mb-1">Verantwoordelijk voor was, fruit & chocomelk</label>
           <select className="w-full p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
             <option value="">Kies een verantwoordelijke</option>
@@ -208,9 +219,9 @@ export default function App() {
           </select>
         </div>
 
-        <div className="md:col-span-2 lg:col-span-3">
-          <label className="block mb-1">Opmerking (bv. ID meenemen)</label>
-          <input type="text" className="w-full p-2 rounded bg-yellow-200 text-black" value={remark} onChange={(e) => setRemark(e.target.value)} />
+        <div className="md:col-span-2">
+          <label className="block mb-1">Opmerking</label>
+          <input type="text" className="w-full p-2 rounded bg-yellow-100 text-black" value={remark} onChange={(e) => setRemark(e.target.value)} />
         </div>
       </div>
 
@@ -219,7 +230,7 @@ export default function App() {
 
       <div className="grid md:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
         {playerList.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
-          <div key={p} className={`flex items-center justify-between p-2 rounded ${p in selectedPlayers ? "bg-green-800" : "bg-gray-800"}`}>
+          <div key={p} className={`flex items-center justify-between p-2 rounded ${p in selectedPlayers ? "bg-green-300 text-black" : "bg-gray-800"}`}>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
               <span>{p}</span>
@@ -248,7 +259,7 @@ export default function App() {
         ))}
       </div>
 
-      <div className="sticky bottom-0 bg-gray-900 py-4 mt-8 flex flex-wrap gap-4 z-10">
+      <div className="flex flex-wrap gap-4 mt-6">
         <button onClick={generateEmail} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white">
           Genereer e-mail
         </button>
@@ -258,10 +269,13 @@ export default function App() {
           </button>
         )}
       </div>
+    </div>
 
+    {/* Previewsectie */}
+    <div className="w-full md:w-1/2">
       {preview && (
-        <div id="preview" className="bg-white text-black p-4 rounded shadow-lg mt-6" dangerouslySetInnerHTML={{ __html: preview }} />
+        <div id="preview" className="bg-white text-black p-6 rounded-lg shadow-lg overflow-y-auto max-h-[90vh]" dangerouslySetInnerHTML={{ __html: preview }} />
       )}
     </div>
-  );
-}
+  </div>
+);
