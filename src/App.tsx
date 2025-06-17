@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
-const playerList = [
+const playerListInitial = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
 
 const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
+  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15",
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
@@ -30,13 +30,16 @@ export default function App() {
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
   const [preview, setPreview] = useState("");
-  const [search, setSearch] = useState("");
-  const [players, setPlayers] = useState([...playerList]);
+  const [playerList, setPlayerList] = useState(playerListInitial);
+  const [searchTerm, setSearchTerm] = useState("");
   const [newPlayer, setNewPlayer] = useState("");
 
   useEffect(() => {
-    if (matchType === "Thuiswedstrijd") setGatheringPlace("Kleedkamer X");
-    else if (matchType === "Uitwedstrijd") setGatheringPlace("Parking KVE");
+    if (matchType === "Thuiswedstrijd") {
+      setGatheringPlace("Kleedkamer X");
+    } else if (matchType === "Uitwedstrijd") {
+      setGatheringPlace("Parking KVE");
+    }
   }, [matchType]);
 
   const togglePlayer = (player: string) => {
@@ -57,11 +60,13 @@ export default function App() {
   };
 
   const addPlayer = () => {
-    if (newPlayer && !players.includes(newPlayer)) {
-      setPlayers([...players, newPlayer]);
+    if (newPlayer && !playerList.includes(newPlayer)) {
+      setPlayerList([...playerList, newPlayer]);
       setNewPlayer("");
     }
   };
+
+  const filteredPlayers = playerList.filter((p) => p.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const copyToClipboard = async () => {
     const previewElement = document.querySelector("#preview");
@@ -74,14 +79,17 @@ export default function App() {
       ]);
       alert("E-mail succesvol gekopieerd met layout!");
     } else {
-      alert("Kopieren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
+      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
     }
   };
 
   const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1] || "999") - parseInt(b[1] || "999"));
+    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
     const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
-    const nonSelectedText = players.filter((p) => !(p in selectedPlayers)).map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
+    const nonSelectedText = playerList
+      .filter((p) => !(p in selectedPlayers))
+      .map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`)
+      .join("<br/>");
 
     const extraMededeling = matchType === 'Uitwedstrijd'
       ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
@@ -89,41 +97,46 @@ export default function App() {
 
     const email = `
       <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <h2 style='font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;'>Beste ouders en spelers van de U15,</h2>
-        <p style='margin-bottom: 2rem;'>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>. Hieronder vinden jullie alle belangrijke details voor de wedstrijd.</p>
+        <h2>Beste ouders en spelers van de U15,</h2>
+        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
 
-        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>Wedstrijdinformatie</h3>
-          <p>Wedstrijd: ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}<br/>
-          Datum: ${date}<br/>
-          Aanvang: ${time}<br/>
-          Terrein: ${field || "[terrein]"}<br/>
-          Adres: ${address || "[adres]"}${matchType === 'Uitwedstrijd' ? `<br/>Aankomst bij ${opponent}: ${arrivalTimeOpponent || "[uur]"}` : ""}</p>
+        <div style='padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
+          <h3>📅 Wedstrijdinformatie</h3>
+          <ul>
+            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}</li>
+            <li><strong>Datum:</strong> ${date}</li>
+            <li><strong>Aanvang:</strong> ${time}</li>
+            <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
+            <li><strong>Adres:</strong> ${address || "[adres]"}</li>
+            ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
+          </ul>
         </div>
 
-        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>Verzamelinformatie</h3>
-          <p>Verzamelplaats: ${gatheringPlace || "[verzamelplaats]"}<br/>
-          Verzameltijd: ${gatheringTime || "[verzameltijd]"}</p>
+        <div style='margin-top: 1rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
+          <h3>📍 Verzamelen</h3>
+          <ul>
+            <li><strong>Verzamelplaats:</strong> ${gatheringPlace}</li>
+            <li><strong>Verzameltijd:</strong> ${gatheringTime}</li>
+          </ul>
         </div>
 
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Selectie</h3>
+        <div style='margin-top: 1rem;'>
+          <h3>✅ Selectie</h3>
           <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
         </div>
 
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Niet geselecteerde spelers</h3>
+        <div>
+          <h3>🚫 Niet geselecteerd</h3>
           <p>${nonSelectedText || "Geen info"}</p>
         </div>
 
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Verantwoordelijkheden</h3>
+        <div>
+          <h3>🧺 Verantwoordelijkheid</h3>
           <p>Was, fruit en chocomelk: ${responsible || "[naam speler]"}</p>
         </div>
 
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Belangrijke mededeling</h3>
+        <div>
+          <h3>📢 Mededeling</h3>
           <p><span style='background-color: yellow; font-weight: bold;'>Vergeet niet om jullie identiteitskaart (ID) mee te nemen!</span></p>
           ${extraMededeling}
         </div>
@@ -135,19 +148,9 @@ export default function App() {
     setPreview(email);
   };
 
-  const filteredPlayers = players.filter((p) => p.toLowerCase().includes(search.toLowerCase()));
-
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6">
+    <div className="p-4 max-w-4xl mx-auto space-y-6 text-sm">
       <h1 className="text-xl font-bold">Email Generator</h1>
-
-      <input
-        type="text"
-        placeholder="Zoek speler..."
-        value={search}
-        onChange={(e) => setSearch(e.target.value)}
-        className="border p-2 w-full"
-      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <select className="border p-2" value={day} onChange={(e) => setDay(e.target.value)}>
@@ -170,12 +173,14 @@ export default function App() {
         <input className="border p-2" type="time" placeholder="Verzameltijd" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
         <select className="border p-2" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
           <option value="">Verantwoordelijke</option>
-          {players.map((p) => <option key={p} value={p}>{p}</option>)}
+          {playerList.map((p) => <option key={p} value={p}>{p}</option>)}
         </select>
       </div>
 
       <div>
         <h2 className="text-lg font-bold mt-6">Wedstrijdselectie</h2>
+        <input className="border p-2 w-full mt-2" type="text" placeholder="Zoek speler..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+
         {filteredPlayers.map((p) => (
           <div key={p} className="flex items-center gap-2 mt-1">
             <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
@@ -190,21 +195,15 @@ export default function App() {
           </div>
         ))}
 
-        <div className="flex gap-2 mt-4">
-          <input
-            type="text"
-            placeholder="Nieuwe speler"
-            value={newPlayer}
-            onChange={(e) => setNewPlayer(e.target.value)}
-            className="border p-2 flex-1"
-          />
-          <button className="bg-gray-800 text-white px-4 py-2 rounded" onClick={addPlayer}>Toevoegen</button>
+        <div className="mt-4 flex gap-2">
+          <input className="border p-2 flex-1" placeholder="Nieuwe speler toevoegen" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} />
+          <button className="bg-blue-600 text-white px-4 rounded" onClick={addPlayer}>Toevoegen</button>
         </div>
       </div>
 
       <div>
         <h2 className="text-lg font-bold mt-6">Niet-geselecteerden en reden</h2>
-        {players.filter(p => !(p in selectedPlayers)).map((p) => (
+        {playerList.filter(p => !(p in selectedPlayers)).map((p) => (
           <div key={p} className="flex items-center gap-2 mt-1">
             <span className="flex-1 text-sm">{p}</span>
             <select value={nonSelectedReasons[p] || ""} onChange={(e) => setReason(p, e.target.value)} className="border p-1 text-sm">
@@ -215,7 +214,7 @@ export default function App() {
         ))}
       </div>
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded mt-4" onClick={generateEmail}>Genereer e-mail</button>
+      <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={generateEmail}>Genereer e-mail</button>
       {preview && (
         <>
           <div
