@@ -135,47 +135,27 @@ export default function App() {
     setPreview(email);
   };
 
-
-
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6 text-sm">
-      <h1 className="text-xl font-bold">Email Generator</h1>
+    <div className="p-4 max-w-4xl mx-auto space-y-6 text-white">
+      <h1 className="text-2xl font-bold mb-4">Email Generator</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select className="border p-2" value={day} onChange={(e) => setDay(e.target.value)}>
-          <option value="">Kies een dag</option>
-          {days.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
-        <select className="border p-2" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
-          <option>Thuiswedstrijd</option>
-          <option>Uitwedstrijd</option>
-        </select>
-        <input className="border p-2" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <input className="border p-2" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-        <input className="border p-2" placeholder="Tegenstander" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
-        <input className="border p-2" placeholder="Terrein" value={field} onChange={(e) => setField(e.target.value)} />
-        <input className="border p-2" placeholder="Adres" value={address} onChange={(e) => setAddress(e.target.value)} />
-        {matchType === "Uitwedstrijd" && (
-          <input className="border p-2" type="time" placeholder="Aankomst" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
-        )}
-        <input className="border p-2" placeholder="Verzamelplaats" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
-        <input className="border p-2" type="time" placeholder="Verzameltijd" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
-        <select className="border p-2" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
-          <option value="">Verantwoordelijke</option>
-          {playerList.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-      </div>
+      {/* Hier komen alle invoervelden */}
 
       <div>
         <h2 className="text-lg font-bold mt-6">Wedstrijdselectie</h2>
-        <input className="border p-2 w-full mt-2" type="text" placeholder="Zoek speler..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-
-        {filteredPlayers.map((p) => (
+        <input
+          type="text"
+          placeholder="Zoek speler..."
+          className="border p-2 rounded w-full mb-2 bg-gray-900"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {playerList.filter((p) => p.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
           <div key={p} className="flex items-center gap-2 mt-1">
             <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
             <span className="flex-1 text-sm">{p}</span>
             {p in selectedPlayers && (
-              <select value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)} className="border p-1 text-sm">
+              <select value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)} className="border p-1 text-sm bg-gray-900 rounded">
                 {[...Array(25)].map((_, i) => (
                   <option key={i + 1} value={i + 1}>{i + 1}</option>
                 ))}
@@ -183,19 +163,18 @@ export default function App() {
             )}
           </div>
         ))}
-
-        <div className="mt-4 flex gap-2">
-          <input className="border p-2 flex-1" placeholder="Nieuwe speler toevoegen" value={newPlayer} onChange={(e) => setNewPlayer(e.target.value)} />
-          <button className="bg-blue-600 text-white px-4 rounded" onClick={addPlayer}>Toevoegen</button>
-        </div>
       </div>
 
       <div>
         <h2 className="text-lg font-bold mt-6">Niet-geselecteerden en reden</h2>
-        {playerList.filter(p => !(p in selectedPlayers)).map((p) => (
+        {playerList.filter((p) => !(p in selectedPlayers)).map((p) => (
           <div key={p} className="flex items-center gap-2 mt-1">
             <span className="flex-1 text-sm">{p}</span>
-            <select value={nonSelectedReasons[p] || ""} onChange={(e) => setReason(p, e.target.value)} className="border p-1 text-sm">
+            <select
+              value={nonSelectedReasons[p] || ""}
+              onChange={(e) => setReason(p, e.target.value)}
+              className="border p-1 text-sm bg-gray-900 rounded"
+            >
               <option value="">Reden</option>
               {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
@@ -208,7 +187,7 @@ export default function App() {
         <>
           <div
             id="preview"
-            className="bg-white p-4 border rounded shadow text-sm overflow-auto"
+            className="bg-white p-4 border rounded shadow text-sm overflow-auto text-black"
             dangerouslySetInnerHTML={{ __html: preview }}
           />
           <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
