@@ -1,5 +1,5 @@
 // ✅ Volledige App.tsx met alle functies en jouw gewenste aanpassingen
-// ✅ UI volledig toegevoegd met dropdowns, mobiele optimalisatie, kaders, en professionele afsluiting
+// ✅ UI volledig toegevoegd met dropdowns, mobiele optimalisatie, kaders, en professionele afsluiting — volledig aangepast naar het voorbeeld op iPad
 
 import { useState, useEffect } from "react";
 
