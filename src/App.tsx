@@ -1,18 +1,19 @@
+// Volledige correcte App.tsx code met optimalisaties
 import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
 
 const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
+  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15",
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
@@ -58,32 +59,25 @@ export default function App() {
     if (el && navigator.clipboard && window.ClipboardItem) {
       const html = el.innerHTML;
       await navigator.clipboard.write([
-        new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
+        new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) })
       ]);
       alert("E-mail succesvol gekopieerd met layout!");
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
- const generateEmail = () => {
+
+  const generateEmail = () => {
     const selected = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
     const selectedText = selected.map(([name, num]) => `
-      <tr>
-        <td style="padding:6px 8px;">
-          <span style="background:#dee2e6;padding:4px 8px;border-radius:4px;font-weight:bold;">#${num}</span>
-        </td>
-        <td style="padding:6px 8px;">${name}</td>
-      </tr>
+      <div style="margin-bottom:4px;">
+        <span style="background-color:#e2e6ea;padding:2px 6px;border-radius:4px;margin-right:6px;font-weight:bold;">#${num}</span>${name}
+      </div>
     `).join("");
 
     const nonSelectedText = playerList
       .filter(p => !(p in selectedPlayers))
-      .map(p => `
-        <tr>
-          <td style="padding:6px 8px;">${p}</td>
-          <td style="padding:6px 8px;">${nonSelectedReasons[p] || "[reden]"}</td>
-        </tr>
-      `).join("");
+      .map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
 
     const extraNote = matchType === "Uitwedstrijd"
       ? `<p style="background-color: #d0ebff; padding: 10px; border-left: 4px solid #339af0; border-radius: 4px; margin-top: 1rem;">
@@ -91,60 +85,61 @@ export default function App() {
           We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. 
           Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. 
           Laat dit wel weten via de WhatsApp-poll.
-        </p>`
-      : "";
+        </p>` : "";
 
     const html = `
-<div style="font-family: Arial, sans-serif; padding: 2rem; background-color: #fefefe;">
-  <h2 style="margin-bottom: 1rem;">Beste ouders en spelers van de U15,</h2>
-  <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
+      <div style="font-family: Arial, sans-serif; padding: 1rem;">
+        <h2>Beste ouders en spelers van de U15,</h2>
+        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
 
-  <div style="margin-top: 1.5rem;">
-    <h3>Wedstrijddetails</h3>
-    <table style="width:100%;border-collapse:collapse;">
-      <tr><td style="padding:6px;"><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
-      <tr><td style="padding:6px;"><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
-      <tr><td style="padding:6px;"><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
-      <tr><td style="padding:6px;"><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
-      <tr><td style="padding:6px;"><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
-      ${matchType === "Uitwedstrijd" && opponent ? `<tr><td style="padding:6px;"><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
-    </table>
-  </div>
+        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem; background:#f9f9f9;">
+          <h3>Wedstrijddetails</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
+            <tr><td><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
+            <tr><td><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
+            <tr><td><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
+            <tr><td><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
+            ${matchType === "Uitwedstrijd" && opponent ? `<tr><td><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
+          </table>
+        </div>
 
-  <div style="margin-top: 1.5rem;">
-    <h3>Verzameldetails</h3>
-    <table style="width:100%;border-collapse:collapse;">
-      <tr><td style="padding:6px;"><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
-      <tr><td style="padding:6px;"><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
-    </table>
-  </div>
+        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem; background:#f9f9f9;">
+          <h3>Verzameldetails</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
+            <tr><td><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
+          </table>
+        </div>
 
-  <div style="margin-top:1.5rem;">
-    <h3>Selectie</h3>
-    ${selected.length > 0 ? `<table style="width:100%;border-collapse:collapse;">${selectedText}</table>` : "Nog geen spelers geselecteerd."}
-  </div>
+        <div style="margin-top:1.5rem;">
+          <h3>Selectie</h3>
+          ${selectedText || "Nog geen spelers geselecteerd."}
+        </div>
 
-  <div style="margin-top:1.5rem;">
-    <h3>Niet geselecteerd</h3>
-    ${nonSelectedText ? `<table style="width:100%;border-collapse:collapse;"><tr><th style=\"text-align:left;padding:6px;\">Naam</th><th style=\"text-align:left;padding:6px;\">Reden</th></tr>${nonSelectedText}</table>` : "<p>Geen info beschikbaar.</p>"}
-  </div>
+        <div style="margin-top:1.5rem;">
+          <h3>Niet geselecteerd</h3>
+          <p>${nonSelectedText || "Geen info beschikbaar."}</p>
+        </div>
 
-  <div style="margin-top:1.5rem;">
-    <h3>Verantwoordelijk voor was, fruit & chocomelk</h3>
-    <p style="font-weight:bold;">${responsible || "[naam]"}</p>
-  </div>
+        <div style="margin-top:1.5rem;">
+          <h3>Verantwoordelijk voor was, fruit & chocomelk</h3>
+          <p>${responsible || "[naam]"}</p>
+        </div>
 
-  <div style="margin-top:1.5rem;">
-    <h3>Opmerking</h3>
-    <p><span style="background-color: yellow;">${remark}</span></p>
-    ${extraNote}
-  </div>
+        <div style="margin-top:1.5rem;">
+          <h3>Opmerking</h3>
+          <p><span style="background-color: yellow;">${remark}</span></p>
+          ${extraNote}
+        </div>
 
-  <p style="margin-top: 2rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen<br/><br/></p>
-</div>`;
+        <p style="margin-top: 2rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen<br/><br/></p>
+      </div>
+    `;
 
     setPreview(html);
   };
+
   return (
   <div className="flex flex-col md:flex-row gap-6 p-4 max-w-7xl mx-auto text-white bg-gray-900 min-h-screen">
     {/* Inputsectie */}
