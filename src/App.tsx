@@ -3,14 +3,17 @@ import { useState } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
- "Jesse Agbor", "Elliot Cahen", "Wolf Cappan", "Thor Christiaen", "Rune De Poorter", "Ernest De Wolf",
-  "Yasin El Allaoui", "Matteo Geurs", "Bavo Guns", "Mauro Hautekeete", "Lionel Kembo-Tetani", "Oscar Lambers",
-  "Yassin Lassouani", "Liam Maes", "Victor Matthys", "Felix Minjauw", "Yasin Moustapha",
-  "Kobe Nevejans", "Steyaert Rhune","Elton Tinyih", "Van Hende Xavi", "Vanneste Finn",
+  "Jerome Belpaeme","Leon Boone", "Wolf Cappan","Leon De Backer","Mateo De Tremerie",
+  "Nicolas Desaver","Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke"
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
+  "Filemon Verstraete", 
+ 
 ];
 
 const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU17", "Stand-by GU17", 
+  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
@@ -114,7 +117,7 @@ export default function App() {
           ${extraMededeling}
         </div>
 
-        <p style='margin-top: 2rem;'>Met sportieve groeten,<br>Yannick Deraedt<br>Trainer U16 KVE Drongen</p>
+        <p style='margin-top: 2rem;'>Met sportieve groeten,<br>Yannick Deraedt<br>Trainer U15 KVE Drongen</p>
       </div>
     `;
 
