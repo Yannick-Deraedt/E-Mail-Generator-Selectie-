@@ -72,7 +72,7 @@ export default function App() {
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
-      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`) // selectielijst
+      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`)
       .join("");
 
     const nonSelectedList = playerList
@@ -129,8 +129,79 @@ export default function App() {
 
       {/* Formuliergedeelte */}
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {/* ... bestaande invoervelden ... */}
+        <div>
+          <label className="block mb-1">Dag</label>
+          <select className="w-full p-2 rounded bg-gray-800" value={day} onChange={e => setDay(e.target.value)}>
+            <option value="">Kies een dag</option>
+            {days.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-1">Type wedstrijd</label>
+          <select className="w-full p-2 rounded bg-gray-800" value={matchType} onChange={e => setMatchType(e.target.value)}>
+            <option>Thuiswedstrijd</option>
+            <option>Uitwedstrijd</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-1">Datum</label>
+          <input type="date" className="w-full p-2 rounded bg-gray-800" value={date} onChange={e => setDate(e.target.value)} />
+        </div>
+
+        <div>
+          <label className="block mb-1">Start wedstrijd</label>
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={time} onChange={e => setTime(e.target.value)} />
+        </div>
+
+        <div>
+          <label className="block mb-1">Tegenstander</label>
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={opponent} onChange={e => setOpponent(e.target.value)} />
+        </div>
+
+        <div>
+          <label className="block mb-1">Terrein</label>
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={field} onChange={e => setField(e.target.value)} />
+        </div>
+
+        <div>
+          <label className="block mb-1">Adres</label>
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={address} onChange={e => setAddress(e.target.value)} />
+        </div>
+
+        {matchType === "Uitwedstrijd" && (
+          <div>
+            <label className="block mb-1">Aankomst bij tegenstander</label>
+            <input type="time" className="w-full p-2 rounded bg-gray-800" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} />
+          </div>
+        )}
+
+        <div>
+          <label className="block mb-1">Verzamelplaats</label>
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} />
+        </div>
+
+        <div>
+          <label className="block mb-1">Verzameltijd</label>
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} />
+        </div>
+
+        <div>
+          <label className="block mb-1">Verantwoordelijk voor was, fruit & chocomelk</label>
+          <select className="w-full p-2 rounded bg-gray-800" value={responsible} onChange={e => setResponsible(e.target.value)}>
+            <option value="">Kies een verantwoordelijke</option>
+            {playerList.map(p => <option key={p}>{p}</option>)}
+          </select>
+        </div>
+
+        <div className="md:col-span-2 lg:col-span-3">
+          <label className="block mb-1">Opmerking (bv. ID meenemen)</label>
+          <input type="text" className="w-full p-2 rounded bg-yellow-200 text-black" value={remark} onChange={e => setRemark(e.target.value)} />
+        </div>
       </div>
+        ))}
+   </div>
 
       {/* Spelerselectie */}
       <div className="mb-8">
