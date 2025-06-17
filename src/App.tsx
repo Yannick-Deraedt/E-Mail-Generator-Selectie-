@@ -1,4 +1,4 @@
-// App.tsx — verbeterde volledige versie met mooie layout
+// App.tsx — verbeterde volledige versie met duidelijke layout voor wedstrijdinfo
 import { useState, useEffect } from "react";
 import "./index.css";
 
@@ -37,6 +37,63 @@ export default function App() {
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
+
+  const handleInputBlock = (label: string, children: JSX.Element) => (
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium text-gray-300">{label}</label>
+      {children}
+    </div>
+  );
+
+  return (
+    <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Email Generator</h1>
+
+      <div className="grid md:grid-cols-2 gap-4 mb-6">
+        {handleInputBlock("Dag", (
+          <select className="w-full p-2 rounded bg-gray-800" value={day} onChange={(e) => setDay(e.target.value)}>
+            <option value="">Kies een dag</option>
+            {days.map((d) => <option key={d}>{d}</option>)}
+          </select>
+        ))}
+        {handleInputBlock("Type wedstrijd", (
+          <select className="w-full p-2 rounded bg-gray-800" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
+            <option>Thuiswedstrijd</option>
+            <option>Uitwedstrijd</option>
+          </select>
+        ))}
+        {handleInputBlock("Datum", (
+          <input type="date" className="w-full p-2 rounded bg-gray-800" value={date} onChange={(e) => setDate(e.target.value)} />
+        ))}
+        {handleInputBlock("Aanvangsuur", (
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={time} onChange={(e) => setTime(e.target.value)} />
+        ))}
+        {handleInputBlock("Tegenstander", (
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={opponent} onChange={(e) => setOpponent(e.target.value)} placeholder="Tegenstander" />
+        ))}
+        {handleInputBlock("Terrein", (
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={field} onChange={(e) => setField(e.target.value)} placeholder="Terrein" />
+        ))}
+        {handleInputBlock("Adres", (
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Adres" />
+        ))}
+        {matchType === "Uitwedstrijd" && handleInputBlock("Aankomsttijd uitploeg", (
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
+        ))}
+        {handleInputBlock("Verzamelplaats", (
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
+        ))}
+        {handleInputBlock("Verzameltijd", (
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
+        ))}
+        {handleInputBlock("Verantwoordelijke", (
+          <select className="w-full p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
+            <option value="">Verantwoordelijke</option>
+            {playerList.map((p) => <option key={p}>{p}</option>)}
+          </select>
+        ))}
+      </div>
+
 
   const togglePlayer = (player: string) => {
     setSelectedPlayers((prev) => {
