@@ -1,5 +1,4 @@
-// App.tsx – foutvrije, mobielvriendelijke en PSD-klare versie voor Vercel
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
@@ -16,7 +15,15 @@ const reasons = [
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
-function FormField({ label, value, onChange, type = "text", options = [] }) {
+type FormFieldProps = {
+  label: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => void;
+  type?: string;
+  options?: string[];
+};
+
+function FormField({ label, value, onChange, type = "text", options = [] }: FormFieldProps) {
   return (
     <div className="flex flex-col">
       <label className="text-sm font-medium mb-1">{label}</label>
@@ -72,24 +79,12 @@ export default function App() {
     setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
   };
 
-  const copyHtmlToClipboard = async () => {
-    const previewElement = document.querySelector("#preview");
-    if (previewElement && navigator.clipboard && typeof window !== "undefined") {
-      try {
-        await navigator.clipboard.writeText(previewElement.innerHTML);
-        alert("HTML succesvol gekopieerd!");
-      } catch {
-        alert("Kopiëren mislukt. Probeer manueel te kopiëren.");
-      }
-    }
-  };
-
-  const copyPlainToClipboard = async () => {
+  const copyToClipboard = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(plainText);
-      alert("Platte tekst succesvol gekopieerd!");
+      await navigator.clipboard.writeText(text);
+      alert("Succesvol gekopieerd!");
     } catch {
-      alert("Kopiëren mislukt. Probeer manueel te kopiëren.");
+      alert("Kopiëren mislukt. Probeer manueel.");
     }
   };
 
@@ -109,11 +104,17 @@ export default function App() {
     const plain = `📅 ${matchInfo.day} – ${matchInfo.matchType} tegen ${matchInfo.opponent}
 Aanvang: ${matchInfo.time} | Datum: ${matchInfo.date}
 Adres: ${matchInfo.address} | Terrein: ${matchInfo.field}${matchInfo.matchType === "Uitwedstrijd" ? `\nAankomst tegenstander: ${matchInfo.arrivalTimeOpponent}` : ""}
-\n⏱️ Verzamelen: ${matchInfo.gatheringPlace} om ${matchInfo.gatheringTime}
-\n✅ Selectie:\n${selectedText}
-\n❌ Niet geselecteerden:\n${nonSelectedText}
-\n🧺 Verantwoordelijke: ${matchInfo.responsible}
-\n📌 Vergeet je ID niet!`;
+⏱️ Verzamelen: ${matchInfo.gatheringPlace} om ${matchInfo.gatheringTime}
+
+✅ Selectie:
+${selectedText}
+
+❌ Niet geselecteerden:
+${nonSelectedText}
+
+🧺 Verantwoordelijke: ${matchInfo.responsible}
+
+📌 Vergeet je ID niet!`;
 
     setPlainText(plain);
     setPreview(plain.replace(/\n/g, "<br/>").replace(/ /g, "&nbsp;"));
@@ -181,8 +182,8 @@ Adres: ${matchInfo.address} | Terrein: ${matchInfo.field}${matchInfo.matchType =
         <>
           <div id="preview" className="bg-white p-4 border rounded shadow text-sm overflow-auto whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: preview }} />
           <div className="flex flex-wrap gap-2 mt-3">
-            <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={copyHtmlToClipboard}>📋 Kopieer HTML</button>
-            <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={copyPlainToClipboard}>📄 Kopieer platte tekst</button>
+            <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={() => copyToClipboard(preview)}>📋 Kopieer HTML</button>
+            <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={() => copyToClipboard(plainText)}>📄 Kopieer platte tekst</button>
           </div>
         </>
       )}
