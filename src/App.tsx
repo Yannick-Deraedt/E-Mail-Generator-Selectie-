@@ -65,7 +65,7 @@ export default function App() {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
-  const generateEmail = () => {
+ const generateEmail = () => {
     const selected = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
     const selectedText = selected.map(([name, num]) => `
       <tr>
@@ -95,54 +95,53 @@ export default function App() {
       : "";
 
     const html = `
-      <div style="font-family: Arial, sans-serif; padding: 2rem; background-color: #fefefe;">
-        <h2 style="margin-bottom: 1rem;">Beste ouders en spelers van de U15,</h2>
-        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
+<div style="font-family: Arial, sans-serif; padding: 2rem; background-color: #fefefe;">
+  <h2 style="margin-bottom: 1rem;">Beste ouders en spelers van de U15,</h2>
+  <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
 
-        <div style="margin-top: 1.5rem;">
-          <h3>Wedstrijddetails</h3>
-          <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="padding:6px;"><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
-            <tr><td style="padding:6px;"><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
-            <tr><td style="padding:6px;"><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
-            <tr><td style="padding:6px;"><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
-            <tr><td style="padding:6px;"><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
-            ${matchType === "Uitwedstrijd" && opponent ? `<tr><td style="padding:6px;"><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
-          </table>
-        </div>
+  <div style="margin-top: 1.5rem;">
+    <h3>Wedstrijddetails</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:6px;"><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
+      <tr><td style="padding:6px;"><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
+      <tr><td style="padding:6px;"><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
+      <tr><td style="padding:6px;"><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
+      <tr><td style="padding:6px;"><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
+      ${matchType === "Uitwedstrijd" && opponent ? `<tr><td style="padding:6px;"><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
+    </table>
+  </div>
 
-        <div style="margin-top: 1.5rem;">
-          <h3>Verzameldetails</h3>
-          <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="padding:6px;"><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
-            <tr><td style="padding:6px;"><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
-          </table>
-        </div>
+  <div style="margin-top: 1.5rem;">
+    <h3>Verzameldetails</h3>
+    <table style="width:100%;border-collapse:collapse;">
+      <tr><td style="padding:6px;"><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
+      <tr><td style="padding:6px;"><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
+    </table>
+  </div>
 
-        <div style="margin-top:1.5rem;">
-          <h3>Selectie</h3>
-          ${selected.length > 0 ? `<table style="width:100%;border-collapse:collapse;">${selectedText}</table>` : "Nog geen spelers geselecteerd."}
-        </div>
+  <div style="margin-top:1.5rem;">
+    <h3>Selectie</h3>
+    ${selected.length > 0 ? `<table style="width:100%;border-collapse:collapse;">${selectedText}</table>` : "Nog geen spelers geselecteerd."}
+  </div>
 
-        <div style="margin-top:1.5rem;">
-          <h3>Niet geselecteerd</h3>
-          ${nonSelectedText ? `<table style="width:100%;border-collapse:collapse;"><tr><th style=\"text-align:left;padding:6px;\">Naam</th><th style=\"text-align:left;padding:6px;\">Reden</th></tr>${nonSelectedText}</table>` : "<p>Geen info beschikbaar.</p>"}
-        </div>
+  <div style="margin-top:1.5rem;">
+    <h3>Niet geselecteerd</h3>
+    ${nonSelectedText ? `<table style="width:100%;border-collapse:collapse;"><tr><th style=\"text-align:left;padding:6px;\">Naam</th><th style=\"text-align:left;padding:6px;\">Reden</th></tr>${nonSelectedText}</table>` : "<p>Geen info beschikbaar.</p>"}
+  </div>
 
-        <div style="margin-top:1.5rem;">
-          <h3>Verantwoordelijk voor was, fruit & chocomelk</h3>
-          <p style="font-weight:bold;">${responsible || "[naam]"}</p>
-        </div>
+  <div style="margin-top:1.5rem;">
+    <h3>Verantwoordelijk voor was, fruit & chocomelk</h3>
+    <p style="font-weight:bold;">${responsible || "[naam]"}</p>
+  </div>
 
-        <div style="margin-top:1.5rem;">
-          <h3>Opmerking</h3>
-          <p><span style="background-color: yellow;">${remark}</span></p>
-          ${extraNote}
-        </div>
+  <div style="margin-top:1.5rem;">
+    <h3>Opmerking</h3>
+    <p><span style="background-color: yellow;">${remark}</span></p>
+    ${extraNote}
+  </div>
 
-        <p style="margin-top: 2rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen<br/><br/></p>
-      </div>
-    `;
+  <p style="margin-top: 2rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen<br/><br/></p>
+</div>`;
 
     setPreview(html);
   };
