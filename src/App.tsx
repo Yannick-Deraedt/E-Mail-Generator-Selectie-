@@ -1,7 +1,5 @@
 // ✅ Volledige App.tsx met alle functies en jouw gewenste aanpassingen
-// ✅ Verbeterde UI met dropdowns voor rugnummers en redenen
-// ✅ Alle redenopties terug toegevoegd (inclusief GU15, stand-by GU15, ...)
-// ✅ Verbeterde layout met tabellen en onder elkaar voor mobiel
+// ✅ UI volledig toegevoegd met dropdowns, mobiele optimalisatie, kaders, en professionele afsluiting
 
 import { useState, useEffect } from "react";
 
@@ -59,36 +57,25 @@ export default function App() {
   const setReason = (player: string, reason: string) =>
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
 
-  const copyToClipboard = async () => {
-    const el = document.querySelector("#preview");
-    if (el && navigator.clipboard && window.ClipboardItem) {
-      const html = el.innerHTML;
-      await navigator.clipboard.write([
-        new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
-      ]);
-      alert("E-mail succesvol gekopieerd met layout!");
-    } else {
-      alert("Kopiëren niet ondersteund in deze browser.");
-    }
-  };
-
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
-      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`) 
+      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`)
       .join("");
 
     const nonSelectedList = playerList
       .filter(p => !(p in selectedPlayers))
-      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`) 
+      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`)
       .join("");
 
     const opponentArrivalText = matchType === "Uitwedstrijd" && arrivalTimeOpponent
-      ? `<tr><td><strong>Aankomst bij tegenstander:</strong></td><td>${arrivalTimeOpponent}</td></tr>`
+      ? `<tr><td><strong>Aankomst tegenstander:</strong></td><td>${arrivalTimeOpponent}</td></tr>`
       : "";
 
     const carpoolText = matchType === "Uitwedstrijd"
-      ? `<p><strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</p>`
+      ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px">
+          <p><strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</p>
+        </div>`
       : "";
 
     const html = `
@@ -102,25 +89,22 @@ export default function App() {
           <tr><td><strong>Tegenstander:</strong></td><td>${opponent}</td></tr>
           <tr><td><strong>Terrein:</strong></td><td>${field}</td></tr>
           <tr><td><strong>Adres:</strong></td><td>${address}</td></tr>
+          <tr><td><strong>Verzamelen:</strong></td><td>${gatheringTime} aan ${gatheringPlace}</td></tr>
           ${opponentArrivalText}
         </table>
 
-        <h2 style="margin-top:20px;margin-bottom:4px">Verzameldetails</h2>
-        <table style="width:100%;border-collapse:collapse">
-          <tr><td><strong>Verzamelen:</strong></td><td>${gatheringTime} aan ${gatheringPlace}</td></tr>
-        </table>
-
-
         ${carpoolText}
 
-        <h2 style="margin-top:20px;margin-bottom:4px">Selectie</h2>
-        <ul style="padding-left:16px;background:#e0f7fa;border-radius:6px;padding:10px">${selectedList}</ul>
+        <h2 style="margin-top:20px">Selectie</h2>
+        <ul style="background:#f0f0f0;border-radius:6px;padding:10px">${selectedList}</ul>
 
-        <h2 style="margin-top:20px;margin-bottom:4px">Niet geselecteerd</h2>
-        <ul style="padding-left:16px;background:#ffe0e0;border-radius:6px;padding:10px">${nonSelectedList}</ul>
+        <h2 style="margin-top:20px">Niet geselecteerd</h2>
+        <ul style="background:#f8d7da;border-radius:6px;padding:10px">${nonSelectedList}</ul>
 
         <p style="margin-top:20px"><strong>Verantwoordelijke voor was, fruit & chocomelk:</strong> ${responsible || "-"}</p>
         <p><strong>Opmerking:</strong> ${remark}</p>
+
+        <p style="margin-top:40px">Sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 IP – KVE Drongen</p>
       </div>
     `;
 
@@ -129,99 +113,99 @@ export default function App() {
 
   return (
     <div className="p-4 max-w-4xl mx-auto text-white bg-gray-900 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">E-mail Generator</h1>
+      <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
 
-      <div className="flex flex-col gap-4">
-        <label className="block">
-          <span className="block text-sm font-medium">Type wedstrijd</span>
+      <div className="grid grid-cols-1 gap-4">
+        <label>Type wedstrijd
           <select value={matchType} onChange={e => setMatchType(e.target.value)} className="text-black w-full p-1 rounded">
             <option>Thuiswedstrijd</option>
             <option>Uitwedstrijd</option>
           </select>
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Dag</span>
+
+        <label>Dag
           <select value={day} onChange={e => setDay(e.target.value)} className="text-black w-full p-1 rounded">
             <option value="">Kies een dag</option>
-            {days.map(d => <option key={d}>{d}</option>)}
+            {days.map(d => (<option key={d}>{d}</option>))}
           </select>
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Datum</span>
+
+        <label>Datum
           <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Startuur</span>
+
+        <label>Startuur wedstrijd
           <input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Tegenstander</span>
+
+        <label>Tegenstander
           <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Terrein</span>
+
+        <label>Terrein
           <input type="text" value={field} onChange={e => setField(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Adres</span>
+
+        <label>Adres
           <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Verzameluur</span>
+
+        <label>Verzameluur
           <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
+
         {matchType === "Uitwedstrijd" && (
-          <label className="block">
-            <span className="block text-sm font-medium">Aankomstuur bij tegenstander</span>
+          <label>Aankomstuur tegenstander
             <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="text-black w-full p-1 rounded" />
           </label>
         )}
-        <label className="block">
-          <span className="block text-sm font-medium">Verantwoordelijke (was, fruit & chocomelk)</span>
+
+        <label>Verantwoordelijke (was, fruit & chocomelk)
           <input type="text" value={responsible} onChange={e => setResponsible(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
-        <label className="block">
-          <span className="block text-sm font-medium">Opmerking</span>
+
+        <label>Opmerking
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
 
-        <h2 className="text-xl font-bold mt-6 mb-2">Selectie spelers</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          {playerList.map(player => (
-            <div key={player} className="flex items-center gap-2">
-              <input type="checkbox" checked={player in selectedPlayers} onChange={() => togglePlayer(player)} />
-              <span>{player}</span>
-              {player in selectedPlayers ? (
-                <select
-                  className="ml-auto text-black px-2 py-1 rounded"
-                  value={selectedPlayers[player]}
-                  onChange={e => setRugnummer(player, e.target.value)}
-                >
-                  {jerseyNumbers.map(nr => (
-                    <option key={nr} value={nr}>{nr}</option>
-                  ))}
-                </select>
-              ) : (
-                <select
-                  className="ml-auto text-black px-2 py-1 rounded"
-                  value={nonSelectedReasons[player] || ""}
-                  onChange={e => setReason(player, e.target.value)}
-                >
-                  <option value="">Reden</option>
-                  {nonSelectionReasons.map(reason => (
-                    <option key={reason} value={reason}>{reason}</option>
-                  ))}
-                </select>
-              )}
-            </div>
-          ))}
-        </div>
+        <h2 className="text-xl font-bold mt-6">Selectie spelers</h2>
+        {playerList.map(player => (
+          <div key={player} className="flex items-center gap-2 mb-1">
+            <input
+              type="checkbox"
+              checked={player in selectedPlayers}
+              onChange={() => togglePlayer(player)}
+            />
+            <span className="flex-1">{player}</span>
+            {player in selectedPlayers ? (
+              <select
+                className="w-20 text-black"
+                value={selectedPlayers[player]}
+                onChange={e => setRugnummer(player, e.target.value)}
+              >
+                {jerseyNumbers.map(n => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
+            ) : (
+              <select
+                className="flex-1 text-black"
+                value={nonSelectedReasons[player] || ""}
+                onChange={e => setReason(player, e.target.value)}
+              >
+                <option value="">Reden niet geselecteerd</option>
+                {nonSelectionReasons.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            )}
+          </div>
+        ))}
 
         <button onClick={generateEmail} className="mt-4 bg-blue-600 px-4 py-2 rounded">Genereer e-mail</button>
-        <button onClick={copyToClipboard} className="mt-2 bg-green-600 px-4 py-2 rounded">📋 Kopieer e-mail</button>
 
         <h2 className="text-xl font-bold mt-6 mb-2">Preview</h2>
-        <div id="preview" className="bg-white text-black p-4 rounded" dangerouslySetInnerHTML={{ __html: preview }} />
+        <div className="bg-white text-black p-4 rounded" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
     </div>
   );
