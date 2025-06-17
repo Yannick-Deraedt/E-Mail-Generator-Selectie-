@@ -42,6 +42,12 @@ export default function App() {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
 
+  useEffect(() => {
+    if (matchType === "Uitwedstrijd") {
+      setArrivalTimeOpponent(`tegenstander: ${opponent}`);
+    }
+  }, [matchType, opponent]);
+
   const togglePlayer = (player: string) => {
     setSelectedPlayers(prev => {
       const updated = { ...prev };
@@ -60,12 +66,12 @@ export default function App() {
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
-      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`)
+      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`) 
       .join("");
 
     const nonSelectedList = playerList
       .filter(p => !(p in selectedPlayers))
-      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`)
+      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`) 
       .join("");
 
     const opponentArrivalText = matchType === "Uitwedstrijd" && arrivalTimeOpponent
@@ -156,19 +162,24 @@ export default function App() {
 
         {matchType === "Uitwedstrijd" && (
           <label>Aankomstuur tegenstander
-            <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="text-black w-full p-1 rounded" />
+            <input type="text" value={arrivalTimeOpponent} readOnly className="text-black w-full p-1 rounded" />
           </label>
         )}
 
         <label>Verantwoordelijke (was, fruit & chocomelk)
-          <input type="text" value={responsible} onChange={e => setResponsible(e.target.value)} className="text-black w-full p-1 rounded" />
+          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="text-black w-full p-1 rounded">
+            <option value="">Kies een speler</option>
+            {playerList.map(name => (
+              <option key={name} value={name}>{name}</option>
+            ))}
+          </select>
         </label>
 
         <label>Opmerking
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="text-black w-full p-1 rounded" />
         </label>
 
-        <h2 className="text-xl font-bold mt-6">Selectie spelers</h2>
+        <h2 className="text-xl font-bold mt-6">Spelersselectie</h2>
         {playerList.map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
             <input
