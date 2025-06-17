@@ -1,4 +1,5 @@
-import { useState } from "react";
+// App.tsx — volledige, correcte versie
+import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
@@ -31,6 +32,11 @@ export default function App() {
   const [responsible, setResponsible] = useState("");
   const [preview, setPreview] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    if (matchType === "Thuiswedstrijd") setGatheringPlace("Kleedkamer X");
+    else setGatheringPlace("Parking KVE");
+  }, [matchType]);
 
   const togglePlayer = (player: string) => {
     setSelectedPlayers((prev) => {
@@ -65,131 +71,119 @@ export default function App() {
   };
 
   const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => {
-      const numA = parseInt(a[1] || "999");
-      const numB = parseInt(b[1] || "999");
-      return numA - numB;
-    });
-
+    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1] || "999") - parseInt(b[1] || "999"));
     const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
-
-    const nonSelectedText = playerList
-      .filter((p) => !(p in selectedPlayers))
-      .map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`)
-      .join("<br/>");
-
-    const extraMededeling = matchType === 'Uitwedstrijd'
-      ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
+    const nonSelectedText = playerList.filter(p => !(p in selectedPlayers)).map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
+    const extraMededeling = matchType === 'Uitwedstrijd' ?
+      `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
       : "";
 
     const email = `
       <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <h2 style='font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;'>Beste ouders en spelers van de U15,</h2>
-        <p style='margin-bottom: 2rem;'>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>. Hieronder vinden jullie alle belangrijke details voor de wedstrijd.</p>
-
-        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>⚽ Wedstrijdinformatie</h3>
+        <h2 style='font-size: 1.2rem; font-weight: bold;'>Beste ouders en spelers van de U15,</h2>
+        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
+        <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
+          <h3>⚽ Wedstrijdinfo</h3>
           <ul>
-            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}</li>
+            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
             <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-            <li><strong>Aanvang:</strong> ${time || "[uur]"}</li>
+            <li><strong>Uur:</strong> ${time || "[uur]"}</li>
             <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
             <li><strong>Adres:</strong> ${address || "[adres]"}</li>
-            ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
+            ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
           </ul>
         </div>
-
-        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>📍 Verzamelinformatie</h3>
+        <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
+          <h3>📍 Verzamelen</h3>
           <ul>
-            <li><strong>Verzamelplaats:</strong> ${gatheringPlace || "[verzamelplaats]"}</li>
-            <li><strong>Verzameltijd:</strong> ${gatheringTime || "[verzameltijd]"}</li>
+            <li><strong>Plaats:</strong> ${gatheringPlace}</li>
+            <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
           </ul>
         </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>✅ Selectie</h3>
-          <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
+        <div style='margin-top:1rem;'>
+          <h3>✅ Selectie</h3><p>${selectedText || "Nog geen spelers geselecteerd."}</p>
         </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>🚫 Niet geselecteerden</h3>
-          <p>${nonSelectedText || "Geen info"}</p>
+        <div style='margin-top:1rem;'>
+          <h3>🚫 Niet geselecteerd</h3><p>${nonSelectedText || "Geen info"}</p>
         </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>🧺 Verantwoordelijkheden</h3>
-          <p>Was, fruit en chocomelk: ${responsible || "[naam speler]"}</p>
+        <div style='margin-top:1rem;'>
+          <h3>🧺 Verantwoordelijke</h3><p>${responsible || "[naam]"}</p>
         </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>📣 Belangrijke mededeling</h3>
-          <p><span style='background-color: yellow; font-weight: bold;'>Vergeet niet om jullie identiteitskaart (ID) mee te nemen!</span></p>
+        <div style='margin-top:1rem;'>
+          <h3>📣 Opmerking</h3>
+          <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
           ${extraMededeling}
         </div>
-
         <p style='margin-top: 2rem;'>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
-      </div>
-    `;
+      </div>`;
 
     setPreview(email);
   };
 
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-6 text-white">
-      <h1 className="text-2xl font-bold mb-4">Email Generator</h1>
+    <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
+      <h1 className="text-3xl font-bold mb-6">Email Generator</h1>
 
-      {/* Hier komen alle invoervelden */}
+      <div className="grid md:grid-cols-2 gap-4 mb-8">
+        <div>
+          <label className="block mb-1">Dag</label>
+          <select className="w-full p-2 rounded bg-gray-800" value={day} onChange={(e) => setDay(e.target.value)}>
+            <option value="">Kies een dag</option>
+            {days.map((d) => <option key={d}>{d}</option>)}
+          </select>
+        </div>
+        <div>
+          <label className="block mb-1">Type wedstrijd</label>
+          <select className="w-full p-2 rounded bg-gray-800" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
+            <option>Thuiswedstrijd</option>
+            <option>Uitwedstrijd</option>
+          </select>
+        </div>
+        <input className="p-2 rounded bg-gray-800" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <input className="p-2 rounded bg-gray-800" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+        <input className="p-2 rounded bg-gray-800" placeholder="Tegenstander" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
+        <input className="p-2 rounded bg-gray-800" placeholder="Terrein" value={field} onChange={(e) => setField(e.target.value)} />
+        <input className="p-2 rounded bg-gray-800" placeholder="Adres" value={address} onChange={(e) => setAddress(e.target.value)} />
+        {matchType === "Uitwedstrijd" && <input className="p-2 rounded bg-gray-800" type="time" placeholder="Aankomst" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />}
+        <input className="p-2 rounded bg-gray-800" placeholder="Verzamelplaats" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
+        <input className="p-2 rounded bg-gray-800" type="time" placeholder="Verzameltijd" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
+        <select className="p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
+          <option value="">Verantwoordelijke</option>
+          {playerList.map((p) => <option key={p}>{p}</option>)}
+        </select>
+      </div>
 
-      <div>
-        <h2 className="text-lg font-bold mt-6">Wedstrijdselectie</h2>
-        <input
-          type="text"
-          placeholder="Zoek speler..."
-          className="border p-2 rounded w-full mb-2 bg-gray-900"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
-        {playerList.filter((p) => p.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
-          <div key={p} className="flex items-center gap-2 mt-1">
+      <h2 className="text-xl font-bold mb-2">Wedstrijdselectie</h2>
+      <input type="text" className="w-full mb-2 p-2 rounded bg-gray-800" placeholder="Zoek speler..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+      <div className="grid md:grid-cols-2 gap-2">
+        {playerList.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
+          <div key={p} className="flex gap-2 items-center">
             <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
-            <span className="flex-1 text-sm">{p}</span>
+            <label className="flex-1 text-sm">{p}</label>
             {p in selectedPlayers && (
-              <select value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)} className="border p-1 text-sm bg-gray-900 rounded">
-                {[...Array(25)].map((_, i) => (
-                  <option key={i + 1} value={i + 1}>{i + 1}</option>
-                ))}
+              <select className="bg-gray-800 p-1 rounded text-sm" value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)}>
+                {[...Array(25)].map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
               </select>
             )}
           </div>
         ))}
       </div>
 
-      <div>
-        <h2 className="text-lg font-bold mt-6">Niet-geselecteerden en reden</h2>
-        {playerList.filter((p) => !(p in selectedPlayers)).map((p) => (
-          <div key={p} className="flex items-center gap-2 mt-1">
-            <span className="flex-1 text-sm">{p}</span>
-            <select
-              value={nonSelectedReasons[p] || ""}
-              onChange={(e) => setReason(p, e.target.value)}
-              className="border p-1 text-sm bg-gray-900 rounded"
-            >
-              <option value="">Reden</option>
-              {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
-            </select>
-          </div>
-        ))}
-      </div>
+      <h2 className="text-xl font-bold mt-6 mb-2">Niet-geselecteerden en reden</h2>
+      {playerList.filter(p => !(p in selectedPlayers)).map((p) => (
+        <div key={p} className="flex gap-2 items-center mb-1">
+          <label className="flex-1 text-sm">{p}</label>
+          <select className="bg-gray-800 p-1 rounded text-sm" value={nonSelectedReasons[p] || ""} onChange={(e) => setReason(p, e.target.value)}>
+            <option value="">Reden</option>
+            {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
+        </div>
+      ))}
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={generateEmail}>Genereer e-mail</button>
+      <button className="bg-blue-600 text-white px-4 py-2 rounded mt-6" onClick={generateEmail}>Genereer e-mail</button>
       {preview && (
         <>
-          <div
-            id="preview"
-            className="bg-white p-4 border rounded shadow text-sm overflow-auto text-black"
-            dangerouslySetInnerHTML={{ __html: preview }}
-          />
+          <div id="preview" className="bg-white p-4 border rounded shadow text-black mt-4" dangerouslySetInnerHTML={{ __html: preview }} />
           <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
         </>
       )}
