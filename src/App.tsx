@@ -122,92 +122,30 @@ export default function App() {
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
 
       <div className="grid grid-cols-1 gap-4">
-        <label>Type wedstrijd
-          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="text-black w-full p-1 rounded">
-            <option>Thuiswedstrijd</option>
-            <option>Uitwedstrijd</option>
-          </select>
-        </label>
-
-        <label>Dag
-          <select value={day} onChange={e => setDay(e.target.value)} className="text-black w-full p-1 rounded">
-            <option value="">Kies een dag</option>
-            {days.map(d => (<option key={d}>{d}</option>))}
-          </select>
-        </label>
-
-        <label>Datum
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
-
-        <label>Startuur wedstrijd
-          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
-
-        <label>Tegenstander
-          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
-
-        <label>Terrein
-          <input type="text" value={field} onChange={e => setField(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
-
-        <label>Adres
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
-
-        <label>Verzameluur
-          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
-
-        {matchType === "Uitwedstrijd" && (
-          <label>Aankomstuur tegenstander
-            <input type="text" value={arrivalTimeOpponent} readOnly className="text-black w-full p-1 rounded" />
-          </label>
-        )}
-
-        <label>Verantwoordelijke (was, fruit & chocomelk)
-          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="text-black w-full p-1 rounded">
-            <option value="">Kies een speler</option>
-            {playerList.map(name => (
-              <option key={name} value={name}>{name}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>Opmerking
-          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="text-black w-full p-1 rounded" />
-        </label>
+        <label>Dag<select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black"><option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}</select></label>
+        <label>Type wedstrijd<select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black"><option>Thuiswedstrijd</option><option>Uitwedstrijd</option></select></label>
+        <label>Datum<input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" /></label>
+        <label>Start wedstrijd<input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" /></label>
+        <label>Tegenstander<input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" /></label>
+        <label>Terrein<input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" /></label>
+        <label>Adres<input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" /></label>
+        <label>Verzameltijd<input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" /></label>
+        <label>Verantwoordelijke (was, fruit & chocomelk)<select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black"><option value="">Kies een speler</option>{playerList.map(p => <option key={p}>{p}</option>)}</select></label>
+        <label>Opmerking<input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" /></label>
 
         <h2 className="text-xl font-bold mt-6">Spelersselectie</h2>
         {playerList.map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
-            <input
-              type="checkbox"
-              checked={player in selectedPlayers}
-              onChange={() => togglePlayer(player)}
-            />
+            <input type="checkbox" checked={player in selectedPlayers} onChange={() => togglePlayer(player)} />
             <span className="flex-1">{player}</span>
             {player in selectedPlayers ? (
-              <select
-                className="w-20 text-black"
-                value={selectedPlayers[player]}
-                onChange={e => setRugnummer(player, e.target.value)}
-              >
-                {jerseyNumbers.map(n => (
-                  <option key={n} value={n}>{n}</option>
-                ))}
+              <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
+                {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
               </select>
             ) : (
-              <select
-                className="flex-1 text-black"
-                value={nonSelectedReasons[player] || ""}
-                onChange={e => setReason(player, e.target.value)}
-              >
+              <select className="flex-1 text-black" value={nonSelectedReasons[player] || ""} onChange={e => setReason(player, e.target.value)}>
                 <option value="">Reden niet geselecteerd</option>
-                {nonSelectionReasons.map(r => (
-                  <option key={r} value={r}>{r}</option>
-                ))}
+                {nonSelectionReasons.map(r => (<option key={r} value={r}>{r}</option>))}
               </select>
             )}
           </div>
