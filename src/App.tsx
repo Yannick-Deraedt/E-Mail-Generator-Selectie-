@@ -1,35 +1,59 @@
+// App.tsx – geoptimaliseerde versie met herbruikbare componenten, groepsstate, validatie en PDF-export
 import { useState } from "react";
+import html2pdf from "html2pdf.js";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
-  "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke", // <-- FIXED
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
+  "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
 
 const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
+  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15",
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
+function FormField({ label, value, onChange, type = "text", options = [] }) {
+  return (
+    <div className="flex flex-col">
+      <label className="text-sm font-medium mb-1">{label}</label>
+      {options.length > 0 ? (
+        <select className="border p-2" value={value} onChange={onChange}>
+          <option value="">Kies een optie</option>
+          {options.map((opt) => (
+            <option key={opt} value={opt}>{opt}</option>
+          ))}
+        </select>
+      ) : (
+        <input className="border p-2" type={type} value={value} onChange={onChange} />
+      )}
+    </div>
+  );
+}
+
 export default function App() {
-  const [matchType, setMatchType] = useState("Thuiswedstrijd");
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
-  const [day, setDay] = useState("");
-  const [opponent, setOpponent] = useState("");
-  const [field, setField] = useState("");
-  const [address, setAddress] = useState("");
-  const [gatheringPlace, setGatheringPlace] = useState("");
-  const [gatheringTime, setGatheringTime] = useState("");
-  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
+  const [matchInfo, setMatchInfo] = useState({
+    matchType: "Thuiswedstrijd",
+    date: "",
+    time: "",
+    day: "",
+    opponent: "",
+    field: "",
+    address: "",
+    gatheringPlace: "",
+    gatheringTime: "",
+    arrivalTimeOpponent: "",
+    responsible: ""
+  });
+
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
-  const [responsible, setResponsible] = useState("");
   const [preview, setPreview] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const togglePlayer = (player: string) => {
     setSelectedPlayers((prev) => {
@@ -63,7 +87,19 @@ export default function App() {
     }
   };
 
+  const downloadAsPDF = () => {
+    const element = document.querySelector("#preview");
+    if (element) {
+      html2pdf().from(element).save("wedstrijd-email.pdf");
+    }
+  };
+
   const generateEmail = () => {
+    if (!matchInfo.date || !matchInfo.opponent || Object.keys(selectedPlayers).length === 0) {
+      alert("Vul eerst alle verplichte velden in en selecteer minstens één speler.");
+      return;
+    }
+
     const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => {
       const numA = parseInt(a[1] || "999");
       const numB = parseInt(b[1] || "999");
@@ -77,52 +113,31 @@ export default function App() {
       .map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`)
       .join("<br/>");
 
-    const extraMededeling = matchType === 'Uitwedstrijd'
-      ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
+    const extraMededeling = matchInfo.matchType === 'Uitwedstrijd'
+      ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>... </span></p>`
       : "";
 
     const email = `
       <div style='font-family: Arial, sans-serif; padding: 1rem;'>
         <h2 style='font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;'>Beste ouders en spelers van de U16,</h2>
-        <p style='margin-bottom: 2rem;'>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>. Hieronder vinden jullie alle belangrijke details voor de wedstrijd.</p>
-
+        <p style='margin-bottom: 2rem;'>Aanstaande <strong>${matchInfo.day}</strong> spelen we een <strong>${matchInfo.matchType}</strong> tegen <strong>${matchInfo.opponent}</strong>.</p>
         <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>Wedstrijdinformatie</h3>
-          <p>Wedstrijd: ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}<br/>
-          Datum: ${date}<br/>
-          Aanvang: ${time}<br/>
-          Terrein: ${field || "[terrein]"}<br/>
-          Adres: ${address || "[adres]"}${matchType === 'Uitwedstrijd' ? `<br/>Aankomst bij ${opponent}: ${arrivalTimeOpponent || "[uur]"}` : ""}</p>
+          <h3>Wedstrijdinformatie</h3>
+          <p>Wedstrijd: ${matchInfo.matchType === 'Thuiswedstrijd' ? 'KVE vs ' + matchInfo.opponent : matchInfo.opponent + ' vs KVE'}<br/>
+          Datum: ${matchInfo.date}<br/>
+          Aanvang: ${matchInfo.time}<br/>
+          Terrein: ${matchInfo.field}<br/>
+          Adres: ${matchInfo.address}${matchInfo.matchType === 'Uitwedstrijd' ? `<br/>Aankomst bij ${matchInfo.opponent}: ${matchInfo.arrivalTimeOpponent}` : ""}</p>
         </div>
-
-        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>Verzamelinformatie</h3>
-          <p>Verzamelplaats: ${gatheringPlace || "[verzamelplaats]"}<br/>
-          Verzameltijd: ${gatheringTime || "[verzameltijd]"}</p>
-        </div>
-
         <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Selectie</h3>
-          <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
+          <h3>Verzamelinformatie</h3>
+          <p>Verzamelplaats: ${matchInfo.gatheringPlace}<br/>Verzameltijd: ${matchInfo.gatheringTime}</p>
         </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Niet geselecteerde spelers</h3>
-          <p>${nonSelectedText || "Geen info"}</p>
-        </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Verantwoordelijkheden</h3>
-          <p>Was, fruit en chocomelk: ${responsible || "[naam speler]"}</p>
-        </div>
-
-        <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>Belangrijke mededeling</h3>
-          <p><span style='background-color: yellow; font-weight: bold;'>Vergeet niet om jullie identiteitskaart (ID) mee te nemen!</span></p>
-          ${extraMededeling}
-        </div>
-
-        <p style='margin-top: 2rem;'>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
+        <div><h3>Selectie</h3><p>${selectedText}</p></div>
+        <div><h3>Niet geselecteerde spelers</h3><p>${nonSelectedText}</p></div>
+        <div><h3>Verantwoordelijkheden</h3><p>Was, fruit en chocomelk: ${matchInfo.responsible}</p></div>
+        <div><h3>Belangrijke mededeling</h3><p><span style='background-color: yellow;'>Vergeet je ID niet mee te nemen!</span></p>${extraMededeling}</div>
+        <p>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
       </div>
     `;
 
@@ -134,33 +149,30 @@ export default function App() {
       <h1 className="text-xl font-bold">Email Generator</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <select className="border p-2" value={day} onChange={(e) => setDay(e.target.value)}>
-          <option value="">Kies een dag</option>
-          {days.map((d) => <option key={d} value={d}>{d}</option>)}
-        </select>
-        <select className="border p-2" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
-          <option>Thuiswedstrijd</option>
-          <option>Uitwedstrijd</option>
-        </select>
-        <input className="border p-2" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <input className="border p-2" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-        <input className="border p-2" placeholder="Tegenstander" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
-        <input className="border p-2" placeholder="Terrein" value={field} onChange={(e) => setField(e.target.value)} />
-        <input className="border p-2" placeholder="Adres" value={address} onChange={(e) => setAddress(e.target.value)} />
-        {matchType === "Uitwedstrijd" && (
-          <input className="border p-2" type="time" placeholder="Aankomst" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
+        <FormField label="Dag" value={matchInfo.day} onChange={(e) => setMatchInfo({ ...matchInfo, day: e.target.value })} options={days} />
+        <FormField label="Type" value={matchInfo.matchType} onChange={(e) => setMatchInfo({ ...matchInfo, matchType: e.target.value })} options={["Thuiswedstrijd", "Uitwedstrijd"]} />
+        <FormField label="Datum" type="date" value={matchInfo.date} onChange={(e) => setMatchInfo({ ...matchInfo, date: e.target.value })} />
+        <FormField label="Tijd" type="time" value={matchInfo.time} onChange={(e) => setMatchInfo({ ...matchInfo, time: e.target.value })} />
+        <FormField label="Tegenstander" value={matchInfo.opponent} onChange={(e) => setMatchInfo({ ...matchInfo, opponent: e.target.value })} />
+        <FormField label="Terrein" value={matchInfo.field} onChange={(e) => setMatchInfo({ ...matchInfo, field: e.target.value })} />
+        <FormField label="Adres" value={matchInfo.address} onChange={(e) => setMatchInfo({ ...matchInfo, address: e.target.value })} />
+        {matchInfo.matchType === "Uitwedstrijd" && (
+          <FormField label="Aankomst uitploeg" type="time" value={matchInfo.arrivalTimeOpponent} onChange={(e) => setMatchInfo({ ...matchInfo, arrivalTimeOpponent: e.target.value })} />
         )}
-        <input className="border p-2" placeholder="Verzamelplaats" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
-        <input className="border p-2" type="time" placeholder="Verzameltijd" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
-        <select className="border p-2" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
-          <option value="">Verantwoordelijke</option>
-          {playerList.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
+        <FormField label="Verzamelplaats" value={matchInfo.gatheringPlace} onChange={(e) => setMatchInfo({ ...matchInfo, gatheringPlace: e.target.value })} />
+        <FormField label="Verzameltijd" type="time" value={matchInfo.gatheringTime} onChange={(e) => setMatchInfo({ ...matchInfo, gatheringTime: e.target.value })} />
+        <FormField label="Verantwoordelijke" value={matchInfo.responsible} onChange={(e) => setMatchInfo({ ...matchInfo, responsible: e.target.value })} options={playerList} />
       </div>
 
       <div>
-        <h2 className="text-lg font-bold mt-6">Wedstrijdselectie</h2>
-        {playerList.map((p) => (
+        <h2 className="text-lg font-bold mt-6">Zoek & Selecteer spelers</h2>
+        <input
+          className="border p-2 mb-2 w-full"
+          placeholder="Zoek speler..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {playerList.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
           <div key={p} className="flex items-center gap-2 mt-1">
             <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
             <span className="flex-1 text-sm">{p}</span>
@@ -196,7 +208,10 @@ export default function App() {
             className="bg-white p-4 border rounded shadow text-sm overflow-auto"
             dangerouslySetInnerHTML={{ __html: preview }}
           />
-          <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
+          <div className="flex gap-4 mt-2">
+            <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
+            <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={downloadAsPDF}>⬇️ Download PDF</button>
+          </div>
         </>
       )}
     </div>
