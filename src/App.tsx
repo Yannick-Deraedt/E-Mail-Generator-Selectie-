@@ -73,7 +73,8 @@ export default function App() {
       .map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
 
     const extraNote = matchType === "Uitwedstrijd"
-      ? `<p style="background-color: #d0ebff; padding: 8px; border-radius: 5px;"><strong>🚗 Carpool:</strong> samenkomst op <strong>Parking KVE</strong>. Indien het een omweg >15min is, mag je rechtstreeks rijden, maar laat dit weten via WhatsApp-poll.</p>`
+      ? `<p style="background-color: #d0ebff; padding: 8px; border-radius: 5px;"><strong>🚗 Carpool:We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
+
       : "";
 
     const html = `
