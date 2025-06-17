@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
-const playerListInitial = [
+const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
@@ -23,24 +23,14 @@ export default function App() {
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
-  const [gatheringPlace, setGatheringPlace] = useState("");
+  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
   const [gatheringTime, setGatheringTime] = useState("");
   const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
   const [preview, setPreview] = useState("");
-  const [playerList, setPlayerList] = useState(playerListInitial);
   const [searchTerm, setSearchTerm] = useState("");
-  const [newPlayer, setNewPlayer] = useState("");
-
-  useEffect(() => {
-    if (matchType === "Thuiswedstrijd") {
-      setGatheringPlace("Kleedkamer X");
-    } else {
-      setGatheringPlace("Parking KVE");
-    }
-  }, [matchType]);
 
   const togglePlayer = (player: string) => {
     setSelectedPlayers((prev) => {
@@ -58,17 +48,6 @@ export default function App() {
   const setReason = (player: string, reason: string) => {
     setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
   };
-
-  const addPlayer = () => {
-    if (newPlayer.trim() && !playerList.includes(newPlayer.trim())) {
-      setPlayerList([...playerList, newPlayer.trim()]);
-      setNewPlayer("");
-    }
-  };
-
-  const filteredPlayers = playerList.filter((p) =>
-    p.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const copyToClipboard = async () => {
     const previewElement = document.querySelector("#preview");
@@ -109,12 +88,11 @@ export default function App() {
         <p style='margin-bottom: 2rem;'>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>. Hieronder vinden jullie alle belangrijke details voor de wedstrijd.</p>
 
         <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3 style='font-weight: bold;'>📅 Wedstrijdinformatie</h3>
-          <ul style='padding-left: 1rem;'>
+          <h3 style='font-weight: bold;'>⚽ Wedstrijdinformatie</h3>
+          <ul>
             <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}</li>
-            <li><strong>Dag:</strong> ${day}</li>
-            <li><strong>Datum:</strong> ${date}</li>
-            <li><strong>Uur:</strong> ${time}</li>
+            <li><strong>Datum:</strong> ${date || "[datum]"}</li>
+            <li><strong>Aanvang:</strong> ${time || "[uur]"}</li>
             <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
             <li><strong>Adres:</strong> ${address || "[adres]"}</li>
             ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
@@ -123,19 +101,19 @@ export default function App() {
 
         <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
           <h3 style='font-weight: bold;'>📍 Verzamelinformatie</h3>
-          <ul style='padding-left: 1rem;'>
+          <ul>
             <li><strong>Verzamelplaats:</strong> ${gatheringPlace || "[verzamelplaats]"}</li>
             <li><strong>Verzameltijd:</strong> ${gatheringTime || "[verzameltijd]"}</li>
           </ul>
         </div>
 
         <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>📝 Selectie</h3>
+          <h3 style='font-weight: bold;'>✅ Selectie</h3>
           <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
         </div>
 
         <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>🚫 Niet geselecteerde spelers</h3>
+          <h3 style='font-weight: bold;'>🚫 Niet geselecteerden</h3>
           <p>${nonSelectedText || "Geen info"}</p>
         </div>
 
@@ -145,7 +123,7 @@ export default function App() {
         </div>
 
         <div style='margin-bottom: 2rem;'>
-          <h3 style='font-weight: bold;'>⚠️ Belangrijke mededeling</h3>
+          <h3 style='font-weight: bold;'>📣 Belangrijke mededeling</h3>
           <p><span style='background-color: yellow; font-weight: bold;'>Vergeet niet om jullie identiteitskaart (ID) mee te nemen!</span></p>
           ${extraMededeling}
         </div>
@@ -156,6 +134,7 @@ export default function App() {
 
     setPreview(email);
   };
+
 
 
   return (
