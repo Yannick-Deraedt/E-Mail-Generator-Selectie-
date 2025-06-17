@@ -1,4 +1,4 @@
-// App.tsx — volledige versie met blokjeslayout in e-mail
+// App.tsx
 import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
@@ -79,46 +79,34 @@ export default function App() {
 
     const email = `
       <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <div style='border: 2px solid #004080; padding: 1rem; border-radius: 10px;'>
-          <h2 style='font-size: 1.3rem;'>Beste ouders en spelers van de U15,</h2>
-          <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
-          <div style='margin-top: 1rem; border: 1px solid #ccc; padding: 1rem; border-radius: 6px;'>
-            <h3>⚽ Wedstrijddetails</h3>
-            <ul>
-              <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
-              <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-              <li><strong>Start wedstrijd:</strong> ${time || "[Start wedstrijd]"}</li>
-              <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
-              <li><strong>Adres:</strong> ${address || "[adres]"}</li>
-              ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
-            </ul>
-          </div>
-          <div style='margin-top: 1rem; border: 1px solid #ccc; padding: 1rem; border-radius: 6px;'>
-            <h3>📍 Verzamelafspraak</h3>
-            <ul>
-              <li><strong>Plaats:</strong> ${gatheringPlace}</li>
-              <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
-            </ul>
-          </div>
-          <div style='margin-top: 1rem;'>
-            <h3>✅ Selectie</h3>
-            <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
-          </div>
-          <div style='margin-top: 1rem;'>
-            <h3>🚫 Niet geselecteerd</h3>
-            <p>${nonSelectedText || "Geen info"}</p>
-          </div>
-          <div style='margin-top: 1rem;'>
-            <h3>🧺 Verantwoordelijke</h3>
-            <p>${responsible || "[naam]"}</p>
-          </div>
-          <div style='margin-top: 1rem;'>
-            <h3>📣 Opmerking</h3>
-            <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
-            ${extraMededeling}
-          </div>
-          <p style='margin-top: 2rem;'>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
+        <h2>Beste ouders en spelers van de U15,</h2>
+        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
+        <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
+          <h3>⚽ Wedstrijdinfo</h3>
+          <ul>
+            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
+            <li><strong>Datum:</strong> ${date || "[datum]"}</li>
+            <li><strong>Start wedstrijd:</strong> ${time || "[Start wedstrijd]"}</li>
+            <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
+            <li><strong>Adres:</strong> ${address || "[adres]"}</li>
+            ${matchType === 'Uitwedstrijd' && opponent ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
+          </ul>
         </div>
+        <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
+          <h3>📍 Verzamelen</h3>
+          <ul>
+            <li><strong>Plaats:</strong> ${gatheringPlace}</li>
+            <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
+          </ul>
+        </div>
+        <div><h3>✅ Selectie</h3><p>${selectedText || "Nog geen spelers geselecteerd."}</p></div>
+        <div><h3>🚫 Niet geselecteerd</h3><p>${nonSelectedText || "Geen info"}</p></div>
+        <div><h3>🧺 Verantwoordelijke</h3><p>${responsible || "[naam]"}</p></div>
+        <div><h3>📣 Opmerking</h3>
+          <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
+          ${extraMededeling}
+        </div>
+        <p>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
       </div>`;
 
     setPreview(email);
