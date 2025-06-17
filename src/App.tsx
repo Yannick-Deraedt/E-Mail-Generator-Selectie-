@@ -1,4 +1,4 @@
-// App.tsx — verbeterde volledige versie met duidelijke layout voor wedstrijdinfo
+// App.tsx — volledige en verbeterde versie met nette layout
 import { useState, useEffect } from "react";
 import "./index.css";
 
@@ -37,6 +37,88 @@ export default function App() {
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
+
+  const togglePlayer = (player: string) => {
+    setSelectedPlayers((prev) => {
+      const updated = { ...prev };
+      if (player in updated) delete updated[player];
+      else updated[player] = "1";
+      return updated;
+    });
+  };
+
+  const setRugnummer = (player: string, number: string) => {
+    setSelectedPlayers((prev) => ({ ...prev, [player]: number }));
+  };
+
+  const setReason = (player: string, reason: string) => {
+    setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
+  };
+
+  const copyToClipboard = async () => {
+    const previewElement = document.querySelector("#preview");
+    if (previewElement && navigator.clipboard && window.ClipboardItem) {
+      const html = previewElement.innerHTML;
+      await navigator.clipboard.write([
+        new ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" })
+        })
+      ]);
+      alert("E-mail succesvol gekopieerd met layout!");
+    } else {
+      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
+    }
+  };
+
+  const generateEmail = () => {
+    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1] || "999") - parseInt(b[1] || "999"));
+    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
+    const nonSelectedText = playerList.filter(p => !(p in selectedPlayers)).map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
+    const extraMededeling = matchType === 'Uitwedstrijd' ?
+      `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
+      : "";
+
+    const email = `
+      <div style='font-family: Arial, sans-serif; padding: 1rem;'>
+        <h2 style='font-size: 1.2rem; font-weight: bold;'>Beste ouders en spelers van de U15,</h2>
+        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
+        <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
+          <h3>⚽ Wedstrijdinfo</h3>
+          <ul>
+            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
+            <li><strong>Datum:</strong> ${date || "[datum]"}</li>
+            <li><strong>Uur:</strong> ${time || "[uur]"}</li>
+            <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
+            <li><strong>Adres:</strong> ${address || "[adres]"}</li>
+            ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
+          </ul>
+        </div>
+        <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
+          <h3>📍 Verzamelen</h3>
+          <ul>
+            <li><strong>Plaats:</strong> ${gatheringPlace}</li>
+            <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
+          </ul>
+        </div>
+        <div style='margin-top:1rem;'>
+          <h3>✅ Selectie</h3><p>${selectedText || "Nog geen spelers geselecteerd."}</p>
+        </div>
+        <div style='margin-top:1rem;'>
+          <h3>🚫 Niet geselecteerd</h3><p>${nonSelectedText || "Geen info"}</p>
+        </div>
+        <div style='margin-top:1rem;'>
+          <h3>🧺 Verantwoordelijke</h3><p>${responsible || "[naam]"}</p>
+        </div>
+        <div style='margin-top:1rem;'>
+          <h3>📣 Opmerking</h3>
+          <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
+          ${extraMededeling}
+        </div>
+        <p style='margin-top: 2rem;'>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
+      </div>`;
+
+    setPreview(email);
+  };
 
   const handleInputBlock = (label: string, children: JSX.Element) => (
     <div className="flex flex-col gap-1">
@@ -92,123 +174,6 @@ export default function App() {
             {playerList.map((p) => <option key={p}>{p}</option>)}
           </select>
         ))}
-      </div>
-
-
-  const togglePlayer = (player: string) => {
-    setSelectedPlayers((prev) => {
-      const updated = { ...prev };
-      if (player in updated) delete updated[player];
-      else updated[player] = "1";
-      return updated;
-    });
-  };
-
-  const setRugnummer = (player: string, number: string) => {
-    setSelectedPlayers((prev) => ({ ...prev, [player]: number }));
-  };
-
-  const setReason = (player: string, reason: string) => {
-    setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
-  };
-
-  const copyToClipboard = async () => {
-    const previewElement = document.querySelector("#preview");
-    if (previewElement && navigator.clipboard && window.ClipboardItem) {
-      const html = previewElement.innerHTML;
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" })
-        })
-      ]);
-      alert("E-mail succesvol gekopieerd met layout!");
-    } else {
-      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
-    }
-  };
-
-  const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1] || "999") - parseInt(b[1] || "999"));
-    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
-    const nonSelectedText = playerList.filter(p => !(p in selectedPlayers)).map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
-    const extraMededeling = matchType === 'Uitwedstrijd' ?
-      `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
-      : "";
-
-    const email = `
-      <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <h2 style='font-size: 1.2rem; font-weight: bold;'>Beste ouders en spelers van de U15,</h2>
-        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
-        <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
-          <h3>⚽ Wedstrijdinformatie</h3>
-          <ul>
-            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
-            <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-            <li><strong>Uur:</strong> ${time || "[uur]"}</li>
-            <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
-            <li><strong>Adres:</strong> ${address || "[adres]"}</li>
-            ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
-          </ul>
-        </div>
-        <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
-          <h3>📍 Verzamelinformatie</h3>
-          <ul>
-            <li><strong>Plaats:</strong> ${gatheringPlace}</li>
-            <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
-          </ul>
-        </div>
-        <div style='margin-top:1rem;'>
-          <h3>✅ Selectie</h3><p>${selectedText || "Nog geen spelers geselecteerd."}</p>
-        </div>
-        <div style='margin-top:1rem;'>
-          <h3>🚫 Niet geselecteerd</h3><p>${nonSelectedText || "Geen info"}</p>
-        </div>
-        <div style='margin-top:1rem;'>
-          <h3>🧺 Verantwoordelijke</h3><p>${responsible || "[naam]"}</p>
-        </div>
-        <div style='margin-top:1rem;'>
-          <h3>📣 Opmerking</h3>
-          <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
-          ${extraMededeling}
-        </div>
-        <p style='margin-top: 2rem;'>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
-      </div>`;
-
-    setPreview(email);
-  };
-
-
-  return (
-    <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Email Generator</h1>
-
-      <div className="grid md:grid-cols-2 gap-4 mb-8">
-        <div>
-          <label className="block mb-1">Dag</label>
-          <select className="w-full p-2 rounded bg-gray-800" value={day} onChange={(e) => setDay(e.target.value)}>
-            <option value="">Kies een dag</option>
-            {days.map((d) => <option key={d}>{d}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1">Type wedstrijd</label>
-          <select className="w-full p-2 rounded bg-gray-800" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
-            <option>Thuiswedstrijd</option>
-            <option>Uitwedstrijd</option>
-          </select>
-        </div>
-        <input className="p-2 rounded bg-gray-800" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        <input className="p-2 rounded bg-gray-800" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-        <input className="p-2 rounded bg-gray-800" placeholder="Tegenstander" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
-        <input className="p-2 rounded bg-gray-800" placeholder="Terrein" value={field} onChange={(e) => setField(e.target.value)} />
-        <input className="p-2 rounded bg-gray-800" placeholder="Adres" value={address} onChange={(e) => setAddress(e.target.value)} />
-        {matchType === "Uitwedstrijd" && <input className="p-2 rounded bg-gray-800" type="time" placeholder="Aankomst" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />}
-        <input className="p-2 rounded bg-gray-800" placeholder="Verzamelplaats" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
-        <input className="p-2 rounded bg-gray-800" type="time" placeholder="Verzameltijd" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
-        <select className="p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
-          <option value="">Verantwoordelijke</option>
-          {playerList.map((p) => <option key={p}>{p}</option>)}
-        </select>
       </div>
 
       <h2 className="text-xl font-bold mb-2">Wedstrijdselectie</h2>
