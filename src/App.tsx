@@ -3,15 +3,15 @@ import { useState, useEffect } from "react";
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerListInitial = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
 
 const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15",
+  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
@@ -37,7 +37,7 @@ export default function App() {
   useEffect(() => {
     if (matchType === "Thuiswedstrijd") {
       setGatheringPlace("Kleedkamer X");
-    } else if (matchType === "Uitwedstrijd") {
+    } else {
       setGatheringPlace("Parking KVE");
     }
   }, [matchType]);
@@ -60,13 +60,15 @@ export default function App() {
   };
 
   const addPlayer = () => {
-    if (newPlayer && !playerList.includes(newPlayer)) {
-      setPlayerList([...playerList, newPlayer]);
+    if (newPlayer.trim() && !playerList.includes(newPlayer.trim())) {
+      setPlayerList([...playerList, newPlayer.trim()]);
       setNewPlayer("");
     }
   };
 
-  const filteredPlayers = playerList.filter((p) => p.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredPlayers = playerList.filter((p) =>
+    p.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const copyToClipboard = async () => {
     const previewElement = document.querySelector("#preview");
@@ -84,8 +86,14 @@ export default function App() {
   };
 
   const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
+    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => {
+      const numA = parseInt(a[1] || "999");
+      const numB = parseInt(b[1] || "999");
+      return numA - numB;
+    });
+
     const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
+
     const nonSelectedText = playerList
       .filter((p) => !(p in selectedPlayers))
       .map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`)
@@ -97,46 +105,47 @@ export default function App() {
 
     const email = `
       <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <h2>Beste ouders en spelers van de U15,</h2>
-        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
+        <h2 style='font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;'>Beste ouders en spelers van de U15,</h2>
+        <p style='margin-bottom: 2rem;'>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>. Hieronder vinden jullie alle belangrijke details voor de wedstrijd.</p>
 
-        <div style='padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3>📅 Wedstrijdinformatie</h3>
-          <ul>
+        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
+          <h3 style='font-weight: bold;'>📅 Wedstrijdinformatie</h3>
+          <ul style='padding-left: 1rem;'>
             <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}</li>
+            <li><strong>Dag:</strong> ${day}</li>
             <li><strong>Datum:</strong> ${date}</li>
-            <li><strong>Aanvang:</strong> ${time}</li>
+            <li><strong>Uur:</strong> ${time}</li>
             <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
             <li><strong>Adres:</strong> ${address || "[adres]"}</li>
             ${matchType === 'Uitwedstrijd' ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
           </ul>
         </div>
 
-        <div style='margin-top: 1rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3>📍 Verzamelen</h3>
-          <ul>
-            <li><strong>Verzamelplaats:</strong> ${gatheringPlace}</li>
-            <li><strong>Verzameltijd:</strong> ${gatheringTime}</li>
+        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
+          <h3 style='font-weight: bold;'>📍 Verzamelinformatie</h3>
+          <ul style='padding-left: 1rem;'>
+            <li><strong>Verzamelplaats:</strong> ${gatheringPlace || "[verzamelplaats]"}</li>
+            <li><strong>Verzameltijd:</strong> ${gatheringTime || "[verzameltijd]"}</li>
           </ul>
         </div>
 
-        <div style='margin-top: 1rem;'>
-          <h3>✅ Selectie</h3>
+        <div style='margin-bottom: 2rem;'>
+          <h3 style='font-weight: bold;'>📝 Selectie</h3>
           <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
         </div>
 
-        <div>
-          <h3>🚫 Niet geselecteerd</h3>
+        <div style='margin-bottom: 2rem;'>
+          <h3 style='font-weight: bold;'>🚫 Niet geselecteerde spelers</h3>
           <p>${nonSelectedText || "Geen info"}</p>
         </div>
 
-        <div>
-          <h3>🧺 Verantwoordelijkheid</h3>
+        <div style='margin-bottom: 2rem;'>
+          <h3 style='font-weight: bold;'>🧺 Verantwoordelijkheden</h3>
           <p>Was, fruit en chocomelk: ${responsible || "[naam speler]"}</p>
         </div>
 
-        <div>
-          <h3>📢 Mededeling</h3>
+        <div style='margin-bottom: 2rem;'>
+          <h3 style='font-weight: bold;'>⚠️ Belangrijke mededeling</h3>
           <p><span style='background-color: yellow; font-weight: bold;'>Vergeet niet om jullie identiteitskaart (ID) mee te nemen!</span></p>
           ${extraMededeling}
         </div>
@@ -147,6 +156,7 @@ export default function App() {
 
     setPreview(email);
   };
+
 
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-6 text-sm">
