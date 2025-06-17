@@ -1,11 +1,10 @@
-// App.tsx – volledige versie met verbeterde kopieerfunctie (rich HTML)
 import { useState } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver","Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
-  "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke"
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke", // <-- FIXED
   "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
@@ -51,7 +50,7 @@ export default function App() {
 
   const copyToClipboard = async () => {
     const previewElement = document.querySelector("#preview");
-    if (navigator.clipboard && previewElement) {
+    if (previewElement && navigator.clipboard && window.ClipboardItem) {
       const html = previewElement.innerHTML;
       await navigator.clipboard.write([
         new ClipboardItem({
@@ -59,17 +58,24 @@ export default function App() {
         })
       ]);
       alert("E-mail succesvol gekopieerd met layout!");
+    } else {
+      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
     }
   };
 
   const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
-    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br>");
+    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => {
+      const numA = parseInt(a[1] || "999");
+      const numB = parseInt(b[1] || "999");
+      return numA - numB;
+    });
+
+    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
 
     const nonSelectedText = playerList
       .filter((p) => !(p in selectedPlayers))
       .map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`)
-      .join("<br>");
+      .join("<br/>");
 
     const extraMededeling = matchType === 'Uitwedstrijd'
       ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
@@ -82,16 +88,16 @@ export default function App() {
 
         <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
           <h3 style='font-weight: bold;'>Wedstrijdinformatie</h3>
-          <p>Wedstrijd: ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}<br>
-          Datum: ${date}<br>
-          Aanvang: ${time}<br>
-          Terrein: ${field || "[terrein]"}<br>
-          Adres: ${address || "[adres]"}${matchType === 'Uitwedstrijd' ? `<br>Aankomst bij ${opponent}: ${arrivalTimeOpponent || "[uur]"}` : ""}</p>
+          <p>Wedstrijd: ${matchType === 'Thuiswedstrijd' ? 'KVE vs ' + opponent : opponent + ' vs KVE'}<br/>
+          Datum: ${date}<br/>
+          Aanvang: ${time}<br/>
+          Terrein: ${field || "[terrein]"}<br/>
+          Adres: ${address || "[adres]"}${matchType === 'Uitwedstrijd' ? `<br/>Aankomst bij ${opponent}: ${arrivalTimeOpponent || "[uur]"}` : ""}</p>
         </div>
 
         <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
           <h3 style='font-weight: bold;'>Verzamelinformatie</h3>
-          <p>Verzamelplaats: ${gatheringPlace || "[verzamelplaats]"}<br>
+          <p>Verzamelplaats: ${gatheringPlace || "[verzamelplaats]"}<br/>
           Verzameltijd: ${gatheringTime || "[verzameltijd]"}</p>
         </div>
 
@@ -116,7 +122,7 @@ export default function App() {
           ${extraMededeling}
         </div>
 
-        <p style='margin-top: 2rem;'>Met sportieve groeten,<br>Yannick Deraedt<br>Trainer U15 KVE Drongen</p>
+        <p style='margin-top: 2rem;'>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
       </div>
     `;
 
