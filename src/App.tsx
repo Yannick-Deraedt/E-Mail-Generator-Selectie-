@@ -1,4 +1,3 @@
-// App.tsx
 import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
@@ -31,6 +30,7 @@ export default function App() {
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
+  const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [searchTerm, setSearchTerm] = useState("");
   const [preview, setPreview] = useState("");
 
@@ -67,13 +67,21 @@ export default function App() {
   };
   const generateEmail = () => {
     const selected = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
-    const selectedText = selected.map(([name, num]) => `${num}. ${name}`).join("<br/>");
+    const selectedText = selected.map(([name, num]) => `
+      <div style="margin-bottom:4px;">
+        <span style="background-color:#e2e6ea;padding:2px 6px;border-radius:4px;margin-right:6px;font-weight:bold;">#${num}</span>${name}
+      </div>
+    `).join("");
+
     const nonSelectedText = playerList
       .filter(p => !(p in selectedPlayers))
       .map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
 
     const extraNote = matchType === "Uitwedstrijd"
-      ? `<p style="background-color: #d0ebff; padding: 8px; border-radius: 5px;"><strong>🚗 Carpool:</strong> samenkomst op <strong>Parking KVE</strong>. Indien het een omweg >15min is, mag je rechtstreeks rijden, maar laat dit weten via WhatsApp-poll.</p>`
+      ? `<p style="background-color: #d0ebff; padding: 8px; border-radius: 5px;">
+          <strong>Carpool:</strong> samenkomst op <strong>Parking KVE</strong>. 
+          Indien het een omweg >15min is, mag je rechtstreeks rijden, maar laat dit weten via de WhatsApp-poll.
+         </p>`
       : "";
 
     const html = `
@@ -81,54 +89,54 @@ export default function App() {
         <h2>Beste ouders en spelers van de U15,</h2>
         <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
         
-        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;">
-          <h3>⚽ Wedstrijddetails</h3>
-          <ul>
-            <li><strong>Wedstrijd:</strong> ${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
-            <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-            <li><strong>Start wedstrijd:</strong> ${time || "[tijd]"}</li>
-            <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
-            <li><strong>Adres:</strong> ${address || "[adres]"}</li>
+        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem; background:#f9f9f9;">
+          <h3>Wedstrijddetails</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td><strong>Wedstrijd:</strong></td><td>${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</td></tr>
+            <tr><td><strong>Datum:</strong></td><td>${date || "[datum]"}</td></tr>
+            <tr><td><strong>Start wedstrijd:</strong></td><td>${time || "[tijd]"}</td></tr>
+            <tr><td><strong>Terrein:</strong></td><td>${field || "[terrein]"}</td></tr>
+            <tr><td><strong>Adres:</strong></td><td>${address || "[adres]"}</td></tr>
             ${matchType === "Uitwedstrijd" && opponent
-              ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
-          </ul>
+              ? `<tr><td><strong>Aankomst bij ${opponent}:</strong></td><td>${arrivalTimeOpponent || "[uur]"}</td></tr>` : ""}
+          </table>
         </div>
 
-        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;">
-          <h3>📍 Verzameldetails</h3>
-          <ul>
-            <li><strong>Plaats:</strong> ${gatheringPlace}</li>
-            <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
-          </ul>
+        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem; background:#f9f9f9;">
+          <h3>Verzameldetails</h3>
+          <table style="width:100%;border-collapse:collapse;">
+            <tr><td><strong>Plaats:</strong></td><td>${gatheringPlace}</td></tr>
+            <tr><td><strong>Uur:</strong></td><td>${gatheringTime || "[uur]"}</td></tr>
+          </table>
         </div>
 
-        <div>
-          <h3>✅ Selectie</h3>
-          <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
+        <div style="margin-top:1.5rem;">
+          <h3>Selectie</h3>
+          ${selectedText || "Nog geen spelers geselecteerd."}
         </div>
 
-        <div>
-          <h3>🚫 Niet geselecteerd</h3>
+        <div style="margin-top:1.5rem;">
+          <h3>Niet geselecteerd</h3>
           <p>${nonSelectedText || "Geen info beschikbaar."}</p>
         </div>
 
-        <div>
-          <h3>🧺 Verantwoordelijke</h3>
+        <div style="margin-top:1.5rem;">
+          <h3>Verantwoordelijk voor was, fruit & chocomelk</h3>
           <p>${responsible || "[naam]"}</p>
         </div>
 
-        <div>
-          <h3>📣 Opmerking</h3>
-          <p><span style="background-color: yellow;">Vergeet jullie ID niet mee te nemen!</span></p>
+        <div style="margin-top:1.5rem;">
+          <h3>Opmerking</h3>
+          <p><span style="background-color: yellow;">${remark}</span></p>
           ${extraNote}
         </div>
 
-        <p style="margin-top: 1rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
+        <p style="margin-top: 2rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen<br/><br/></p>
       </div>
     `;
+
     setPreview(html);
   };
-
   return (
     <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">E-mail Generator</h1>
@@ -181,6 +189,7 @@ export default function App() {
             <input type="time" className="w-full p-2 rounded bg-gray-800" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
           </div>
         )}
+
         <div>
           <label className="block mb-1">Verzamelplaats</label>
           <input type="text" className="w-full p-2 rounded bg-gray-800" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
@@ -192,11 +201,16 @@ export default function App() {
         </div>
 
         <div>
-          <label className="block mb-1">Verantwoordelijke</label>
+          <label className="block mb-1">Verantwoordelijk voor was, fruit & chocomelk</label>
           <select className="w-full p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
             <option value="">Kies een verantwoordelijke</option>
             {playerList.map(p => <option key={p}>{p}</option>)}
           </select>
+        </div>
+
+        <div className="md:col-span-2 lg:col-span-3">
+          <label className="block mb-1">Opmerking (bv. ID meenemen)</label>
+          <input type="text" className="w-full p-2 rounded bg-yellow-200 text-black" value={remark} onChange={(e) => setRemark(e.target.value)} />
         </div>
       </div>
 
@@ -234,13 +248,13 @@ export default function App() {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-4 mt-6">
+      <div className="sticky bottom-0 bg-gray-900 py-4 mt-8 flex flex-wrap gap-4 z-10">
         <button onClick={generateEmail} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white">
-          📧 Genereer e-mail
+          Genereer e-mail
         </button>
         {preview && (
           <button onClick={copyToClipboard} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-white">
-            📋 Kopieer e-mail
+            Kopieer e-mail
           </button>
         )}
       </div>
