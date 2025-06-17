@@ -82,7 +82,7 @@ export default function App() {
         <h2>Beste ouders en spelers van de U15,</h2>
         <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
         <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
-          <h3>⚽ Wedstrijdinfo</h3>
+          <h3>⚽ Wedstrijddetails</h3>
           <ul>
             <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
             <li><strong>Datum:</strong> ${date || "[datum]"}</li>
@@ -93,7 +93,7 @@ export default function App() {
           </ul>
         </div>
         <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
-          <h3>📍 Verzamelen</h3>
+          <h3>📍 Verzameldetails</h3>
           <ul>
             <li><strong>Plaats:</strong> ${gatheringPlace}</li>
             <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
