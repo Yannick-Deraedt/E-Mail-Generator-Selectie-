@@ -33,12 +33,13 @@ export default function App() {
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [preview, setPreview] = useState("");
 
-  // Verzamelplaats automatisch aanpassen
+  // Automatisch gathering place & reset arrival bij type
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
     if (matchType !== "Uitwedstrijd") setArrivalTimeOpponent("");
   }, [matchType]);
 
+  // Selectie - niet-geselecteerd flow
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     const updated = { ...nonSelectedReasons };
@@ -74,53 +75,105 @@ export default function App() {
     }
   };
 
+  // EMAIL GENERATIE volgens e-mailnormen
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
-      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`).join("");
+      .map(([name, number]) => `
+        <tr>
+          <td style="padding:6px 10px;border-bottom:1px solid #ccc"><strong>#${number}</strong></td>
+          <td style="padding:6px 10px;border-bottom:1px solid #ccc">${name}</td>
+        </tr>
+      `).join("");
 
     const nonSelectedList = playerList
       .filter(p => !(p in selectedPlayers))
-      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`).join("");
+      .map(p => `
+        <tr>
+          <td style="padding:6px 10px;border-bottom:1px solid #ccc">${p}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #ccc">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td>
+        </tr>
+      `).join("");
 
     const arrivalRow = matchType === "Uitwedstrijd" && arrivalTimeOpponent
-      ? `<tr><td><strong>Aankomst bij tegenstander:</strong></td><td>${arrivalTimeOpponent} (${opponent})</td></tr>` : "";
+      ? `<tr><td style="font-weight:bold">Aankomst bij tegenstander:</td><td>${arrivalTimeOpponent} (${opponent})</td></tr>`
+      : "";
 
     const carpoolText = matchType === "Uitwedstrijd"
-      ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px">
-          <p><strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</p>
-        </div>` : "";
+      ? `<div style="margin:18px 0 12px 0;background:#e8f4fc;padding:10px;border-radius:6px;font-size:15px">
+          <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen.<br/>
+          Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
+        </div>`
+      : "";
 
+    // Professionele aanspreking, witregels & afsluiting
     const html = `
-      <div style="font-family:sans-serif;line-height:1.6">
-        <h2 style="margin-bottom:4px">Wedstrijddetails</h2>
-        <table style="width:100%;border-collapse:collapse">
-          <tr><td><strong>Dag:</strong></td><td>${day}</td></tr>
-          <tr><td><strong>Type:</strong></td><td>${matchType}</td></tr>
-          <tr><td><strong>Datum:</strong></td><td>${date}</td></tr>
-          <tr><td><strong>Start wedstrijd:</strong></td><td>${time}</td></tr>
-          <tr><td><strong>Tegenstander:</strong></td><td>${opponent}</td></tr>
-          <tr><td><strong>Terrein:</strong></td><td>${field}</td></tr>
-          <tr><td><strong>Adres:</strong></td><td>${address}</td></tr>
-          <tr><td><strong>Verzamelen:</strong></td><td>${gatheringTime} aan ${gatheringPlace}</td></tr>
-          ${arrivalRow}
-        </table>
+      <div style="font-family:sans-serif;line-height:1.7;max-width:650px;">
+        <p style="margin-bottom:24px">
+          Beste ouders,<br/><br/>
+          Hieronder vinden jullie alle informatie voor de komende wedstrijd. Gelieve tijdig te bevestigen via ProSoccerData of via WhatsApp.
+        </p>
+        <div style="background:#f2f7fd;border-radius:8px;padding:18px 20px 14px 20px;margin-bottom:20px;border:1px solid #d2e3f7">
+          <h2 style="font-size:19px;color:#134c87;margin-bottom:14px;">Wedstrijddetails</h2>
+          <table style="width:100%;font-size:16px">
+            <tr><td style="font-weight:bold;width:220px">Dag:</td><td>${day}</td></tr>
+            <tr><td style="font-weight:bold">Type:</td><td>${matchType}</td></tr>
+            <tr><td style="font-weight:bold">Datum:</td><td>${date}</td></tr>
+            <tr><td style="font-weight:bold">Start wedstrijd:</td><td>${time}</td></tr>
+            <tr><td style="font-weight:bold">Tegenstander:</td><td>${opponent}</td></tr>
+            <tr><td style="font-weight:bold">Terrein:</td><td>${field}</td></tr>
+            <tr><td style="font-weight:bold">Adres:</td><td>${address}</td></tr>
+            <tr><td style="font-weight:bold">Verzamelen:</td><td>${gatheringTime} aan ${gatheringPlace}</td></tr>
+            ${arrivalRow}
+          </table>
+        </div>
         ${carpoolText}
-        <h2 style="margin-top:20px">Selectie</h2>
-        <ul style="background:#f0f0f0;border-radius:6px;padding:10px">${selectedList}</ul>
-        <h2 style="margin-top:20px">Niet geselecteerd</h2>
-        <ul style="background:#f8d7da;border-radius:6px;padding:10px">${nonSelectedList}</ul>
-        <p style="margin-top:20px"><strong>Verantwoordelijke voor was, fruit & chocomelk:</strong> ${responsible || "-"}</p>
-        <p><strong>Opmerking:</strong> ${remark}</p>
-        <p style="margin-top:40px">Sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 IP – KVE Drongen</p>
+        <div style="background:#f9fafc;border-radius:8px;padding:16px 20px;margin-bottom:18px;border:1px solid #e3e3e3">
+          <h2 style="font-size:18px;color:#2b3e52;margin-bottom:8px;">Selectie</h2>
+          <table style="width:100%;font-size:16px;background:#fff;border-radius:5px;">
+            <thead>
+              <tr style="background:#e6effa">
+                <th style="padding:6px 10px;border-bottom:2px solid #b2d1f1;text-align:left">Rugnr</th>
+                <th style="padding:6px 10px;border-bottom:2px solid #b2d1f1;text-align:left">Speler</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${selectedList}
+            </tbody>
+          </table>
+        </div>
+        <div style="background:#fdf6f7;border-radius:8px;padding:16px 20px;margin-bottom:18px;border:1px solid #efd4d7">
+          <h2 style="font-size:18px;color:#852828;margin-bottom:8px;">Niet geselecteerd</h2>
+          <table style="width:100%;font-size:16px;background:#fff;border-radius:5px;">
+            <thead>
+              <tr style="background:#fbe8e9">
+                <th style="padding:6px 10px;border-bottom:2px solid #f5c8cc;text-align:left">Speler</th>
+                <th style="padding:6px 10px;border-bottom:2px solid #f5c8cc;text-align:left">Reden</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${nonSelectedList}
+            </tbody>
+          </table>
+        </div>
+        <div style="background:#f8f4e5;border-radius:8px;padding:12px 20px 9px 20px;margin-bottom:14px;border:1px solid #e2d3b2">
+          <strong>Verantwoordelijke voor was, fruit & chocomelk:</strong> ${responsible || "-"}
+        </div>
+        <div style="margin:0 0 24px 0;padding:8px 20px;">
+          <strong>Opmerking:</strong> ${remark}
+        </div>
+        <p style="margin-top:40px">
+          Met sportieve groet,<br/><br/>
+          Yannick Deraedt<br/>
+          Trainer U15 IP – KVE Drongen
+        </p>
       </div>
     `;
     setPreview(html);
   };
 
-  // UI: Geselecteerden bovenaan, niet-geselecteerden onderaan
   return (
-    <div className="p-4 max-w-4xl mx-auto text-white bg-gray-900 min-h-screen">
+    <div className="p-4 max-w-2xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
       <div className="flex flex-col gap-4">
         <label>Dag
@@ -152,7 +205,7 @@ export default function App() {
           <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Verzamelplaats
-          <input type="text" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} className="w-full p-2 rounded text-black mt-1" readOnly />
+          <input type="text" value={gatheringPlace} readOnly className="w-full p-2 rounded text-black mt-1" />
         </label>
         {matchType === "Uitwedstrijd" && (
           <label>Aankomst bij tegenstander
@@ -169,22 +222,6 @@ export default function App() {
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
 
-        {/* Geselecteerden bovenaan */}
-        <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
-        {Object.keys(selectedPlayers).length === 0 && (
-          <div className="text-gray-400">Nog geen spelers geselecteerd</div>
-        )}
-        {Object.keys(selectedPlayers).map(player => (
-          <div key={player} className="flex items-center gap-2 mb-1">
-            <input type="checkbox" checked onChange={() => handleDeselect(player)} />
-            <span className="flex-1">{player}</span>
-            <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
-              {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
-            </select>
-          </div>
-        ))}
-
-        {/* Niet-geselecteerden onderaan */}
         <h2 className="text-xl font-bold mt-6">Niet-geselecteerden</h2>
         {playerList.filter(p => !(p in selectedPlayers)).map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
@@ -193,6 +230,17 @@ export default function App() {
             <select className="flex-1 text-black" value={nonSelectedReasons[player] || ""} onChange={e => setReason(player, e.target.value)}>
               <option value="">Reden niet geselecteerd</option>
               {nonSelectionReasons.map(r => (<option key={r} value={r}>{r}</option>))}
+            </select>
+          </div>
+        ))}
+
+        <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
+        {Object.keys(selectedPlayers).map(player => (
+          <div key={player} className="flex items-center gap-2 mb-1">
+            <input type="checkbox" checked onChange={() => handleDeselect(player)} />
+            <span className="flex-1">{player}</span>
+            <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
+              {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
             </select>
           </div>
         ))}
