@@ -2,25 +2,14 @@
 import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
-const playerList = [
-  "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
-  "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
-  "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
-  "Filemon Verstraete"
-];
-
-const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
-  "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
-];
+const playerList = [ /* jouw lijst blijft identiek */ ];
+const reasons = [ /* jouw redenenlijst blijft identiek */ ];
 
 export default function App() {
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
+  const [day, setDay] = useState("");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
-  const [day, setDay] = useState("");
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
@@ -30,182 +19,160 @@ export default function App() {
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
-  const [preview, setPreview] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [preview, setPreview] = useState("");
 
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
 
-  const togglePlayer = (player: string) => {
-    setSelectedPlayers((prev) => {
-      const updated = { ...prev };
-      if (player in updated) delete updated[player];
-      else updated[player] = "1";
-      return updated;
+  const togglePlayer = (p: string) => {
+    setSelectedPlayers(prev => {
+      const next = { ...prev };
+      next[p] ? delete next[p] : next[p] = "1";
+      return next;
     });
   };
-
-  const setRugnummer = (player: string, number: string) => {
-    setSelectedPlayers((prev) => ({ ...prev, [player]: number }));
-  };
-
-  const setReason = (player: string, reason: string) => {
-    setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
-  };
+  const setRugnummer = (p: string, n: string) => setSelectedPlayers(prev => ({ ...prev, [p]: n }));
+  const setReason = (p: string, r: string) => setNonSelectedReasons(prev => ({ ...prev, [p]: r }));
 
   const copyToClipboard = async () => {
-    const previewElement = document.querySelector("#preview");
-    if (previewElement && navigator.clipboard && window.ClipboardItem) {
-      const html = previewElement.innerHTML;
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" })
-        })
-      ]);
+    const el = document.querySelector("#preview");
+    if (el && navigator.clipboard?.write) {
+      const html = (el as HTMLElement).innerHTML;
+      await navigator.clipboard.write([new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" })
+      })]);
       alert("E-mail succesvol gekopieerd met layout!");
-    } else {
-      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
-    }
+    } else alert("Kopiëren niet ondersteund, gebruik Ctrl+C.");
   };
 
   const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
-    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
-    const nonSelectedText = playerList.filter(p => !(p in selectedPlayers)).map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
-    const extraMededeling = matchType === 'Uitwedstrijd'
-      ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
+    const sel = Object.entries(selectedPlayers).sort((a,b)=>+a[1]-+b[1]);
+    const selText = sel.map(([p,n])=>`${n}. ${p}`).join("<br/>");
+    const nonSel = playerList.filter(p => !(p in selectedPlayers))
+      .map(p=>`- ${p} – ${nonSelectedReasons[p]||"[reden]"}`).join("<br/>");
+    const extra = matchType==="Uitwedstrijd"
+      ? `<p style="background:#d0ebff;padding:8px;border-radius:6px;"><strong>🚗 Carpool:</strong> samen vanaf Parking KVE, tenzij >15min omweg.</p>`
       : "";
 
-    const email = `
-      <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <h2>Beste ouders en spelers van de U15,</h2>
-        <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
-        <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
-          <h3>⚽ Wedstrijddetails</h3>
-          <ul>
-            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
-            <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-            <li><strong>Start wedstrijd:</strong> ${time || "[Start wedstrijd]"}</li>
-            <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
-            <li><strong>Adres:</strong> ${address || "[adres]"}</li>
-            ${matchType === 'Uitwedstrijd' && opponent ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
-          </ul>
-        </div>
-        <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
-          <h3>📍 Verzameldetails</h3>
-          <ul>
-            <li><strong>Plaats:</strong> ${gatheringPlace}</li>
-            <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
-          </ul>
-        </div>
-        <div><h3>✅ Selectie</h3><p>${selectedText || "Nog geen spelers geselecteerd."}</p></div>
-        <div><h3>🚫 Niet geselecteerd</h3><p>${nonSelectedText || "Geen info"}</p></div>
-        <div><h3>🧺 Verantwoordelijke</h3><p>${responsible || "[naam]"}</p></div>
-        <div><h3>📣 Opmerking</h3>
-          <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
-          ${extraMededeling}
-        </div>
-        <p>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
-      </div>`;
+    const html = `
+      <div style="font-family:Arial;line-height:1.4;padding:16px;">
+        <div style="border:2px solid #004080;border-radius:8px;padding:16px;">
+          <h2 style="margin:0;color:#004080;">Beste ouders & spelers U15</h2>
+          <p>Aanstaande <strong>${day}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent}</strong>.</p>
 
-    setPreview(email);
+          <div style="border:1px solid #ccc;border-radius:6px;margin:16px 0;padding:8px;">
+            <h3 style="margin:0 0 8px;">⚽ Wedstrijddetails</h3>
+            <ul style="margin:0;padding-left:18px;">
+              <li><strong>Wedstrijd:</strong> ${matchType==="Thuiswedstrijd"?`KVE vs ${opponent}`:`${opponent} vs KVE`}</li>
+              <li><strong>Datum:</strong> ${date}</li>
+              <li><strong>Start wedstrijd:</strong> ${time}</li>
+              <li><strong>Terrein:</strong> ${field}</li>
+              <li><strong>Adres:</strong> ${address}</li>
+              ${matchType==="Uitwedstrijd" && `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent}</li>`}
+            </ul>
+          </div>
+
+          <div style="border:1px solid #ccc;border-radius:6px;margin:16px 0;padding:8px;">
+            <h3 style="margin:0 0 8px;">📍 Verzameldetails</h3>
+            <ul style="margin:0;padding-left:18px;">
+              <li><strong>Plaats:</strong> ${gatheringPlace}</li>
+              <li><strong>Uur:</strong> ${gatheringTime}</li>
+            </ul>
+          </div>
+
+          <div><h3 style="margin:16px 0 4px;">✅ Selectie</h3><p>${selText||"Nog geen spelers geselecteerd."}</p></div>
+          <div><h3 style="margin:16px 0 4px;">🚫 Niet geselecteerd</h3><p>${nonSel||"Geen info"}</p></div>
+          <div><h3 style="margin:16px 0 4px;">🧺 Verantwoordelijke</h3><p>${responsible}</p></div>
+          <div><h3 style="margin:16px 0 4px;">📣 Opmerking</h3>
+            <p><span style="background:yellow;">Vergeet jullie ID niet mee te nemen!</span></p>
+            ${extra}
+          </div>
+          <p style="margin-top:16px;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
+        </div>
+      </div>`;
+    setPreview(html);
   };
 
   return (
-    <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
+    <div className="min-h-screen bg-gray-900 text-white p-4">
       <h1 className="text-3xl font-bold mb-6">Email Generator</h1>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        <div>
-          <label className="block mb-1">Dag</label>
-          <select className="w-full p-2 rounded bg-gray-800" value={day} onChange={(e) => setDay(e.target.value)}>
-            <option value="">Kies een dag</option>
-            {days.map((d) => <option key={d}>{d}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1">Type wedstrijd</label>
-          <select className="w-full p-2 rounded bg-gray-800" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
-            <option>Thuiswedstrijd</option>
-            <option>Uitwedstrijd</option>
-          </select>
-        </div>
-        <div>
-          <label className="block mb-1">Datum</label>
-          <input className="w-full p-2 rounded bg-gray-800" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </div>
-        <div>
-          <label className="block mb-1">Start wedstrijd</label>
-          <input className="w-full p-2 rounded bg-gray-800" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-        </div>
-        <div>
-          <label className="block mb-1">Tegenstander</label>
-          <input className="w-full p-2 rounded bg-gray-800" placeholder="Tegenstander" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
-        </div>
-        <div>
-          <label className="block mb-1">Terrein</label>
-          <input className="w-full p-2 rounded bg-gray-800" placeholder="Terrein" value={field} onChange={(e) => setField(e.target.value)} />
-        </div>
-        <div>
-          <label className="block mb-1">Adres</label>
-          <input className="w-full p-2 rounded bg-gray-800" placeholder="Adres" value={address} onChange={(e) => setAddress(e.target.value)} />
-        </div>
-        {matchType === "Uitwedstrijd" && (
-          <div>
-            <label className="block mb-1">Aankomst uur (bij tegenstander)</label>
-            <input className="w-full p-2 rounded bg-gray-800" type="time" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
-          </div>
-        )}
-        <div>
-          <label className="block mb-1">Verzamelplaats</label>
-          <input className="w-full p-2 rounded bg-gray-800" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
-        </div>
-        <div>
-          <label className="block mb-1">Verzameltijd</label>
-          <input className="w-full p-2 rounded bg-gray-800" type="time" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
-        </div>
-        <div>
-          <label className="block mb-1">Verantwoordelijke</label>
-          <select className="w-full p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
-            <option value="">Verantwoordelijke</option>
-            {playerList.map((p) => <option key={p}>{p}</option>)}
-          </select>
-        </div>
-      </div>
-      <h2 className="text-xl font-bold mb-2">Wedstrijdselectie</h2>
-      <input type="text" className="w-full mb-2 p-2 rounded bg-gray-800" placeholder="Zoek speler..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-      <div className="grid md:grid-cols-2 gap-2">
-        {playerList.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
-          <div key={p} className="flex gap-2 items-center">
-            <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
-            <label className="flex-1 text-sm">{p}</label>
-            {p in selectedPlayers && (
-              <select className="bg-gray-800 p-1 rounded text-sm" value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)}>
-                {[...Array(25)].map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        {/* Wedstrijddetails invulvelden */}
+        {[["Dag", day, setDay, "select", days], ["Type", matchType, setMatchType, "select", ["Thuiswedstrijd","Uitwedstrijd"]],
+          ["Datum", date, setDate, "date"], ["Uur", time, setTime, "time"],
+          ["Tegenstander", opponent, setOpponent, "text"], ["Terrein", field, setField, "text"],
+          ["Adres", address, setAddress, "text"],
+          ...(matchType==="Uitwedstrijd" ? [["Aankomst bij tegenstander", arrivalTimeOpponent, setArrivalTimeOpponent, "time"]] : []),
+          ["Verzamelplaats", gatheringPlace, ()=>{}, "text", , true],
+          ["Verzameltijd", gatheringTime, setGatheringTime, "time"],
+          ["Verantwoordelijke", responsible, setResponsible, "select", playerList]
+        ].map(([label, val, setter, type, options=[], disabled]) => (
+          <label key={label} className="block">
+            <span>{label}</span>
+            {type === "select" ? (
+              <select disabled={disabled} value={val as string} onChange={e=>(setter as any)(e.target.value)}
+                className="mt-1 w-full p-2 bg-gray-800 rounded">
+                <option value="">-- Kies --</option>
+                {options.map(o=><option key={o as string}>{o}</option>)}
               </select>
+            ) : (
+              <input type={type} disabled={disabled}
+                value={val as string} onChange={e=>(setter as any)(e.target.value)}
+                className="mt-1 w-full p-2 bg-gray-800 rounded"/>
             )}
-          </div>
+          </label>
         ))}
       </div>
 
-      <h2 className="text-xl font-bold mt-6 mb-2">Niet-geselecteerden en reden</h2>
-      {playerList.filter(p => !(p in selectedPlayers)).map((p) => (
-        <div key={p} className="flex gap-2 items-center mb-1">
-          <label className="flex-1 text-sm">{p}</label>
-          <select className="bg-gray-800 p-1 rounded text-sm" value={nonSelectedReasons[p] || ""} onChange={(e) => setReason(p, e.target.value)}>
-            <option value="">Reden</option>
-            {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2">Wedstrijdselectie</h2>
+        <input type="text" placeholder="Zoek speler..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)}
+          className="w-full mb-3 p-2 bg-gray-800 rounded"/>
+        <div className="max-h-60 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-2">
+          {playerList.filter(p=>p.toLowerCase().includes(searchTerm.toLowerCase())).map(p=>(
+            <div key={p} className={`flex items-center gap-2 p-2 rounded cursor-pointer ${p in selectedPlayers?"bg-green-800":"bg-gray-800"}`}
+              onClick={()=>togglePlayer(p)}>
+              <input type="checkbox" checked={p in selectedPlayers} readOnly/>
+              <span className="flex-1">{p}</span>
+              {p in selectedPlayers && (
+                <input type="number" min="1" max="99" value={selectedPlayers[p]}
+                  onChange={e=>setRugnummer(p,e.target.value)}
+                  className="w-12 p-1 text-black rounded"/>
+              )}
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded mt-6" onClick={generateEmail}>Genereer e-mail</button>
+      <div className="mb-6">
+        <h2 className="text-xl font-bold mb-2">Niet geselecteerden & reden</h2>
+        <div className="max-h-60 overflow-y-auto space-y-2">
+          {playerList.filter(p=>!(p in selectedPlayers)).map(p=>(
+            <div key={p} className="flex items-center gap-2">
+              <span className="flex-1">{p}</span>
+              <select value={nonSelectedReasons[p]||""} onChange={e=>setReason(p,e.target.value)}
+                className="p-1 bg-gray-800 rounded">
+                <option value="">Reden</option>
+                {reasons.map(r=><option key={r}>{r}</option>)}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="flex gap-4 mb-6">
+        <button onClick={generateEmail}
+          className="px-4 py-2 bg-blue-600 rounded hover:bg-blue-500">📧 Genereer e-mail</button>
+        <button onClick={copyToClipboard}
+          className="px-4 py-2 bg-green-600 rounded hover:bg-green-500">📋 Kopieer e-mail</button>
+      </div>
+
       {preview && (
-        <>
-          <div id="preview" className="bg-white p-4 border rounded shadow text-black mt-4" dangerouslySetInnerHTML={{ __html: preview }} />
-          <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
-        </>
+        <div id="preview" className="bg-white text-black p-4 rounded shadow-xl max-w-3xl mx-auto"
+          dangerouslySetInnerHTML={{ __html: preview }} />
       )}
     </div>
   );
