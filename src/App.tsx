@@ -1,18 +1,19 @@
-// App.tsx — volledige, correcte versie
+// App.tsx — verbeterde volledige versie met mooie layout
 import { useState, useEffect } from "react";
+import "./index.css";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
 
 const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
+  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15",
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
@@ -34,8 +35,7 @@ export default function App() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    if (matchType === "Thuiswedstrijd") setGatheringPlace("Kleedkamer X");
-    else setGatheringPlace("Parking KVE");
+    setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
 
   const togglePlayer = (player: string) => {
@@ -83,7 +83,7 @@ export default function App() {
         <h2 style='font-size: 1.2rem; font-weight: bold;'>Beste ouders en spelers van de U15,</h2>
         <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
         <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
-          <h3>⚽ Wedstrijdinfo</h3>
+          <h3>⚽ Wedstrijdinformatie</h3>
           <ul>
             <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
             <li><strong>Datum:</strong> ${date || "[datum]"}</li>
@@ -94,7 +94,7 @@ export default function App() {
           </ul>
         </div>
         <div style='margin-top:1rem; border:1px solid #ccc; border-radius:6px; padding:1rem;'>
-          <h3>📍 Verzamelen</h3>
+          <h3>📍 Verzamelinformatie</h3>
           <ul>
             <li><strong>Plaats:</strong> ${gatheringPlace}</li>
             <li><strong>Uur:</strong> ${gatheringTime || "[uur]"}</li>
@@ -119,6 +119,7 @@ export default function App() {
 
     setPreview(email);
   };
+
 
   return (
     <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
