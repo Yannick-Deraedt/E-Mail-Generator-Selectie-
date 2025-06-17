@@ -1,12 +1,8 @@
 // App.tsx
 import { useState, useEffect } from "react";
 
-// Weekdagen voor dropdown
-const days = [
-  "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"
-];
+const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
-// Spelerslijst
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
@@ -16,7 +12,6 @@ const playerList = [
   "Filemon Verstraete"
 ];
 
-// Redenen niet-selectie
 const reasons = [
   "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
   "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
@@ -36,74 +31,70 @@ export default function App() {
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
-  const [preview, setPreview] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [preview, setPreview] = useState("");
 
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
   }, [matchType]);
 
   const togglePlayer = (player: string) => {
-    setSelectedPlayers((prev) => {
+    setSelectedPlayers(prev => {
       const updated = { ...prev };
-      if (player in updated) delete updated[player];
+      if (updated[player]) delete updated[player];
       else updated[player] = "1";
       return updated;
     });
   };
 
-  const setRugnummer = (player: string, number: string) => {
-    setSelectedPlayers((prev) => ({ ...prev, [player]: number }));
-  };
+  const setRugnummer = (player: string, nummer: string) =>
+    setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
 
-  const setReason = (player: string, reason: string) => {
-    setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
-  };
+  const setReason = (player: string, reason: string) =>
+    setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
 
   const copyToClipboard = async () => {
-    const previewElement = document.querySelector("#preview");
-    if (previewElement && navigator.clipboard && window.ClipboardItem) {
-      const html = previewElement.innerHTML;
+    const el = document.querySelector("#preview");
+    if (el && navigator.clipboard && window.ClipboardItem) {
+      const html = el.innerHTML;
       await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" })
-        })
+        new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
       ]);
       alert("E-mail succesvol gekopieerd met layout!");
     } else {
-      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
+      alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
-
   const generateEmail = () => {
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
-    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
+    const selected = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
+    const selectedText = selected.map(([name, num]) => `${num}. ${name}`).join("<br/>");
     const nonSelectedText = playerList
       .filter(p => !(p in selectedPlayers))
       .map(p => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`).join("<br/>");
 
-    const extraMededeling = matchType === 'Uitwedstrijd'
-      ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.</span></p>`
+    const extraNote = matchType === "Uitwedstrijd"
+      ? `<p style="background-color: #d0ebff; padding: 8px; border-radius: 5px;"><strong>🚗 Carpool:</strong> samenkomst op <strong>Parking KVE</strong>. Indien het een omweg >15min is, mag je rechtstreeks rijden, maar laat dit weten via WhatsApp-poll.</p>`
       : "";
 
-    const email = `
-      <div style='font-family: Arial, sans-serif; padding: 1rem;'>
+    const html = `
+      <div style="font-family: Arial, sans-serif; padding: 1rem;">
         <h2>Beste ouders en spelers van de U15,</h2>
         <p>Aanstaande <strong>${day || "[dag]"}</strong> spelen we een <strong>${matchType}</strong> tegen <strong>${opponent || "[tegenstander]"}</strong>.</p>
-
-        <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
+        
+        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;">
           <h3>⚽ Wedstrijddetails</h3>
           <ul>
-            <li><strong>Wedstrijd:</strong> ${matchType === 'Thuiswedstrijd' ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
+            <li><strong>Wedstrijd:</strong> ${matchType === "Thuiswedstrijd" ? `KVE vs ${opponent}` : `${opponent} vs KVE`}</li>
             <li><strong>Datum:</strong> ${date || "[datum]"}</li>
-            <li><strong>Start wedstrijd:</strong> ${time || "[Start wedstrijd]"}</li>
+            <li><strong>Start wedstrijd:</strong> ${time || "[tijd]"}</li>
             <li><strong>Terrein:</strong> ${field || "[terrein]"}</li>
             <li><strong>Adres:</strong> ${address || "[adres]"}</li>
-            ${matchType === 'Uitwedstrijd' && opponent ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
+            ${matchType === "Uitwedstrijd" && opponent
+              ? `<li><strong>Aankomst bij ${opponent}:</strong> ${arrivalTimeOpponent || "[uur]"}</li>` : ""}
           </ul>
         </div>
 
-        <div style='border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;'>
+        <div style="border:1px solid #ccc; border-radius:6px; padding:1rem; margin-top:1rem;">
           <h3>📍 Verzameldetails</h3>
           <ul>
             <li><strong>Plaats:</strong> ${gatheringPlace}</li>
@@ -111,24 +102,36 @@ export default function App() {
           </ul>
         </div>
 
-        <div><h3>✅ Selectie</h3><p>${selectedText || "Nog geen spelers geselecteerd."}</p></div>
-        <div><h3>🚫 Niet geselecteerd</h3><p>${nonSelectedText || "Geen info"}</p></div>
-        <div><h3>🧺 Verantwoordelijke</h3><p>${responsible || "[naam]"}</p></div>
-
-        <div><h3>📣 Opmerking</h3>
-          <p><span style='background-color: yellow;'>Vergeet jullie ID niet mee te nemen!</span></p>
-          ${extraMededeling}
+        <div>
+          <h3>✅ Selectie</h3>
+          <p>${selectedText || "Nog geen spelers geselecteerd."}</p>
         </div>
 
-        <p>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
+        <div>
+          <h3>🚫 Niet geselecteerd</h3>
+          <p>${nonSelectedText || "Geen info beschikbaar."}</p>
+        </div>
+
+        <div>
+          <h3>🧺 Verantwoordelijke</h3>
+          <p>${responsible || "[naam]"}</p>
+        </div>
+
+        <div>
+          <h3>📣 Opmerking</h3>
+          <p><span style="background-color: yellow;">Vergeet jullie ID niet mee te nemen!</span></p>
+          ${extraNote}
+        </div>
+
+        <p style="margin-top: 1rem;">Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
       </div>
     `;
-    setPreview(email);
+    setPreview(html);
   };
 
   return (
     <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
-      <h1 className="text-3xl font-bold mb-6">Email Generator</h1>
+      <h1 className="text-3xl font-bold mb-6">E-mail Generator</h1>
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div>
@@ -138,6 +141,7 @@ export default function App() {
             {days.map((d) => <option key={d}>{d}</option>)}
           </select>
         </div>
+
         <div>
           <label className="block mb-1">Type wedstrijd</label>
           <select className="w-full p-2 rounded bg-gray-800" value={matchType} onChange={(e) => setMatchType(e.target.value)}>
@@ -145,83 +149,104 @@ export default function App() {
             <option>Uitwedstrijd</option>
           </select>
         </div>
+
         <div>
           <label className="block mb-1">Datum</label>
-          <input className="w-full p-2 rounded bg-gray-800" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input type="date" className="w-full p-2 rounded bg-gray-800" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
+
         <div>
           <label className="block mb-1">Start wedstrijd</label>
-          <input className="w-full p-2 rounded bg-gray-800" type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={time} onChange={(e) => setTime(e.target.value)} />
         </div>
+
         <div>
           <label className="block mb-1">Tegenstander</label>
-          <input className="w-full p-2 rounded bg-gray-800" placeholder="Tegenstander" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={opponent} onChange={(e) => setOpponent(e.target.value)} />
         </div>
+
         <div>
           <label className="block mb-1">Terrein</label>
-          <input className="w-full p-2 rounded bg-gray-800" placeholder="Terrein" value={field} onChange={(e) => setField(e.target.value)} />
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={field} onChange={(e) => setField(e.target.value)} />
         </div>
+
         <div>
           <label className="block mb-1">Adres</label>
-          <input className="w-full p-2 rounded bg-gray-800" placeholder="Adres" value={address} onChange={(e) => setAddress(e.target.value)} />
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
+
         {matchType === "Uitwedstrijd" && (
           <div>
-            <label className="block mb-1">Aankomst uur (bij tegenstander)</label>
-            <input className="w-full p-2 rounded bg-gray-800" type="time" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
+            <label className="block mb-1">Aankomst bij tegenstander</label>
+            <input type="time" className="w-full p-2 rounded bg-gray-800" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} />
           </div>
         )}
         <div>
           <label className="block mb-1">Verzamelplaats</label>
-          <input className="w-full p-2 rounded bg-gray-800" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
+          <input type="text" className="w-full p-2 rounded bg-gray-800" value={gatheringPlace} onChange={(e) => setGatheringPlace(e.target.value)} />
         </div>
+
         <div>
           <label className="block mb-1">Verzameltijd</label>
-          <input className="w-full p-2 rounded bg-gray-800" type="time" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
+          <input type="time" className="w-full p-2 rounded bg-gray-800" value={gatheringTime} onChange={(e) => setGatheringTime(e.target.value)} />
         </div>
+
         <div>
           <label className="block mb-1">Verantwoordelijke</label>
           <select className="w-full p-2 rounded bg-gray-800" value={responsible} onChange={(e) => setResponsible(e.target.value)}>
-            <option value="">Verantwoordelijke</option>
-            {playerList.map((p) => <option key={p}>{p}</option>)}
+            <option value="">Kies een verantwoordelijke</option>
+            {playerList.map(p => <option key={p}>{p}</option>)}
           </select>
         </div>
       </div>
 
-      <h2 className="text-xl font-bold mb-2">Wedstrijdselectie</h2>
-      <input type="text" className="w-full mb-2 p-2 rounded bg-gray-800" placeholder="Zoek speler..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-      <div className="grid md:grid-cols-2 gap-2">
-        {playerList.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase())).map((p) => (
-          <div key={p} className="flex gap-2 items-center">
-            <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
-            <label className="flex-1 text-sm">{p}</label>
+      <h2 className="text-xl font-bold mb-2 mt-6">Wedstrijdselectie</h2>
+      <input type="text" placeholder="Zoek speler..." className="w-full p-2 mb-2 rounded bg-gray-800" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+
+      <div className="grid md:grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+        {playerList.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase())).map(p => (
+          <div key={p} className={`flex items-center justify-between p-2 rounded ${p in selectedPlayers ? "bg-green-800" : "bg-gray-800"}`}>
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={p in selectedPlayers} onChange={() => togglePlayer(p)} />
+              <span>{p}</span>
+            </label>
             {p in selectedPlayers && (
-              <select className="bg-gray-800 p-1 rounded text-sm" value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)}>
-                {[...Array(25)].map((_, i) => <option key={i + 1} value={i + 1}>{i + 1}</option>)}
+              <select value={selectedPlayers[p]} onChange={(e) => setRugnummer(p, e.target.value)} className="bg-white text-black p-1 rounded w-16">
+                {[...Array(25)].map((_, i) => (
+                  <option key={i + 1} value={i + 1}>{i + 1}</option>
+                ))}
               </select>
             )}
           </div>
         ))}
       </div>
 
-      <h2 className="text-xl font-bold mt-6 mb-2">Niet-geselecteerden en reden</h2>
-      {playerList.filter(p => !(p in selectedPlayers)).map((p) => (
-        <div key={p} className="flex gap-2 items-center mb-1">
-          <label className="flex-1 text-sm">{p}</label>
-          <select className="bg-gray-800 p-1 rounded text-sm" value={nonSelectedReasons[p] || ""} onChange={(e) => setReason(p, e.target.value)}>
-            <option value="">Reden</option>
-            {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
-          </select>
-        </div>
-      ))}
+      <h2 className="text-xl font-bold mt-6 mb-2">Niet-geselecteerden & reden</h2>
+      <div className="space-y-2 max-h-60 overflow-y-auto">
+        {playerList.filter(p => !(p in selectedPlayers)).map(p => (
+          <div key={p} className="flex items-center gap-2">
+            <span className="flex-1">{p}</span>
+            <select className="bg-gray-800 p-1 rounded" value={nonSelectedReasons[p] || ""} onChange={(e) => setReason(p, e.target.value)}>
+              <option value="">Reden</option>
+              {reasons.map(r => <option key={r} value={r}>{r}</option>)}
+            </select>
+          </div>
+        ))}
+      </div>
 
-      <button className="bg-blue-600 text-white px-4 py-2 rounded mt-6" onClick={generateEmail}>Genereer e-mail</button>
+      <div className="flex flex-wrap gap-4 mt-6">
+        <button onClick={generateEmail} className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white">
+          📧 Genereer e-mail
+        </button>
+        {preview && (
+          <button onClick={copyToClipboard} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-white">
+            📋 Kopieer e-mail
+          </button>
+        )}
+      </div>
 
       {preview && (
-        <>
-          <div id="preview" className="bg-white p-4 border rounded shadow text-black mt-4" dangerouslySetInnerHTML={{ __html: preview }} />
-          <button className="mt-2 px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
-        </>
+        <div id="preview" className="bg-white text-black p-4 rounded shadow-lg mt-6" dangerouslySetInnerHTML={{ __html: preview }} />
       )}
     </div>
   );
