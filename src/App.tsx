@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 
-const days = [
-  "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"
-];
+const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
@@ -14,7 +12,6 @@ const playerList = [
 ];
 
 const jerseyNumbers = Array.from({ length: 99 }, (_, i) => (i + 1).toString());
-
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Rust", "Op vakantie",
   "GU15", "Stand-by GU15", "1x getraind", "Schoolverplichtingen",
@@ -43,7 +40,6 @@ export default function App() {
     setArrivalTimeOpponent(""); // reset bij switch
   }, [matchType]);
 
-  // --- Selectie-flow ---
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     const updated = { ...nonSelectedReasons };
@@ -65,7 +61,20 @@ export default function App() {
   const setReason = (player: string, reason: string) =>
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
 
-  // --- E-mail preview genereren ---
+  // Kopieerknop voor HTML-preview
+  const copyToClipboard = async () => {
+    const el = document.querySelector("#preview-mail");
+    if (el && navigator.clipboard && window.ClipboardItem) {
+      const html = el.innerHTML;
+      await navigator.clipboard.write([
+        new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
+      ]);
+      alert("E-mail succesvol gekopieerd met layout!");
+    } else {
+      alert("Kopiëren niet ondersteund in deze browser.");
+    }
+  };
+
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
@@ -75,10 +84,9 @@ export default function App() {
       .filter(p => !(p in selectedPlayers))
       .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`).join("");
 
-    const opponentArrivalText =
-      matchType === "Uitwedstrijd" && arrivalTimeOpponent
-        ? `<tr><td><strong>Aankomst bij tegenstander:</strong></td><td>${arrivalTimeOpponent} (${opponent})</td></tr>`
-        : "";
+    const opponentArrivalText = matchType === "Uitwedstrijd" && arrivalTimeOpponent
+      ? `<tr><td><strong>Aankomst bij tegenstander:</strong></td><td>${arrivalTimeOpponent} (${opponent})</td></tr>`
+      : "";
 
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px">
@@ -113,74 +121,59 @@ export default function App() {
     setPreview(html);
   };
 
-  // --- UI ---
   return (
     <div className="p-4 max-w-4xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
-      <div className="grid grid-cols-1 gap-4">
+      <div className="flex flex-col gap-4">
 
         <label>Dag
-          <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black">
+          <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
             <option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}
           </select>
         </label>
         <label>Type wedstrijd
-          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
+          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black mt-1">
             <option>Thuiswedstrijd</option><option>Uitwedstrijd</option>
           </select>
         </label>
         <label>Datum
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Start wedstrijd
-          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Tegenstander
-          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Terrein
-          <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Adres
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Verzameltijd
-          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label>Verzamelplaats
-          <input type="text" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="text" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         {matchType === "Uitwedstrijd" && (
-          <label>
-            Aankomst bij tegenstander
-            <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+          <label>Aankomst bij tegenstander
+            <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
           </label>
         )}
         <label>Verantwoordelijke
-          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black">
+          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black mt-1">
             <option value="">Kies een speler</option>
             {Object.keys(selectedPlayers).map(p => <option key={p}>{p}</option>)}
           </select>
         </label>
         <label>Opmerking
-          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
+          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
 
-        {/* Geselecteerden bovenaan */}
-        <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
-        {Object.keys(selectedPlayers).length === 0 && <div className="italic text-gray-400 mb-2">Nog geen spelers geselecteerd.</div>}
-        {Object.keys(selectedPlayers).map(player => (
-          <div key={player} className="flex items-center gap-2 mb-1">
-            <input type="checkbox" checked onChange={() => handleDeselect(player)} />
-            <span className="flex-1">{player}</span>
-            <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
-              {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
-            </select>
-          </div>
-        ))}
-
+        {/* Niet-geselecteerden */}
         <h2 className="text-xl font-bold mt-6">Niet-geselecteerden</h2>
-        {playerList.filter(p => !(p in selectedPlayers)).length === 0 && <div className="italic text-gray-400 mb-2">Iedereen is geselecteerd.</div>}
         {playerList.filter(p => !(p in selectedPlayers)).map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
             <input type="checkbox" onChange={() => handleSelect(player)} />
@@ -192,11 +185,25 @@ export default function App() {
           </div>
         ))}
 
-        <button onClick={generateEmail} className="mt-4 bg-blue-600 px-4 py-2 rounded">Genereer e-mail</button>
+        {/* Geselecteerden */}
+        <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
+        {Object.keys(selectedPlayers).map(player => (
+          <div key={player} className="flex items-center gap-2 mb-1">
+            <input type="checkbox" checked onChange={() => handleDeselect(player)} />
+            <span className="flex-1">{player}</span>
+            <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
+              {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
+            </select>
+          </div>
+        ))}
 
-        {/* Preview */}
+        <div className="flex gap-4 mt-4 mb-6 flex-wrap">
+          <button onClick={generateEmail} className="bg-blue-600 px-4 py-2 rounded">Genereer e-mail</button>
+          <button onClick={copyToClipboard} className="bg-green-600 px-4 py-2 rounded">Kopieer e-mail</button>
+        </div>
+
         <h2 className="text-xl font-bold mt-6 mb-2">Preview</h2>
-        <div className="bg-white text-black p-4 rounded" dangerouslySetInnerHTML={{ __html: preview }} />
+        <div id="preview-mail" className="bg-white text-black p-4 rounded" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
     </div>
   );
