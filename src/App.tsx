@@ -1,5 +1,5 @@
 // ✅ Volledige App.tsx met alle functies en jouw gewenste aanpassingen
-// ✅ Alle onnodige variabelen verwijderd voor een succesvolle build
+// ✅ UI-afwerking voor spelersselectie toegevoegd
 
 import { useState, useEffect } from "react";
 
@@ -118,52 +118,108 @@ export default function App() {
   };
 
   return (
-    <div className="p-4 max-w-5xl mx-auto text-white bg-gray-900 min-h-screen">
+    <div className="p-4 max-w-6xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-6">E-mail Generator</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label>Type wedstrijd:</label>
-          <select className="text-black w-full" value={matchType} onChange={e => setMatchType(e.target.value)}>
-            <option>Thuiswedstrijd</option>
-            <option>Uitwedstrijd</option>
-          </select>
+          <div className="grid grid-cols-1 gap-2">
+            <label className="block">
+              <span className="block text-sm font-medium">Type wedstrijd</span>
+              <select value={matchType} onChange={e => setMatchType(e.target.value)} className="text-black w-full p-1 rounded">
+                <option>Thuiswedstrijd</option>
+                <option>Uitwedstrijd</option>
+              </select>
+            </label>
 
-          <label>Dag:</label>
-          <select className="text-black w-full" value={day} onChange={e => setDay(e.target.value)}>
-            {days.map(d => <option key={d}>{d}</option>)}
-          </select>
+            <label className="block">
+              <span className="block text-sm font-medium">Dag</span>
+              <select value={day} onChange={e => setDay(e.target.value)} className="text-black w-full p-1 rounded">
+                <option value="">Kies een dag</option>
+                {days.map(d => (
+                  <option key={d}>{d}</option>
+                ))}
+              </select>
+            </label>
 
-          <label>Datum:</label>
-          <input type="date" className="text-black w-full" value={date} onChange={e => setDate(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Datum</span>
+              <input type="date" value={date} onChange={e => setDate(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          <label>Start wedstrijd:</label>
-          <input className="text-black w-full" value={time} onChange={e => setTime(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Startuur wedstrijd</span>
+              <input type="time" value={time} onChange={e => setTime(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          <label>Tegenstander:</label>
-          <input className="text-black w-full" value={opponent} onChange={e => setOpponent(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Tegenstander</span>
+              <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          <label>Terrein:</label>
-          <input className="text-black w-full" value={field} onChange={e => setField(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Terrein</span>
+              <input type="text" value={field} onChange={e => setField(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          <label>Adres:</label>
-          <input className="text-black w-full" value={address} onChange={e => setAddress(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Adres</span>
+              <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          <label>Verzameltijd:</label>
-          <input className="text-black w-full" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Verzameluur</span>
+              <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          {matchType === "Uitwedstrijd" && (
-            <>
-              <label>Aankomst bij tegenstander:</label>
-              <input className="text-black w-full" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} />
-            </>
-          )}
+            {matchType === "Uitwedstrijd" && (
+              <label className="block">
+                <span className="block text-sm font-medium">Aankomstuur bij tegenstander</span>
+                <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="text-black w-full p-1 rounded" />
+              </label>
+            )}
 
-          <label>Verantwoordelijke voor was, fruit & chocomelk:</label>
-          <input className="text-black w-full" value={responsible} onChange={e => setResponsible(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Verantwoordelijke (was, fruit & chocomelk)</span>
+              <input type="text" value={responsible} onChange={e => setResponsible(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
 
-          <label>Opmerking:</label>
-          <input className="text-black w-full" value={remark} onChange={e => setRemark(e.target.value)} />
+            <label className="block">
+              <span className="block text-sm font-medium">Opmerking</span>
+              <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="text-black w-full p-1 rounded" />
+            </label>
+          </div>
+
+          <h2 className="text-xl font-bold mt-6 mb-2">Selectie spelers</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 gap-2">
+            {playerList.map(player => (
+              <div key={player} className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={player in selectedPlayers}
+                  onChange={() => togglePlayer(player)}
+                />
+                <span>{player}</span>
+                {player in selectedPlayers ? (
+                  <input
+                    type="number"
+                    placeholder="#"
+                    className="w-16 text-black ml-auto"
+                    value={selectedPlayers[player]}
+                    onChange={e => setRugnummer(player, e.target.value)}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    placeholder="Reden"
+                    className="flex-1 text-black ml-auto"
+                    value={nonSelectedReasons[player] || ""}
+                    onChange={e => setReason(player, e.target.value)}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
 
           <button onClick={generateEmail} className="mt-4 bg-blue-600 px-4 py-2 rounded">Genereer e-mail</button>
           <button onClick={copyToClipboard} className="mt-2 bg-green-600 px-4 py-2 rounded ml-2">📋 Kopieer e-mail</button>
