@@ -1,6 +1,5 @@
-// App.tsx – geoptimaliseerde versie met herbruikbare componenten, groepsstate, validatie en PDF-export
-import { useState } from "react";
-import html2pdf from "html2pdf.js";
+// App.tsx – foutvrije, mobielvriendelijke en PSD-klare versie voor Vercel
+import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 const playerList = [
@@ -53,6 +52,7 @@ export default function App() {
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState("");
+  const [plainText, setPlainText] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const togglePlayer = (player: string) => {
@@ -72,83 +72,58 @@ export default function App() {
     setNonSelectedReasons((prev) => ({ ...prev, [player]: reason }));
   };
 
-  const copyToClipboard = async () => {
+  const copyHtmlToClipboard = async () => {
     const previewElement = document.querySelector("#preview");
-    if (previewElement && navigator.clipboard && window.ClipboardItem) {
-      const html = previewElement.innerHTML;
-      await navigator.clipboard.write([
-        new ClipboardItem({
-          "text/html": new Blob([html], { type: "text/html" })
-        })
-      ]);
-      alert("E-mail succesvol gekopieerd met layout!");
-    } else {
-      alert("Kopiëren met layout wordt niet ondersteund in deze browser. Gebruik Ctrl+C.");
+    if (previewElement && navigator.clipboard && typeof window !== "undefined") {
+      try {
+        await navigator.clipboard.writeText(previewElement.innerHTML);
+        alert("HTML succesvol gekopieerd!");
+      } catch {
+        alert("Kopiëren mislukt. Probeer manueel te kopiëren.");
+      }
     }
   };
 
-  const downloadAsPDF = () => {
-    const element = document.querySelector("#preview");
-    if (element) {
-      html2pdf().from(element).save("wedstrijd-email.pdf");
+  const copyPlainToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(plainText);
+      alert("Platte tekst succesvol gekopieerd!");
+    } catch {
+      alert("Kopiëren mislukt. Probeer manueel te kopiëren.");
     }
   };
 
   const generateEmail = () => {
     if (!matchInfo.date || !matchInfo.opponent || Object.keys(selectedPlayers).length === 0) {
-      alert("Vul eerst alle verplichte velden in en selecteer minstens één speler.");
+      alert("Vul alle verplichte velden in en selecteer minstens één speler.");
       return;
     }
 
-    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => {
-      const numA = parseInt(a[1] || "999");
-      const numB = parseInt(b[1] || "999");
-      return numA - numB;
-    });
-
-    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("<br/>");
-
+    const selectedEntries = Object.entries(selectedPlayers).sort((a, b) => parseInt(a[1]) - parseInt(b[1]));
+    const selectedText = selectedEntries.map(([p, n]) => `${n}. ${p}`).join("\n");
     const nonSelectedText = playerList
       .filter((p) => !(p in selectedPlayers))
       .map((p) => `- ${p} – ${nonSelectedReasons[p] || "[reden]"}`)
-      .join("<br/>");
+      .join("\n");
 
-    const extraMededeling = matchInfo.matchType === 'Uitwedstrijd'
-      ? `<p><span style='background-color: #d0ebff; font-weight: bold;'>We vragen om samen te vertrekken vanaf de parking van <strong>KVE Drongen</strong>... </span></p>`
-      : "";
+    const plain = `📅 ${matchInfo.day} – ${matchInfo.matchType} tegen ${matchInfo.opponent}
+Aanvang: ${matchInfo.time} | Datum: ${matchInfo.date}
+Adres: ${matchInfo.address} | Terrein: ${matchInfo.field}${matchInfo.matchType === "Uitwedstrijd" ? `\nAankomst tegenstander: ${matchInfo.arrivalTimeOpponent}` : ""}
+\n⏱️ Verzamelen: ${matchInfo.gatheringPlace} om ${matchInfo.gatheringTime}
+\n✅ Selectie:\n${selectedText}
+\n❌ Niet geselecteerden:\n${nonSelectedText}
+\n🧺 Verantwoordelijke: ${matchInfo.responsible}
+\n📌 Vergeet je ID niet!`;
 
-    const email = `
-      <div style='font-family: Arial, sans-serif; padding: 1rem;'>
-        <h2 style='font-size: 1.2rem; font-weight: bold; margin-bottom: 1rem;'>Beste ouders en spelers van de U16,</h2>
-        <p style='margin-bottom: 2rem;'>Aanstaande <strong>${matchInfo.day}</strong> spelen we een <strong>${matchInfo.matchType}</strong> tegen <strong>${matchInfo.opponent}</strong>.</p>
-        <div style='margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px;'>
-          <h3>Wedstrijdinformatie</h3>
-          <p>Wedstrijd: ${matchInfo.matchType === 'Thuiswedstrijd' ? 'KVE vs ' + matchInfo.opponent : matchInfo.opponent + ' vs KVE'}<br/>
-          Datum: ${matchInfo.date}<br/>
-          Aanvang: ${matchInfo.time}<br/>
-          Terrein: ${matchInfo.field}<br/>
-          Adres: ${matchInfo.address}${matchInfo.matchType === 'Uitwedstrijd' ? `<br/>Aankomst bij ${matchInfo.opponent}: ${matchInfo.arrivalTimeOpponent}` : ""}</p>
-        </div>
-        <div style='margin-bottom: 2rem;'>
-          <h3>Verzamelinformatie</h3>
-          <p>Verzamelplaats: ${matchInfo.gatheringPlace}<br/>Verzameltijd: ${matchInfo.gatheringTime}</p>
-        </div>
-        <div><h3>Selectie</h3><p>${selectedText}</p></div>
-        <div><h3>Niet geselecteerde spelers</h3><p>${nonSelectedText}</p></div>
-        <div><h3>Verantwoordelijkheden</h3><p>Was, fruit en chocomelk: ${matchInfo.responsible}</p></div>
-        <div><h3>Belangrijke mededeling</h3><p><span style='background-color: yellow;'>Vergeet je ID niet mee te nemen!</span></p>${extraMededeling}</div>
-        <p>Met sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 KVE Drongen</p>
-      </div>
-    `;
-
-    setPreview(email);
+    setPlainText(plain);
+    setPreview(plain.replace(/\n/g, "<br/>").replace(/ /g, "&nbsp;"));
   };
 
   return (
     <div className="p-4 max-w-4xl mx-auto space-y-6">
       <h1 className="text-xl font-bold">Email Generator</h1>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <FormField label="Dag" value={matchInfo.day} onChange={(e) => setMatchInfo({ ...matchInfo, day: e.target.value })} options={days} />
         <FormField label="Type" value={matchInfo.matchType} onChange={(e) => setMatchInfo({ ...matchInfo, matchType: e.target.value })} options={["Thuiswedstrijd", "Uitwedstrijd"]} />
         <FormField label="Datum" type="date" value={matchInfo.date} onChange={(e) => setMatchInfo({ ...matchInfo, date: e.target.value })} />
@@ -201,16 +176,13 @@ export default function App() {
       </div>
 
       <button className="bg-blue-600 text-white px-4 py-2 rounded" onClick={generateEmail}>Genereer e-mail</button>
+
       {preview && (
         <>
-          <div
-            id="preview"
-            className="bg-white p-4 border rounded shadow text-sm overflow-auto"
-            dangerouslySetInnerHTML={{ __html: preview }}
-          />
-          <div className="flex gap-4 mt-2">
-            <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={copyToClipboard}>📋 Kopieer e-mail</button>
-            <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={downloadAsPDF}>⬇️ Download PDF</button>
+          <div id="preview" className="bg-white p-4 border rounded shadow text-sm overflow-auto whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: preview }} />
+          <div className="flex flex-wrap gap-2 mt-3">
+            <button className="px-4 py-2 bg-green-600 text-white rounded" onClick={copyHtmlToClipboard}>📋 Kopieer HTML</button>
+            <button className="px-4 py-2 bg-gray-800 text-white rounded" onClick={copyPlainToClipboard}>📄 Kopieer platte tekst</button>
           </div>
         </>
       )}
