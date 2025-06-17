@@ -1,5 +1,5 @@
 // ✅ Volledige App.tsx met alle functies en jouw gewenste aanpassingen
-// ❌ Emojis zijn nu volledig verwijderd voor een professionelere uitstraling
+// ✅ Alle onnodige variabelen verwijderd voor een succesvolle build
 
 import { useState, useEffect } from "react";
 
@@ -12,11 +12,6 @@ const playerList = [
   "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
-];
-
-const reasons = [
-  "Blessure", "Geschorst", "Rust", "Schoolverplichting", "GU15", "Stand-by GU15", 
-  "Niet getraind", "1x getraind", "Niet verwittigd", "Vakantie", "Ziek", "Disciplinair", "Andere redenen"
 ];
 
 export default function App() {
@@ -34,7 +29,6 @@ export default function App() {
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
-  const [searchTerm, setSearchTerm] = useState("");
   const [preview, setPreview] = useState("");
 
   useEffect(() => {
@@ -72,12 +66,12 @@ export default function App() {
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
-      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`)
+      .map(([name, number]) => `<li><strong>#${number}</strong> - ${name}</li>`) 
       .join("");
 
     const nonSelectedList = playerList
       .filter(p => !(p in selectedPlayers))
-      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`)
+      .map(p => `<li>${p} – ${nonSelectedReasons[p] || "Geen reden opgegeven"}</li>`) 
       .join("");
 
     const opponentArrivalText = matchType === "Uitwedstrijd" && arrivalTimeOpponent
