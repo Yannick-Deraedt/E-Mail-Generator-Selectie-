@@ -17,6 +17,7 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
+  // Basis states
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -25,6 +26,7 @@ export default function App() {
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
   const [gatheringPlace, setGatheringPlace] = useState("");
+  const [customGatheringPlace, setCustomGatheringPlace] = useState(false);
   const [gatheringTime, setGatheringTime] = useState("");
   const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [responsible, setResponsible] = useState("");
@@ -32,24 +34,34 @@ export default function App() {
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
 
+  // Selectie-gerelateerd
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
+  const [playerComments, setPlayerComments] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [searchSelect, setSearchSelect] = useState("");
+  const [searchRugnummer, setSearchRugnummer] = useState("");
+  const [showSelection, setShowSelection] = useState(true);
+  const [showNotSelected, setShowNotSelected] = useState(true);
 
   const previewRef = useRef<HTMLDivElement>(null);
 
+  // Verzamelplaats dropdown smartness
   useEffect(() => {
-    if (matchType === "Uitwedstrijd") {
-      if (!gatheringPlace || gatheringPlace.trim().toLowerCase().includes("kleedkamer")) {
-        setGatheringPlace("Parking KVE");
-      }
-    } else {
-      if (!gatheringPlace || gatheringPlace.trim().toLowerCase().includes("parking")) {
-        setGatheringPlace("Kleedkamer X");
+    if (!customGatheringPlace) {
+      if (matchType === "Uitwedstrijd") {
+        if (!gatheringPlace || gatheringPlace.trim().toLowerCase().includes("kleedkamer")) {
+          setGatheringPlace("Parking KVE");
+        }
+      } else {
+        if (!gatheringPlace || gatheringPlace.trim().toLowerCase().includes("parking")) {
+          setGatheringPlace("Kleedkamer X");
+        }
       }
     }
-  }, [matchType]);
+    // eslint-disable-next-line
+  }, [matchType, customGatheringPlace]);
 
+  // Geselecteerd + zoeklogica
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
@@ -61,6 +73,16 @@ export default function App() {
     (a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b])
   );
 
+  // Unieke rugnummers check
+  const usedNumbers = new Set(Object.values(selectedPlayers).filter(Boolean));
+  const alleRugnummersUniek =
+    selected.length === new Set(Object.values(selectedPlayers).filter(Boolean)).size
+    && !selected.some(p => !selectedPlayers[p]);
+
+  // Selectie max 15 waarschuwing
+  const maxSpelers = 15;
+
+  // Functies
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "" }));
     setNonSelectedReasons(prev => {
@@ -70,7 +92,6 @@ export default function App() {
     });
     setSearchSelect("");
   }
-
   function removeSelected(player: string) {
     setSelectedPlayers(prev => {
       const updated = { ...prev };
@@ -78,20 +99,35 @@ export default function App() {
       return updated;
     });
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
+    setPlayerComments(prev => {
+      const updated = { ...prev };
+      delete updated[player];
+      return updated;
+    });
   }
-
   function handleRugnummer(player: string, nummer: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
   }
-
   function handleNonSelectedReason(player: string, reason: string) {
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
   }
-
   function handleResponsible(player: string) {
     setResponsible(player);
   }
-
+  function handlePlayerComment(player: string, comment: string) {
+    setPlayerComments(prev => ({ ...prev, [player]: comment }));
+  }
+  function autoToewijzen() {
+    let vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n));
+    let i = 0;
+    setSelectedPlayers(prev => {
+      const nieuw = {...prev};
+      for (let p of Object.keys(nieuw)) {
+        if (!nieuw[p] && vrijeNummers[i]) nieuw[p] = vrijeNummers[i++];
+      }
+      return nieuw;
+    });
+  }
   const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && window.ClipboardItem) {
@@ -119,6 +155,7 @@ export default function App() {
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
           ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
         </td>
+        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${playerComments[player] || ""}</td>
       </tr>
     `).join("");
 
@@ -167,6 +204,7 @@ export default function App() {
                 <th style="text-align:left;padding:6px 12px;">Rugnummer</th>
                 <th style="text-align:left;padding:6px 12px;">Naam speler</th>
                 <th style="text-align:left;padding:6px 12px;">Verantwoordelijk</th>
+                <th style="text-align:left;padding:6px 12px;">Opmerking</th>
               </tr>
             </thead>
             <tbody>${selectionTableRows}</tbody>
@@ -232,13 +270,30 @@ export default function App() {
           <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label className="block">Verzamelplaats
-          <input
-            type="text"
-            value={gatheringPlace}
-            onChange={e => setGatheringPlace(e.target.value)}
-            className="w-full p-2 rounded text-black mt-1"
-            placeholder={matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE"}
-          />
+          {!customGatheringPlace ? (
+            <select
+              value={gatheringPlace}
+              onChange={e => {
+                if (e.target.value === "__custom") setCustomGatheringPlace(true);
+                else setGatheringPlace(e.target.value);
+              }}
+              className="w-full p-2 rounded text-black mt-1"
+            >
+              <option value="">Kies verzamelplaats</option>
+              <option value="Kleedkamer X">Kleedkamer X</option>
+              <option value="Parking KVE">Parking KVE</option>
+              <option value="__custom">Andere (manueel invullen)</option>
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={gatheringPlace}
+              onChange={e => setGatheringPlace(e.target.value)}
+              className="w-full p-2 rounded text-black mt-1"
+              placeholder="Geef verzamelplaats op"
+              onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
+            />
+          )}
         </label>
         {matchType === "Uitwedstrijd" && (
           <label className="block">Aankomstuur bij tegenstander
@@ -249,10 +304,46 @@ export default function App() {
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
       </div>
-      {/* ----------- SELECTIE ----------- */}
+      {/* ----------- SELECTIE INFO & UX ----------- */}
+      <div className="mb-2 text-lg">
+        Geselecteerd: <span className="font-bold">{selected.length}</span> / {playerList.length}
+        {selected.length > maxSpelers &&
+          <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold">⚠️ Meer dan 15 geselecteerd!</span>
+        }
+      </div>
+      {selected.length > 0 && (
+        <div className={`mb-2 px-2 py-1 rounded font-bold 
+          ${alleRugnummersUniek 
+          ? 'bg-green-200 text-green-900' 
+          : 'bg-red-200 text-red-900'}`}>
+          {alleRugnummersUniek
+            ? '✅ Alle rugnummers zijn uniek'
+            : '❌ Er zijn dubbele of ontbrekende rugnummers'}
+        </div>
+      )}
+      {/* ----------- SELECTIE COLLAPSIBLE ----------- */}
+      <button className="font-bold mb-2 px-2 py-1 bg-blue-800 hover:bg-blue-700 rounded"
+        onClick={() => setShowSelection(s => !s)}>
+        {showSelection ? "▼" : "►"} Selectie ({selected.length})
+      </button>
+      {showSelection && (
       <div className="mb-6">
-        <h2 className="font-bold text-lg mb-2">Selectie</h2>
-        {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
+        {/* Live search + auto-vul */}
+        <div className="mb-2 flex flex-col md:flex-row gap-2 items-center">
+          <input
+            type="text"
+            className="p-2 rounded text-black w-40"
+            placeholder="Zoek rugnummer..."
+            value={searchRugnummer}
+            onChange={e => setSearchRugnummer(e.target.value)}
+          />
+          <button
+            onClick={autoToewijzen}
+            className="bg-blue-600 text-white px-3 py-2 rounded ml-2 font-bold"
+          >
+            Vul rugnummers op volgorde
+          </button>
+        </div>
         <div className="rounded-xl bg-green-50 overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -261,11 +352,14 @@ export default function App() {
                 <th className="p-2 text-left">Rugnummer</th>
                 <th className="p-2 text-left">Naam speler</th>
                 <th className="p-2 text-left">Verantwoordelijk</th>
+                <th className="p-2 text-left">Opmerking</th>
                 <th></th>
               </tr>
             </thead>
             <tbody>
-              {selected.map(player => (
+              {selected
+                .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
+                .map(player => (
                 <tr key={player} className={`transition ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
                   <td className="p-2">
                     <input
@@ -279,7 +373,9 @@ export default function App() {
                   <td className="p-2">
                     <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
                       <option value="">--</option>
-                      {jerseyNumbers.map(n => <option key={n}>{n}</option>)}
+                      {jerseyNumbers.map(n => (
+                        <option key={n} value={n} disabled={usedNumbers.has(n) && selectedPlayers[player] !== n}>{n}</option>
+                      ))}
                     </select>
                   </td>
                   <td className="p-2">{player}</td>
@@ -294,6 +390,15 @@ export default function App() {
                       <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
                     )}
                   </td>
+                  <td className="p-2">
+                    <input
+                      type="text"
+                      value={playerComments[player] || ""}
+                      onChange={e => handlePlayerComment(player, e.target.value)}
+                      placeholder="Opmerking"
+                      className="w-32 md:w-48 p-1 rounded text-black"
+                    />
+                  </td>
                   <td className="p-2"></td>
                 </tr>
               ))}
@@ -301,9 +406,14 @@ export default function App() {
           </table>
         </div>
       </div>
-      {/* ----------- NIET-GESELECTEERDEN ----------- */}
+      )}
+      {/* ----------- NIET-GESELECTEERDEN COLLAPSIBLE ----------- */}
+      <button className="font-bold mb-2 px-2 py-1 bg-red-800 hover:bg-red-700 rounded"
+        onClick={() => setShowNotSelected(s => !s)}>
+        {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
+      </button>
+      {showNotSelected && (
       <div className="mb-10">
-        <h2 className="font-bold text-lg mb-2">Niet-geselecteerden</h2>
         <div className="font-semibold mb-1">Zoek en selecteer spelers</div>
         <input
           type="text"
@@ -355,6 +465,7 @@ export default function App() {
           </table>
         </div>
       </div>
+      )}
       {/* ----------- WAARSCHUWING + KNOPPEN ----------- */}
       {selected.some(p => !selectedPlayers[p]) && (
         <p className="text-yellow-300 font-semibold mb-2">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
@@ -362,11 +473,11 @@ export default function App() {
       <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
         <button
           onClick={generateEmail}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow"
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded font-bold mr-2 text-lg shadow"
         >Genereer e-mail</button>
         <button
           onClick={copyToClipboard}
-          className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold shadow ${success ? "scale-110" : ""}`}
+          className={`bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded font-bold text-lg shadow ${success ? "scale-110" : ""}`}
         >Kopieer e-mail</button>
         {success && <span className="text-green-400 font-semibold px-3 self-center animate-pulse">✔️ Gekopieerd!</span>}
       </div>
