@@ -42,10 +42,22 @@ export default function App() {
         ? (prev.startsWith("Kleedkamer") ? prev : "Kleedkamer X")
         : "Parking KVE"
     );
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, [matchType]);
 
-  // Selecteren / deselecteren
+  // Geselecteerde spelers
+  const selectedSorted = Object.entries(selectedPlayers).sort((a, b) => a[0].localeCompare(b[0]));
+
+  // Niet-geselecteerde spelers (default sortering alfabetisch)
+  let nonSelected = playerList.filter(p => !(p in selectedPlayers));
+  // Zoekresultaat bovenaan (niet filteren de rest weg!)
+  if (searchTerm.trim() !== "") {
+    const first = nonSelected.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
+    const rest = nonSelected.filter(p => !p.toLowerCase().includes(searchTerm.toLowerCase()));
+    nonSelected = [...first, ...rest];
+  }
+
+  // Selecteren/deselecteren
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     setNonSelectedReasons(prev => {
@@ -53,7 +65,7 @@ export default function App() {
       delete updated[player];
       return updated;
     });
-    setSearchTerm(""); // reset search
+    setSearchTerm(""); // Reset zoekveld
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -67,21 +79,10 @@ export default function App() {
     if (responsible === player) setResponsible("");
   };
 
-  // Zoekfunctie in niet-geselecteerde lijst, altijd zichtbaar
-  const filteredNotSelected = playerList.filter(
-    p => !(p in selectedPlayers) &&
-      (searchTerm.trim() === "" || p.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
-  // Geselecteerde bovenaan, sorteren op alfabet of rugnummer
-  const selectedSorted = Object.entries(selectedPlayers)
-    .sort((a, b) => a[0].localeCompare(b[0]));
-
-  // Generate E-mail (preview)
+  // E-mail preview
   const generateEmail = () => {
     const aanhef = `<p>Beste spelers en ouders,</p>
       <p>Hierbij alle info over de komende wedstrijd. Gelieve goed alles na te lezen en tijdig door te geven indien je niet aanwezig kan zijn.</p>`;
-
     const detailsTable = `
       <table style="background:#f5f6fa;width:100%;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;margin-bottom:10px">
         <tbody>
@@ -110,8 +111,6 @@ export default function App() {
           : ""
       }
     `;
-
-    // Selectietabel
     const selectieTable = selectedSorted.length > 0 ? `
       <table style="width:100%;background:#f6f9f6;border-radius:8px;overflow:hidden;border:1px solid #a7f3d0;margin-top:20px">
         <thead><tr>
@@ -132,8 +131,6 @@ export default function App() {
         </tbody>
       </table>
     ` : "";
-
-    // Niet-geselecteerden
     const nietSelectieList = playerList
       .filter(p => !(p in selectedPlayers))
       .map(
@@ -141,7 +138,6 @@ export default function App() {
           `<tr><td style="padding:6px 8px">${p}</td><td style="padding:6px 8px">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td></tr>`
       )
       .join("");
-
     const nietSelectieTable = nietSelectieList
       ? `<table style="width:100%;background:#fef6f6;border-radius:8px;overflow:hidden;border:1px solid #fecaca;margin-top:20px">
           <thead><tr>
@@ -151,12 +147,10 @@ export default function App() {
           <tbody>${nietSelectieList}</tbody>
         </table>`
       : "";
-
     const verantwoordelijkeText =
       responsible
         ? `<p style="margin-top:18px"><b>Verantwoordelijke voor was, fruit & chocomelk:</b> ${responsible}</p>`
         : "";
-
     const afsluit =
       `<p style="margin-top:16px"><b>Opmerking:</b> ${remark}</p>
        <p style="margin-top:40px">Sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 IP – KVE Drongen</p>`;
@@ -185,7 +179,6 @@ export default function App() {
     }
   };
 
-  // UI
   return (
     <div className="p-4 max-w-2xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
@@ -230,34 +223,10 @@ export default function App() {
         )}
       </div>
 
-      {/* Selectie blok */}
+      {/* Geselecteerde spelers (bovenaan) */}
       <div className="bg-gray-800 p-4 rounded-lg mb-6">
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
-          <h2 className="text-lg font-bold">Selectie</h2>
-          <input
-            ref={inputRef}
-            type="text"
-            className="p-2 rounded text-black w-full sm:w-60"
-            placeholder="Zoek speler om toe te voegen..."
-            value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
-          />
-        </div>
-        {filteredNotSelected.length > 0 && searchTerm && (
-          <div className="bg-white text-black border rounded shadow max-h-44 overflow-auto mb-3">
-            {filteredNotSelected.map(player => (
-              <div key={player}
-                className="flex items-center px-2 py-1 hover:bg-gray-200 cursor-pointer"
-                onClick={() => handleSelect(player)}
-              >
-                <input type="checkbox" checked={false} readOnly className="mr-2" />
-                <span>{player}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {/* Geselecteerde spelers als tabel */}
-        {selectedSorted.length > 0 && (
+        <h2 className="text-lg font-bold mb-2">Selectie</h2>
+        {selectedSorted.length > 0 ? (
           <table className="w-full bg-white text-black rounded mb-3">
             <thead>
               <tr>
@@ -292,8 +261,9 @@ export default function App() {
               ))}
             </tbody>
           </table>
+        ) : (
+          <p className="text-gray-300 mb-2">Nog geen spelers geselecteerd.</p>
         )}
-        {/* Verantwoordelijke dropdown */}
         <label>
           Verantwoordelijke voor was, fruit & chocomelk
           <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black mt-1">
@@ -303,38 +273,54 @@ export default function App() {
         </label>
       </div>
 
-      {/* Niet-geselecteerden */}
+      {/* Niet-geselecteerden lijst met zoekfunctie en checkbox */}
       <div className="bg-gray-800 p-4 rounded-lg mb-6">
-        <h2 className="text-lg font-bold mb-2">Niet-geselecteerden</h2>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
+          <h2 className="text-lg font-bold">Niet-geselecteerden</h2>
+          <input
+            ref={inputRef}
+            type="text"
+            className="p-2 rounded text-black w-full sm:w-60"
+            placeholder="Zoek speler..."
+            value={searchTerm}
+            onChange={e => setSearchTerm(e.target.value)}
+          />
+        </div>
         <table className="w-full bg-white text-black rounded">
           <thead>
             <tr>
+              <th className="px-2 py-1"></th>
               <th className="px-2 py-1 text-left">Naam</th>
               <th className="px-2 py-1 text-left">Reden</th>
             </tr>
           </thead>
           <tbody>
-            {playerList
-              .filter(p => !(p in selectedPlayers))
-              .map(player => (
-                <tr key={player}>
-                  <td className="px-2 py-1">{player}</td>
-                  <td className="px-2 py-1">
-                    <select
-                      className="w-full text-black"
-                      value={nonSelectedReasons[player] || ""}
-                      onChange={e =>
-                        setNonSelectedReasons(prev => ({ ...prev, [player]: e.target.value }))
-                      }
-                    >
-                      <option value="">Reden niet geselecteerd</option>
-                      {nonSelectionReasons.map(r => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </td>
-                </tr>
-              ))}
+            {nonSelected.map(player => (
+              <tr key={player}>
+                <td className="px-2 py-1">
+                  <input
+                    type="checkbox"
+                    checked={false}
+                    onChange={() => handleSelect(player)}
+                  />
+                </td>
+                <td className="px-2 py-1">{player}</td>
+                <td className="px-2 py-1">
+                  <select
+                    className="w-full text-black"
+                    value={nonSelectedReasons[player] || ""}
+                    onChange={e =>
+                      setNonSelectedReasons(prev => ({ ...prev, [player]: e.target.value }))
+                    }
+                  >
+                    <option value="">Reden niet geselecteerd</option>
+                    {nonSelectionReasons.map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
