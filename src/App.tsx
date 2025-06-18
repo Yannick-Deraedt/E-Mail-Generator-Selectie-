@@ -41,11 +41,21 @@ export default function App() {
     if (matchType === "Thuiswedstrijd") setArrivalTimeOpponent("");
   }, [matchType]);
 
-  // Filter voor zoeken
-  const filteredNotSelected = playerList.filter(
-    p => !(p in selectedPlayers) &&
+  // Niet-geselecteerden logica: zoekbalk
+  const rawNotSelected = playerList.filter(p => !(p in selectedPlayers));
+  let searchMatches: string[] = [];
+  let nonMatches: string[] = [];
+  if (searchPlayer.trim()) {
+    searchMatches = rawNotSelected.filter(p =>
       p.toLowerCase().includes(searchPlayer.toLowerCase())
-  );
+    );
+    nonMatches = rawNotSelected.filter(p =>
+      !p.toLowerCase().includes(searchPlayer.toLowerCase())
+    );
+  } else {
+    nonMatches = rawNotSelected;
+  }
+  const filteredNotSelected = [...searchMatches, ...nonMatches];
   const selected = Object.keys(selectedPlayers)
     .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]));
   const notSelected = playerList.filter(p => !(p in selectedPlayers));
@@ -59,6 +69,7 @@ export default function App() {
       setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
     } else {
       setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
+      setTimeout(() => setSearchPlayer(""), 10); // Reset zoekveld na selectie
     }
   }
   function handleRugnummer(player: string, nummer: string) {
@@ -178,7 +189,7 @@ export default function App() {
   return (
     <div className="p-4 max-w-2xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         <label>Dag<select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1"><option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}</select></label>
         <label>Type wedstrijd<select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black mt-1"><option>Thuiswedstrijd</option><option>Uitwedstrijd</option></select></label>
         <label>Datum<input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
@@ -284,10 +295,9 @@ export default function App() {
         </button>
       </div>
 
-      <div ref={previewRef} className="mt-8">
-        <div id="mailonly" className="bg-white text-black p-4 rounded">
-          <div dangerouslySetInnerHTML={{ __html: preview }} />
-        </div>
+      <div className="bg-white text-black p-4 rounded mt-8" ref={previewRef}>
+        <h2 className="text-xl font-bold mb-3" style={{ display: "none" }}>Preview E-Mail</h2>
+        <div id="mailonly" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
     </div>
   );
