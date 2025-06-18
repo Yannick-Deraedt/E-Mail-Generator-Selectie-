@@ -36,8 +36,8 @@ export default function App() {
 
   // Selectie-gerelateerd
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
-  const [playerComments, setPlayerComments] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
+  const [nonSelectedComments, setNonSelectedComments] = useState<Record<string, string>>({});
   const [searchSelect, setSearchSelect] = useState("");
   const [searchRugnummer, setSearchRugnummer] = useState("");
   const [showSelection, setShowSelection] = useState(true);
@@ -90,16 +90,15 @@ export default function App() {
       delete updated[player];
       return updated;
     });
-    setSearchSelect("");
-  }
-  function removeSelected(player: string) {
-    setSelectedPlayers(prev => {
+    setNonSelectedComments(prev => {
       const updated = { ...prev };
       delete updated[player];
       return updated;
     });
-    setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
-    setPlayerComments(prev => {
+    setSearchSelect("");
+  }
+  function removeSelected(player: string) {
+    setSelectedPlayers(prev => {
       const updated = { ...prev };
       delete updated[player];
       return updated;
@@ -111,11 +110,11 @@ export default function App() {
   function handleNonSelectedReason(player: string, reason: string) {
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
   }
+  function handleNonSelectedComment(player: string, comment: string) {
+    setNonSelectedComments(prev => ({ ...prev, [player]: comment }));
+  }
   function handleResponsible(player: string) {
     setResponsible(player);
-  }
-  function handlePlayerComment(player: string, comment: string) {
-    setPlayerComments(prev => ({ ...prev, [player]: comment }));
   }
   function autoToewijzen() {
     let vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n));
@@ -142,9 +141,10 @@ export default function App() {
     }
   };
 
+  // Email genereren + live preview effect
   function generateEmail() {
     if (!day || !date || !time || !opponent) {
-      alert("Vul dag, datum, tijd en tegenstander in voordat je de e-mail genereert.");
+      setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul dag, datum, tijd en tegenstander in.</div>`);
       return;
     }
 
@@ -155,7 +155,6 @@ export default function App() {
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
           ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
         </td>
-        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${playerComments[player] || ""}</td>
       </tr>
     `).join("");
 
@@ -163,6 +162,7 @@ export default function App() {
       <tr>
         <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${player}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedReasons[player] || "-"}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedComments[player] || ""}</td>
       </tr>
     `).join("");
 
@@ -204,7 +204,6 @@ export default function App() {
                 <th style="text-align:left;padding:6px 12px;">Rugnummer</th>
                 <th style="text-align:left;padding:6px 12px;">Naam speler</th>
                 <th style="text-align:left;padding:6px 12px;">Verantwoordelijk</th>
-                <th style="text-align:left;padding:6px 12px;">Opmerking</th>
               </tr>
             </thead>
             <tbody>${selectionTableRows}</tbody>
@@ -217,6 +216,7 @@ export default function App() {
               <tr style="background:#ffd7d7;">
                 <th style="text-align:left;padding:6px 12px;">Naam speler</th>
                 <th style="text-align:left;padding:6px 12px;">Reden</th>
+                <th style="text-align:left;padding:6px 12px;">Opmerking</th>
               </tr>
             </thead>
             <tbody>${nonSelectedTableRows}</tbody>
@@ -233,6 +233,15 @@ export default function App() {
     setPreview(html);
     if (previewRef.current) previewRef.current.scrollIntoView({ behavior: "smooth" });
   }
+
+  // Live preview bij elke relevante wijziging
+  useEffect(() => {
+    generateEmail();
+    // eslint-disable-next-line
+  }, [
+    day, matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
+    arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
+  ]);
 
   return (
     <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
@@ -352,7 +361,6 @@ export default function App() {
                 <th className="p-2 text-left">Rugnummer</th>
                 <th className="p-2 text-left">Naam speler</th>
                 <th className="p-2 text-left">Verantwoordelijk</th>
-                <th className="p-2 text-left">Opmerking</th>
                 <th></th>
               </tr>
             </thead>
@@ -390,15 +398,6 @@ export default function App() {
                       <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
                     )}
                   </td>
-                  <td className="p-2">
-                    <input
-                      type="text"
-                      value={playerComments[player] || ""}
-                      onChange={e => handlePlayerComment(player, e.target.value)}
-                      placeholder="Opmerking"
-                      className="w-32 md:w-48 p-1 rounded text-black"
-                    />
-                  </td>
                   <td className="p-2"></td>
                 </tr>
               ))}
@@ -429,7 +428,7 @@ export default function App() {
               <tr>
                 <th className="p-2 text-left">Selecteer</th>
                 <th className="p-2 text-left">Naam speler</th>
-                <th className="p-2 text-left">Reden niet geselecteerd</th>
+                <th className="p-2 text-left">Reden niet geselecteerd & Opmerking</th>
               </tr>
             </thead>
             <tbody>
@@ -458,6 +457,13 @@ export default function App() {
                       <option value="">Reden niet geselecteerd</option>
                       {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
                     </select>
+                    <input
+                      type="text"
+                      className="w-full mt-1 p-1 rounded text-black"
+                      placeholder="Extra opmerking (optioneel)"
+                      value={nonSelectedComments[player] || ""}
+                      onChange={e => handleNonSelectedComment(player, e.target.value)}
+                    />
                   </td>
                 </tr>
               ))}
@@ -470,21 +476,19 @@ export default function App() {
       {selected.some(p => !selectedPlayers[p]) && (
         <p className="text-yellow-300 font-semibold mb-2">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
       )}
-      <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
-        <button
-          onClick={generateEmail}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded font-bold mr-2 text-lg shadow"
-        >Genereer e-mail</button>
-        <button
-          onClick={copyToClipboard}
-          className={`bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded font-bold text-lg shadow ${success ? "scale-110" : ""}`}
-        >Kopieer e-mail</button>
-        {success && <span className="text-green-400 font-semibold px-3 self-center animate-pulse">✔️ Gekopieerd!</span>}
-      </div>
       {/* ----------- PREVIEW ----------- */}
       <div className="overflow-x-auto bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef}>
         <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
+      {/* ----------- ZWEVENDE KOPIEERKNOP ----------- */}
+      <button
+        onClick={copyToClipboard}
+        className={`fixed bottom-4 right-4 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-full font-bold text-lg shadow-2xl z-50 ${success ? "scale-110" : ""}`}
+        style={{ boxShadow: "0 8px 40px 0 rgba(0,0,0,0.20)", transition: "all 0.2s" }}
+      >
+        📋 Kopieer e-mail
+        {success && <span className="text-green-200 font-semibold pl-3 animate-pulse">✔️</span>}
+      </button>
     </div>
   );
 }
