@@ -368,9 +368,18 @@ export default function App() {
       </div>
 
       {/* PREVIEW */}
-      <div className="bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef} id="preview-html">
-        <div dangerouslySetInnerHTML={{ __html: preview }} />
-      </div>
-    </div>
-  );
-}
+     <div
+  ref={previewRef}
+  id="preview"
+  style={{
+    background: "#fff",
+    color: "#111",
+    borderRadius: "16px",
+    padding: "1.5rem",
+    marginTop: "1.75rem",
+    boxShadow: "0 2px 10px #0002"
+  }}
+>
+  <h2 style={{ fontSize: "1.25rem", fontWeight: "bold", marginBottom: "0.5rem" }}>Preview e-mail</h2>
+  <div dangerouslySetInnerHTML={{ __html: preview }} />
+</div>
