@@ -181,7 +181,7 @@ export default function App() {
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
         <div style="background:${hoofdKleur};border-radius:12px 12px 0 0;padding:16px 24px 12px 24px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
-          <img src="https://drive.google.com/uc?export=view&id=1Mf3oQ9z7LiTtjbhkmca0fxN6ai-fLbqf" alt="logo" style="height:46px;margin-right:18px;border-radius:12px;box-shadow:0 1px 7px #0003"/>
+          <img src="https://i.imgur.com/aBlkfRw.png" alt="logo" style="height:46px;margin-right:18px;border-radius:12px;box-shadow:0 1px 7px #0003"/>
           <div>
             <div style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
             <div style="font-size:1.02em;font-weight:400;opacity:0.97;">Wedstrijddetails & selectie</div>
