@@ -1,53 +1,107 @@
-import { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-export default function Confetti({ active }: { active: boolean }) {
-  const ref = useRef<HTMLDivElement>(null);
+interface ConfettiProps {
+  active: boolean;
+  duration?: number; // duur in ms
+}
+
+const COLORS = [
+  "#142c54", "#1679bc", "#71c7ec", "#f9dd16", "#e66472",
+  "#ffae00", "#aaffc3", "#fff", "#e7effb", "#cf65ff"
+];
+
+export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    if (!active) {
-      if (ref.current) ref.current.innerHTML = "";
-      return;
-    }
-    const count = 80;
-    const colors = [
-      "#1c397a", "#2978e7", "#63c5ff", "#6ec4e8", "#e8f6ff", "#f7cf00", "#fff", "#56b6f7", "#3eaaff"
-    ];
-    const parent = ref.current;
-    if (!parent) return;
-    parent.innerHTML = "";
-    for (let i = 0; i < count; ++i) {
-      const el = document.createElement("div");
-      el.style.position = "absolute";
-      el.style.top = "-32px";
-      el.style.left = Math.random() * 96 + "%";
-      el.style.width = 14 + Math.random() * 12 + "px";
-      el.style.height = 18 + Math.random() * 16 + "px";
-      el.style.background = colors[Math.floor(Math.random() * colors.length)];
-      el.style.borderRadius = "4px";
-      el.style.opacity = "0.89";
-      el.style.transform = `translateY(0) rotate(${Math.random() * 90 - 45}deg)`;
-      el.style.boxShadow = `0 1px 6px #0002`;
-      el.animate([
-        { transform: `translateY(0) rotate(${Math.random() * 60 - 30}deg)`, opacity: 0.92 },
-        { transform: `translateY(${340 + Math.random() * 240}px) rotate(${Math.random() * 720 - 360}deg)`, opacity: 0 }
-      ], {
-        duration: 2100 + Math.random() * 800,
-        delay: Math.random() * 220,
-        easing: "ease-in"
-      });
-      parent.appendChild(el);
-    }
-    // Maak automatisch leeg na 2,7s
-    const timeout = setTimeout(() => { if (ref.current) ref.current.innerHTML = ""; }, 2700);
-    return () => clearTimeout(timeout);
-  }, [active]);
+    let animationFrameId: number;
+    let timeoutId: NodeJS.Timeout;
 
-  return (
-    <div ref={ref} style={{
-      pointerEvents: "none",
-      position: "fixed",
-      left: 0, top: 0, width: "100vw", height: "100vh",
-      zIndex: 20000
-    }}></div>
-  );
+    if (active) {
+      setShow(true);
+
+      // Basic confetti setup
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const W = window.innerWidth;
+      const H = window.innerHeight;
+      canvas.width = W;
+      canvas.height = H;
+
+      // Confetti particles
+      const numConfetti = 800;
+      const confetti = Array.from({ length: numConfetti }).map(() => ({
+        x: Math.random() * W,
+        y: Math.random() * -H,
+        r: Math.random() * 6 + 5,
+        d: Math.random() * numConfetti,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        tilt: Math.random() * 20 - 10,
+        tiltAngleIncremental: Math.random() * 0.07 + 0.05,
+        tiltAngle: 0
+      }));
+
+      function drawConfetti() {
+        ctx.clearRect(0, 0, W, H);
+        confetti.forEach((p, i) => {
+          ctx.beginPath();
+          ctx.lineWidth = p.r;
+          ctx.strokeStyle = p.color;
+          ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
+          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
+          ctx.stroke();
+        });
+        updateConfetti();
+        animationFrameId = requestAnimationFrame(drawConfetti);
+      }
+
+      function updateConfetti() {
+        confetti.forEach(p => {
+          p.tiltAngle += p.tiltAngleIncremental;
+          p.y += (Math.cos(p.d) + 3 + p.r / 4) * 0.6;
+          p.x += Math.sin(0.5) + Math.sin(p.d);
+          p.tilt = Math.sin(p.tiltAngle - (p.d / 3)) * 15;
+
+          // Recycle confetti when out of view
+          if (p.y > H + 20) {
+            p.y = -20;
+            p.x = Math.random() * W;
+          }
+        });
+      }
+
+      drawConfetti();
+
+      timeoutId = setTimeout(() => {
+        setShow(false);
+        cancelAnimationFrame(animationFrameId);
+      }, duration);
+
+      // Stop effect after duration
+      return () => {
+        setShow(false);
+        cancelAnimationFrame(animationFrameId);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+    }
+  }, [active, duration]);
+
+  return show ? (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        pointerEvents: "none",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 99,
+      }}
+    />
+  ) : null;
 }
