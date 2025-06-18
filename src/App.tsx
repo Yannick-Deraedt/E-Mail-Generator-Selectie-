@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import FloatingCopyButton from "./FloatingCopyButton"; // Dit is het zwevende knopje
 
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
@@ -17,7 +18,6 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
-  // Basis states
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -34,7 +34,6 @@ export default function App() {
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Selectie-gerelateerd
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [nonSelectedComments, setNonSelectedComments] = useState<Record<string, string>>({});
@@ -43,7 +42,6 @@ export default function App() {
   const [showSelection, setShowSelection] = useState(true);
   const [showNotSelected, setShowNotSelected] = useState(true);
 
-  // Verzamelplaats dropdown smartness
   useEffect(() => {
     if (!customGatheringPlace) {
       if (matchType === "Uitwedstrijd") {
@@ -59,7 +57,6 @@ export default function App() {
     // eslint-disable-next-line
   }, [matchType, customGatheringPlace]);
 
-  // Geselecteerd + zoeklogica
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
@@ -70,17 +67,12 @@ export default function App() {
   const selected = Object.keys(selectedPlayers).sort(
     (a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b])
   );
-
-  // Unieke rugnummers check
   const usedNumbers = new Set(Object.values(selectedPlayers).filter(Boolean));
   const alleRugnummersUniek =
     selected.length === new Set(Object.values(selectedPlayers).filter(Boolean)).size
     && !selected.some(p => !selectedPlayers[p]);
-
-  // Selectie max 15 waarschuwing
   const maxSpelers = 15;
 
-  // Functies
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "" }));
     setNonSelectedReasons(prev => {
@@ -139,7 +131,6 @@ export default function App() {
     }
   };
 
-  // Email genereren + live preview effect
   function generateEmail() {
     if (!day || !date || !time || !opponent) {
       setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul dag, datum, tijd en tegenstander in.</div>`);
@@ -231,7 +222,6 @@ export default function App() {
     setPreview(html);
   }
 
-  // Live preview bij elke relevante wijziging (maar niet scrollen!)
   useEffect(() => {
     generateEmail();
     // eslint-disable-next-line
@@ -240,7 +230,6 @@ export default function App() {
     arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
   ]);
 
-  // ---------- APP LAYOUT ----------
   return (
     <>
       <div className="bg-gray-900 min-h-screen w-full flex flex-col items-center py-4">
@@ -325,7 +314,6 @@ export default function App() {
               </li>
             </ul>
           </div>
-          {/* ----------- SELECTIE INFO & UX ----------- */}
           <div className="mb-2 text-lg text-white">
             Geselecteerd: <span className="font-bold">{selected.length}</span> / {playerList.length}
             {selected.length > maxSpelers &&
@@ -342,7 +330,6 @@ export default function App() {
                 : '❌ Er zijn dubbele of ontbrekende rugnummers'}
             </div>
           )}
-          {/* ----------- SELECTIE COLLAPSIBLE ----------- */}
           <button className="font-bold mb-2 px-2 py-1 bg-blue-800 hover:bg-blue-700 rounded"
             onClick={() => setShowSelection(s => !s)}>
             {showSelection ? "▼" : "►"} Selectie ({selected.length})
@@ -417,7 +404,6 @@ export default function App() {
             </div>
           </div>
           )}
-          {/* ----------- NIET-GESELECTEERDEN COLLAPSIBLE ----------- */}
           <button className="font-bold mb-2 px-2 py-1 bg-red-800 hover:bg-red-700 rounded"
             onClick={() => setShowNotSelected(s => !s)}>
             {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
@@ -483,41 +469,16 @@ export default function App() {
             </div>
           </div>
           )}
-          {/* ----------- WAARSCHUWING ----------- */}
           {selected.some(p => !selectedPlayers[p]) && (
             <p className="text-yellow-300 font-semibold mb-2">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
           )}
-          {/* ----------- PREVIEW ----------- */}
           <div className="overflow-x-auto bg-white text-black p-4 rounded mt-7 shadow">
             <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
           </div>
         </div>
       </div>
-      {/* ----------- ZWEVENDE LIQUID-GLASS KOPIEERKNOP BOVEN ALLES ----------- */}
-      <button
-        onClick={copyToClipboard}
-        className={`
-          fixed z-[9999] right-6 bottom-7
-          w-16 h-16 flex flex-col items-center justify-center rounded-full
-          bg-white/30 backdrop-blur-lg border border-white/40
-          shadow-xl ring-2 transition-all duration-200
-          ${success ? "ring-4 ring-blue-300 bg-blue-300/60" : "hover:bg-blue-200/70 hover:ring-2 hover:ring-blue-400"}
-        `}
-        style={{
-          WebkitBackdropFilter: "blur(20px)",
-          backdropFilter: "blur(20px)",
-          boxShadow: "0 8px 40px 0 rgba(80,140,255,0.18), 0 0 0 3px rgba(255,255,255,0.11)",
-          cursor: "pointer",
-          border: "1px solid rgba(255,255,255,0.38)",
-        }}
-        aria-label="Kopieer e-mail"
-      >
-        <span style={{ fontSize: "2.1rem", color: "#118b37", textShadow: "0 2px 12px #fff9" }}>📋</span>
-        <span className="text-[0.70rem] font-bold mt-1 text-green-900" style={{ textShadow: "0 1px 4px #fff8" }}>Kopieer</span>
-        {success && (
-          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-blue-700 font-bold text-base animate-pulse" style={{filter:"drop-shadow(0 1px 4px #fff8)"}}>✔️</span>
-        )}
-      </button>
+      {/* HIER ZWEVENDE BUTTON, DUS BUITEN JE LAYOUT! */}
+      <FloatingCopyButton onClick={copyToClipboard} success={success} />
     </>
   );
 }
