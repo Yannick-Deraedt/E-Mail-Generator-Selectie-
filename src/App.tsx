@@ -35,7 +35,6 @@ export default function App() {
   const [preview, setPreview] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Verzamelplaats aanpassen op matchtype (altijd aanpasbaar!)
   useEffect(() => {
     setGatheringPlace(prev =>
       matchType === "Thuiswedstrijd"
@@ -45,19 +44,14 @@ export default function App() {
     // eslint-disable-next-line
   }, [matchType]);
 
-  // Geselecteerde spelers
   const selectedSorted = Object.entries(selectedPlayers).sort((a, b) => a[0].localeCompare(b[0]));
-
-  // Niet-geselecteerde spelers (default sortering alfabetisch)
   let nonSelected = playerList.filter(p => !(p in selectedPlayers));
-  // Zoekresultaat bovenaan (niet filteren de rest weg!)
   if (searchTerm.trim() !== "") {
     const first = nonSelected.filter(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
     const rest = nonSelected.filter(p => !p.toLowerCase().includes(searchTerm.toLowerCase()));
     nonSelected = [...first, ...rest];
   }
 
-  // Selecteren/deselecteren
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     setNonSelectedReasons(prev => {
@@ -65,7 +59,7 @@ export default function App() {
       delete updated[player];
       return updated;
     });
-    setSearchTerm(""); // Reset zoekveld
+    setSearchTerm("");
     if (inputRef.current) inputRef.current.value = "";
   };
 
@@ -79,93 +73,112 @@ export default function App() {
     if (responsible === player) setResponsible("");
   };
 
-  // E-mail preview
   const generateEmail = () => {
-    const aanhef = `<p>Beste spelers en ouders,</p>
-      <p>Hierbij alle info over de komende wedstrijd. Gelieve goed alles na te lezen en tijdig door te geven indien je niet aanwezig kan zijn.</p>`;
+    const aanhef = `
+      <div style="margin-bottom:18px;">
+        <p style="margin-bottom:10px;">Beste spelers en ouders,</p>
+        <p style="margin-bottom:18px;">Hierbij alle info over de komende wedstrijd. Gelieve alles goed na te lezen en tijdig door te geven indien je niet aanwezig kan zijn.</p>
+      </div>`;
     const detailsTable = `
-      <table style="background:#f5f6fa;width:100%;border-radius:8px;overflow:hidden;border:1px solid #cbd5e1;margin-bottom:10px">
+      <table style="width:100%;background:#f9fafb;border-radius:8px;border-collapse:separate;border-spacing:0;margin-bottom:16px;border:1px solid #d1d5db;">
         <tbody>
-          <tr><td style="padding:6px 8px"><b>Dag</b></td><td style="padding:6px 8px">${day}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Type wedstrijd</b></td><td style="padding:6px 8px">${matchType}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Datum</b></td><td style="padding:6px 8px">${date}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Start wedstrijd</b></td><td style="padding:6px 8px">${time}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Tegenstander</b></td><td style="padding:6px 8px">${opponent}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Terrein</b></td><td style="padding:6px 8px">${field}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Adres</b></td><td style="padding:6px 8px">${address}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Dag</b></td><td style="padding:5px 8px;">${day}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Type wedstrijd</b></td><td style="padding:5px 8px;">${matchType}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Datum</b></td><td style="padding:5px 8px;">${date}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Start wedstrijd</b></td><td style="padding:5px 8px;">${time}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Tegenstander</b></td><td style="padding:5px 8px;">${opponent}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Terrein</b></td><td style="padding:5px 8px;">${field}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Adres</b></td><td style="padding:5px 8px;">${address}</td></tr>
         </tbody>
       </table>
-      <table style="background:#f0fbf7;width:100%;border-radius:8px;overflow:hidden;border:1px solid #7dd3fc;margin-bottom:10px">
+      <table style="width:100%;background:#f0fdf4;border-radius:8px;border-collapse:separate;border-spacing:0;margin-bottom:18px;border:1px solid #bbf7d0;">
         <tbody>
-          <tr><td style="padding:6px 8px"><b>Verzameltijd</b></td><td style="padding:6px 8px">${gatheringTime}</td></tr>
-          <tr><td style="padding:6px 8px"><b>Verzamelplaats</b></td><td style="padding:6px 8px">${gatheringPlace}</td></tr>
-          ${matchType === "Uitwedstrijd" && opponent ? `<tr><td style="padding:6px 8px"><b>Aankomst tegenstander</b></td><td style="padding:6px 8px">tegenstander: ${opponent}</td></tr>` : ""}
+          <tr><td style="padding:5px 8px;"><b>Verzameltijd</b></td><td style="padding:5px 8px;">${gatheringTime}</td></tr>
+          <tr><td style="padding:5px 8px;"><b>Verzamelplaats</b></td><td style="padding:5px 8px;">${gatheringPlace}</td></tr>
+          ${
+            matchType === "Uitwedstrijd" && opponent
+              ? `<tr><td style="padding:5px 8px;"><b>Aankomst tegenstander</b></td><td style="padding:5px 8px;">tegenstander: ${opponent}</td></tr>`
+              : ""
+          }
         </tbody>
       </table>
       ${
         matchType === "Uitwedstrijd"
-          ? `<div style="background:#e8f4fc;padding:10px;border-radius:6px;margin-bottom:8px">
-                <b>Carpool:</b> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen.<br>
-                Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
+          ? `<div style="background:#f0f9ff;padding:10px 12px;border-radius:6px;margin-bottom:20px;font-size:15px;border:1px solid #bae6fd;">
+                <b>Carpool:</b> We vragen om samen te vertrekken vanaf de parking van KVE Drongen.<br>
+                Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen.<br>
+                Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden.<br>
+                Laat dit wel weten via de WhatsApp-poll.
             </div>`
           : ""
       }
     `;
     const selectieTable = selectedSorted.length > 0 ? `
-      <table style="width:100%;background:#f6f9f6;border-radius:8px;overflow:hidden;border:1px solid #a7f3d0;margin-top:20px">
-        <thead><tr>
-          <th style="padding:6px 8px;text-align:left">Rugnummer</th>
-          <th style="padding:6px 8px;text-align:left">Naam speler</th>
-          <th style="padding:6px 8px;text-align:left">Verantwoordelijke voor was, fruit & chocomelk</th>
-        </tr></thead>
+      <h3 style="margin-top:28px;margin-bottom:10px;">Selectie</h3>
+      <table style="width:100%;background:#fcfafa;border-radius:8px;border-collapse:separate;border-spacing:0;border:1px solid #e0e7ef;margin-bottom:16px;">
+        <thead>
+          <tr>
+            <th style="padding:5px 8px;text-align:left;font-size:15px;">Rugnummer</th>
+            <th style="padding:5px 8px;text-align:left;font-size:15px;">Naam speler</th>
+            <th style="padding:5px 8px;text-align:left;font-size:15px;">Verantwoordelijke voor was, fruit & chocomelk</th>
+          </tr>
+        </thead>
         <tbody>
           ${selectedSorted
             .map(
               ([name, num]) => `<tr>
-                <td style="padding:6px 8px">${num}</td>
-                <td style="padding:6px 8px">${name}</td>
-                <td style="padding:6px 8px">${responsible === name ? "❌" : ""}</td>
+                <td style="padding:5px 8px;">${num}</td>
+                <td style="padding:5px 8px;">${name}</td>
+                <td style="padding:5px 8px;">${responsible === name ? "❌" : ""}</td>
               </tr>`
             )
             .join("")}
         </tbody>
       </table>
     ` : "";
+
     const nietSelectieList = playerList
       .filter(p => !(p in selectedPlayers))
       .map(
         p =>
-          `<tr><td style="padding:6px 8px">${p}</td><td style="padding:6px 8px">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td></tr>`
+          `<tr><td style="padding:5px 8px;">${p}</td><td style="padding:5px 8px;">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td></tr>`
       )
       .join("");
     const nietSelectieTable = nietSelectieList
-      ? `<table style="width:100%;background:#fef6f6;border-radius:8px;overflow:hidden;border:1px solid #fecaca;margin-top:20px">
-          <thead><tr>
-            <th style="padding:6px 8px;text-align:left">Niet geselecteerd</th>
-            <th style="padding:6px 8px;text-align:left">Reden</th>
-          </tr></thead>
+      ? `<h3 style="margin-top:24px;margin-bottom:10px;">Niet geselecteerd</h3>
+          <table style="width:100%;background:#fff7f7;border-radius:8px;border-collapse:separate;border-spacing:0;border:1px solid #fecaca;">
+          <thead>
+            <tr>
+              <th style="padding:5px 8px;text-align:left;font-size:15px;">Naam</th>
+              <th style="padding:5px 8px;text-align:left;font-size:15px;">Reden</th>
+            </tr>
+          </thead>
           <tbody>${nietSelectieList}</tbody>
         </table>`
       : "";
     const verantwoordelijkeText =
       responsible
-        ? `<p style="margin-top:18px"><b>Verantwoordelijke voor was, fruit & chocomelk:</b> ${responsible}</p>`
+        ? `<div style="margin-top:18px;"><b>Verantwoordelijke voor was, fruit & chocomelk:</b> ${responsible}</div>`
         : "";
     const afsluit =
-      `<p style="margin-top:16px"><b>Opmerking:</b> ${remark}</p>
-       <p style="margin-top:40px">Sportieve groeten,<br/>Yannick Deraedt<br/>Trainer U15 IP – KVE Drongen</p>`;
+      `<div style="margin-top:22px;">
+        <b>Opmerking:</b> ${remark}
+        <br/><br/>
+        Sportieve groeten,<br/>
+        Yannick Deraedt<br/>
+        Trainer U15 IP – KVE Drongen
+      </div>`;
 
     setPreview(
       aanhef +
-        detailsTable +
-        selectieTable +
-        nietSelectieTable +
-        verantwoordelijkeText +
-        afsluit
+      detailsTable +
+      selectieTable +
+      nietSelectieTable +
+      verantwoordelijkeText +
+      afsluit
     );
   };
 
-  // Kopieerfunctie zonder Preview-titel
   const copyToClipboard = async () => {
     const el = document.getElementById("mailpreview");
     if (el && navigator.clipboard && window.ClipboardItem) {
@@ -223,16 +236,16 @@ export default function App() {
         )}
       </div>
 
-      {/* Geselecteerde spelers (bovenaan) */}
+      {/* Selectie (bovenaan) */}
       <div className="bg-gray-800 p-4 rounded-lg mb-6">
         <h2 className="text-lg font-bold mb-2">Selectie</h2>
         {selectedSorted.length > 0 ? (
-          <table className="w-full bg-white text-black rounded mb-3">
+          <table className="w-full bg-white text-black rounded mb-3 border border-gray-200">
             <thead>
               <tr>
-                <th className="px-2 py-1 text-left">#</th>
-                <th className="px-2 py-1 text-left">Naam</th>
-                <th className="px-2 py-1 text-left">Verantwoordelijk voor was, fruit & chocomelk</th>
+                <th className="px-2 py-1 text-left text-sm">#</th>
+                <th className="px-2 py-1 text-left text-sm">Naam</th>
+                <th className="px-2 py-1 text-left text-sm">Verantwoordelijke voor was, fruit & chocomelk</th>
                 <th />
               </tr>
             </thead>
@@ -273,7 +286,7 @@ export default function App() {
         </label>
       </div>
 
-      {/* Niet-geselecteerden lijst met zoekfunctie en checkbox */}
+      {/* Niet-geselecteerden onderaan, zoekfunctie */}
       <div className="bg-gray-800 p-4 rounded-lg mb-6">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
           <h2 className="text-lg font-bold">Niet-geselecteerden</h2>
@@ -286,18 +299,18 @@ export default function App() {
             onChange={e => setSearchTerm(e.target.value)}
           />
         </div>
-        <table className="w-full bg-white text-black rounded">
+        <table className="w-full bg-white text-black rounded border border-gray-200">
           <thead>
             <tr>
               <th className="px-2 py-1"></th>
-              <th className="px-2 py-1 text-left">Naam</th>
-              <th className="px-2 py-1 text-left">Reden</th>
+              <th className="px-2 py-1 text-left text-sm">Naam</th>
+              <th className="px-2 py-1 text-left text-sm">Reden niet geselecteerd</th>
             </tr>
           </thead>
           <tbody>
             {nonSelected.map(player => (
               <tr key={player}>
-                <td className="px-2 py-1">
+                <td className="px-2 py-1 text-center">
                   <input
                     type="checkbox"
                     checked={false}
