@@ -66,3 +66,17 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* Voeg onderaan toe aan index.css of App.css */
+body, #root {
+  position: relative;
+  min-height: 100vh;
+}
+.app-bg-watermark {
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background: center/45% no-repeat url('./assets/clublogo.png');
+  opacity: 0.08;   /* Maak transparanter indien nodig */
+  filter: grayscale(10%) blur(0.5px) brightness(1.6);
+}
