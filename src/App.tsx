@@ -35,7 +35,6 @@ export default function App() {
   const [preview, setPreview] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Verzamelplaats automatisch wijzigen (maar altijd aanpasbaar!)
   useEffect(() => {
     setGatheringPlace(prev =>
       matchType === "Thuiswedstrijd"
@@ -45,7 +44,6 @@ export default function App() {
     // eslint-disable-next-line
   }, [matchType]);
 
-  // Sorteren: selectie alfabetisch (voor UI), niet-geselecteerd met zoek-term bovenaan
   const selectedSorted = Object.entries(selectedPlayers).sort((a, b) => a[0].localeCompare(b[0]));
   let nonSelected = playerList.filter(p => !(p in selectedPlayers));
   if (searchTerm.trim() !== "") {
@@ -54,7 +52,6 @@ export default function App() {
     nonSelected = [...first, ...rest];
   }
 
-  // Handlers
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     setNonSelectedReasons(prev => {
@@ -85,31 +82,35 @@ export default function App() {
       </div>
     `;
     const detailsTable = `
-      <table style="margin:0 auto 20px auto;width:98%;max-width:430px;background:#fff;border-radius:10px;border-collapse:separate;border-spacing:0;box-shadow:0 2px 8px #0001;">
+      <div style="display:flex;justify-content:center;margin-bottom:12px;">
+      <table style="background:#fff;border-radius:10px;border-collapse:separate;border-spacing:0;box-shadow:0 2px 8px #0001;min-width:300px;">
         <tbody>
-          <tr><td style="padding:6px 12px;"><b>Dag</b></td><td style="padding:6px 12px;">${day}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Type wedstrijd</b></td><td style="padding:6px 12px;">${matchType}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Datum</b></td><td style="padding:6px 12px;">${date}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Start wedstrijd</b></td><td style="padding:6px 12px;">${time}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Tegenstander</b></td><td style="padding:6px 12px;">${opponent}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Terrein</b></td><td style="padding:6px 12px;">${field}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Adres</b></td><td style="padding:6px 12px;">${address}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Dag</b></td><td style="padding:8px 14px;">${day}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Type wedstrijd</b></td><td style="padding:8px 14px;">${matchType}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Datum</b></td><td style="padding:8px 14px;">${date}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Start wedstrijd</b></td><td style="padding:8px 14px;">${time}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Tegenstander</b></td><td style="padding:8px 14px;">${opponent}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Terrein</b></td><td style="padding:8px 14px;">${field}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Adres</b></td><td style="padding:8px 14px;">${address}</td></tr>
         </tbody>
       </table>
-      <table style="margin:0 auto 24px auto;width:98%;max-width:430px;background:#f6fff6;border-radius:10px;border-collapse:separate;border-spacing:0;box-shadow:0 1px 6px #22c55e22;">
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:16px;">
+      <table style="background:#f8fefd;border-radius:10px;border-collapse:separate;border-spacing:0;box-shadow:0 1px 6px #22c55e22;min-width:300px;">
         <tbody>
-          <tr><td style="padding:6px 12px;"><b>Verzameltijd</b></td><td style="padding:6px 12px;">${gatheringTime}</td></tr>
-          <tr><td style="padding:6px 12px;"><b>Verzamelplaats</b></td><td style="padding:6px 12px;">${gatheringPlace}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Verzameltijd</b></td><td style="padding:8px 14px;">${gatheringTime}</td></tr>
+          <tr><td style="padding:8px 14px;"><b>Verzamelplaats</b></td><td style="padding:8px 14px;">${gatheringPlace}</td></tr>
           ${
             matchType === "Uitwedstrijd" && opponent
-              ? `<tr><td style="padding:6px 12px;"><b>Aankomst tegenstander</b></td><td style="padding:6px 12px;">tegenstander: ${opponent}</td></tr>`
+              ? `<tr><td style="padding:8px 14px;"><b>Aankomst tegenstander</b></td><td style="padding:8px 14px;">tegenstander: ${opponent}</td></tr>`
               : ""
           }
         </tbody>
       </table>
+      </div>
       ${
         matchType === "Uitwedstrijd"
-          ? `<div style="background:#e0f2ff;padding:10px 12px;border-radius:8px;margin:0 auto 18px auto;max-width:430px;border:1px solid #60a5fa;text-align:center;">
+          ? `<div style="background:#e0f2ff;padding:12px 16px;border-radius:8px;margin:0 auto 16px auto;max-width:420px;border:1px solid #60a5fa;text-align:center;">
                 <b>Carpool:</b> We vragen om samen te vertrekken vanaf de parking van KVE Drongen.<br>
                 Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen.<br>
                 Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden.<br>
@@ -121,46 +122,50 @@ export default function App() {
     // Selectie (groen)
     const selectieTable = selectedSorted.length > 0 ? `
       <h3 style="text-align:center;margin:28px 0 10px 0;">Selectie</h3>
-      <table style="margin:0 auto 0 auto;width:98%;max-width:430px;background:#e9fbe6;border-radius:10px;border-collapse:separate;border-spacing:0;border:1px solid #22c55e;">
+      <div style="display:flex;justify-content:center;">
+      <table style="background:#e9fbe6;border-radius:10px;border-collapse:separate;border-spacing:0;border:1px solid #22c55e;min-width:300px;">
         <thead>
           <tr>
-            <th style="padding:6px 8px;text-align:left;font-size:15px;">Rugnummer</th>
-            <th style="padding:6px 8px;text-align:left;font-size:15px;">Naam speler</th>
-            <th style="padding:6px 8px;text-align:center;font-size:15px;">Verantwoordelijke voor was, fruit & chocomelk</th>
+            <th style="padding:8px 10px;text-align:left;">Rugnummer</th>
+            <th style="padding:8px 10px;text-align:left;">Naam speler</th>
+            <th style="padding:8px 10px;text-align:center;">Verantwoordelijke voor was, fruit & chocomelk</th>
           </tr>
         </thead>
         <tbody>
           ${selectedSorted
             .map(
               ([name, num]) => `<tr>
-                <td style="padding:6px 8px;">${num}</td>
-                <td style="padding:6px 8px;">${name}</td>
-                <td style="padding:6px 8px;text-align:center;">${responsible === name ? "✔️" : ""}</td>
+                <td style="padding:8px 10px;">${num}</td>
+                <td style="padding:8px 10px;">${name}</td>
+                <td style="padding:8px 10px;text-align:center;">${responsible === name ? "✔️" : ""}</td>
               </tr>`
             )
             .join("")}
         </tbody>
       </table>
+      </div>
     ` : "";
     // Niet-selectie (rood)
     const nietSelectieList = playerList
       .filter(p => !(p in selectedPlayers))
       .map(
         p =>
-          `<tr><td style="padding:6px 8px;">${p}</td><td style="padding:6px 8px;">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td></tr>`
+          `<tr><td style="padding:8px 10px;">${p}</td><td style="padding:8px 10px;">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td></tr>`
       )
       .join("");
     const nietSelectieTable = nietSelectieList
       ? `<h3 style="text-align:center;margin:28px 0 10px 0;">Niet geselecteerd</h3>
-          <table style="margin:0 auto 0 auto;width:98%;max-width:430px;background:#fff0f0;border-radius:10px;border-collapse:separate;border-spacing:0;border:1px solid #f87171;">
+          <div style="display:flex;justify-content:center;">
+          <table style="background:#fff0f0;border-radius:10px;border-collapse:separate;border-spacing:0;border:1px solid #f87171;min-width:300px;">
           <thead>
             <tr>
-              <th style="padding:6px 8px;text-align:left;font-size:15px;">Naam</th>
-              <th style="padding:6px 8px;text-align:left;font-size:15px;">Reden</th>
+              <th style="padding:8px 10px;text-align:left;">Naam</th>
+              <th style="padding:8px 10px;text-align:left;">Reden</th>
             </tr>
           </thead>
           <tbody>${nietSelectieList}</tbody>
-        </table>`
+        </table>
+        </div>`
       : "";
     const afsluit =
       `<div style="margin-top:24px;text-align:center;">
@@ -192,10 +197,10 @@ export default function App() {
   };
 
   return (
-    <div className="p-4 max-w-lg mx-auto text-white bg-gray-900 min-h-screen">
+    <div className="p-4 max-w-lg mx-auto text-white bg-gray-900 min-h-screen flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-4 text-center">E-mail Generator</h1>
-      {/* Alles in 1 mooie kader */}
-      <div className="bg-gray-800 p-4 rounded-xl mb-6 flex flex-col gap-3 border border-gray-700 shadow-md">
+      {/* Wedstrijdinfo */}
+      <div className="bg-gray-800 p-4 rounded-xl mb-6 w-full max-w-md flex flex-col gap-3 border border-gray-700 shadow-md">
         <label>Dag
           <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
             <option value="">Kies een dag</option>
@@ -239,15 +244,15 @@ export default function App() {
         </label>
       </div>
       {/* Selectie */}
-      <div className="bg-green-50 border border-green-400 p-4 rounded-xl mb-6">
-        <h2 className="text-lg font-bold mb-2 text-green-700">Selectie</h2>
+      <div className="bg-green-50 border border-green-400 p-4 rounded-xl mb-6 w-full max-w-md">
+        <h2 className="text-lg font-bold mb-2 text-green-700 text-center">Selectie</h2>
         {selectedSorted.length > 0 ? (
-          <table className="w-full bg-green-100 rounded mb-3 border border-green-400 text-black">
+          <table className="w-full bg-green-100 rounded mb-3 border border-green-400 text-black text-sm">
             <thead>
               <tr>
-                <th className="px-2 py-1 text-left text-sm">#</th>
-                <th className="px-2 py-1 text-left text-sm">Naam</th>
-                <th className="px-2 py-1 text-center text-sm">Verantwoordelijke voor was, fruit & chocomelk</th>
+                <th className="px-2 py-1 text-left">#</th>
+                <th className="px-2 py-1 text-left">Naam</th>
+                <th className="px-2 py-1 text-center">Verantwoordelijke voor was, fruit & chocomelk</th>
                 <th />
               </tr>
             </thead>
@@ -277,9 +282,9 @@ export default function App() {
             </tbody>
           </table>
         ) : (
-          <p className="text-green-800 mb-2">Nog geen spelers geselecteerd.</p>
+          <p className="text-green-800 mb-2 text-center">Nog geen spelers geselecteerd.</p>
         )}
-        <label className="text-green-700">Verantwoordelijke voor was, fruit & chocomelk
+        <label className="text-green-700 block text-center">Verantwoordelijke voor was, fruit & chocomelk
           <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black mt-1">
             <option value="">Kies een speler</option>
             {selectedSorted.map(([player]) => <option key={player}>{player}</option>)}
@@ -287,7 +292,7 @@ export default function App() {
         </label>
       </div>
       {/* Niet-geselecteerden */}
-      <div className="bg-red-50 border border-red-400 p-4 rounded-xl mb-6">
+      <div className="bg-red-50 border border-red-400 p-4 rounded-xl mb-6 w-full max-w-md">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-2 gap-2">
           <h2 className="text-lg font-bold text-red-700">Niet-geselecteerden</h2>
           <input
