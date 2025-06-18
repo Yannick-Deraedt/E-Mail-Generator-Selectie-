@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 
-// Spelers en keuzes
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
@@ -37,10 +36,7 @@ export default function App() {
   // Selectie
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
-  const [addPlayer, setAddPlayer] = useState("");
-  const [searchSelect, setSearchSelect] = useState(""); // voor dropdown type-ahead
-
-  // Voor sticky preview
+  const [searchSelect, setSearchSelect] = useState(""); // zoekveld
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -49,22 +45,22 @@ export default function App() {
     }
   }, [matchType]);
 
-  // Player helpers
+  // Helpers
   const notSelected = playerList.filter(p => !(p in selectedPlayers));
   const selected = Object.keys(selectedPlayers);
 
-  // Toevoegen met dropdown, met type-ahead zoeken
-  function handleAddPlayer() {
-    if (addPlayer && notSelected.includes(addPlayer)) {
-      setSelectedPlayers(prev => ({ ...prev, [addPlayer]: "1" }));
-      setAddPlayer("");
-      setSearchSelect("");
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 600);
-    }
-  }
+  // Filter voor zoekfunctie NIET-GESELECTEERDEN
+  const filteredNotSelected = searchSelect.trim()
+    ? notSelected.filter(p => p.toLowerCase().includes(searchSelect.trim().toLowerCase()))
+      .sort((a, b) => a.localeCompare(b))
+    : notSelected;
 
-  function removeSelected(player: string) {
+  // Functies selectie
+  function handleSelect(player: string) {
+    setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
+    setSearchSelect(""); // Reset na toevoegen
+  }
+  function handleDeselect(player: string) {
     setSelectedPlayers(prev => {
       const updated = { ...prev };
       delete updated[player];
@@ -72,15 +68,12 @@ export default function App() {
     });
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
   }
-
   function handleRugnummer(player: string, nummer: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
   }
-
   function handleNonSelectedReason(player: string, reason: string) {
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
   }
-
   // Kopieerfunctie
   const copyToClipboard = async () => {
     const el = document.querySelector("#preview-html-content");
@@ -96,9 +89,8 @@ export default function App() {
     }
   };
 
-  // Genereer email (met professionele opmaak, dark mode proof)
+  // Genereer mail (layout als vorige versie)
   function generateEmail() {
-    // Selectie op volgorde van rugnummer
     const selectionTableRows = selected
       .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
       .map(player => `
@@ -130,7 +122,6 @@ export default function App() {
           <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
 
-    // Mail-opmaak (licht/donker proof)
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;">
         <div style="background:#f9fafb;border-radius:12px;padding:18px 24px 10px 24px;margin-bottom:20px;box-shadow:0 2px 8px #0001;">
@@ -188,13 +179,10 @@ export default function App() {
     if (previewRef.current) previewRef.current.scrollIntoView({ behavior: "smooth" });
   }
 
-  // Dropdown type-ahead
-  const filteredPlayers = notSelected.filter(p => p.toLowerCase().includes(searchSelect.toLowerCase()));
-
   return (
     <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-3">E-mail Generator – KVE Drongen</h1>
-      {/* INVOERLIJST onder elkaar */}
+      {/* INVOERLIJST */}
       <div className="space-y-3 mb-7">
         <label className="block">Dag
           <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
@@ -239,37 +227,7 @@ export default function App() {
         </label>
       </div>
 
-      {/* Selectie toevoegen */}
-      <div className="mb-6">
-        <div className="font-semibold mb-1">Voeg speler toe aan selectie</div>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            placeholder="Zoek speler..."
-            value={searchSelect}
-            onChange={e => setSearchSelect(e.target.value)}
-            className="p-2 rounded text-black flex-1"
-            autoComplete="off"
-          />
-          <select
-            value={addPlayer}
-            onChange={e => setAddPlayer(e.target.value)}
-            className="p-2 rounded text-black flex-1"
-          >
-            <option value="">Kies een speler</option>
-            {filteredPlayers.map(p => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleAddPlayer}
-            className={`bg-blue-600 px-3 py-2 rounded text-white font-bold shadow`}
-          >Toevoegen</button>
-        </div>
-        <div className="text-xs text-gray-400 mb-2">Tip: type om te zoeken. Toevoegen alleen mogelijk als niet geselecteerd.</div>
-      </div>
-
-      {/* SELECTIEBLOK */}
+      {/* SELECTIE */}
       <div className="mb-6">
         <h2 className="font-bold text-lg mb-2">Selectie</h2>
         {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
@@ -279,7 +237,7 @@ export default function App() {
               <tr>
                 <th className="p-2 text-left">Rugnummer</th>
                 <th className="p-2 text-left">Naam speler</th>
-                <th className="p-2 text-left">Verantwoordelijk voor was, fruit & chocomelk</th>
+                <th className="p-2 text-left">Verantwoordelijk</th>
                 <th></th>
               </tr>
             </thead>
@@ -295,18 +253,24 @@ export default function App() {
                     </td>
                     <td className="p-2">{player}</td>
                     <td className="p-2 text-center">
-                      <input
-                        type="radio"
-                        name="verantwoordelijke"
-                        checked={responsible === player}
-                        onChange={() => setResponsible(player)}
-                        style={{ width: 22, height: 22, accentColor: "#38b000", verticalAlign: "middle", marginRight: 6 }}
-                      />
-                      {responsible === player ? " ✅" : ""}
+                      <select
+                        className="w-full text-black p-1 rounded"
+                        value={responsible === player ? player : ""}
+                        onChange={e => setResponsible(e.target.value)}
+                      >
+                        <option value="">Kies verantwoordelijke</option>
+                        {selected
+                          .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
+                          .map(p => (
+                            <option key={p} value={p}>
+                              {p} {responsible === p ? "✅" : ""}
+                            </option>
+                          ))}
+                      </select>
                     </td>
                     <td className="p-2">
                       <button
-                        onClick={() => removeSelected(player)}
+                        onClick={() => handleDeselect(player)}
                         className="text-red-500 hover:text-red-700 font-bold text-lg"
                         aria-label="Verwijder uit selectie"
                       >✖</button>
@@ -320,19 +284,38 @@ export default function App() {
 
       {/* NIET GESELECTEERDEN */}
       <div className="mb-10">
-        <h2 className="font-bold text-lg mb-2">Niet-geselecteerden</h2>
-        {notSelected.length === 0 && <div className="italic text-gray-400 mb-2">Iedereen is geselecteerd.</div>}
+        <div className="flex items-center mb-2 gap-2">
+          <h2 className="font-bold text-lg">Niet-geselecteerden</h2>
+          <input
+            type="text"
+            placeholder="Zoek speler…"
+            value={searchSelect}
+            onChange={e => setSearchSelect(e.target.value)}
+            className="p-2 rounded text-black ml-3 flex-1"
+            style={{ minWidth: 160, maxWidth: 250 }}
+          />
+        </div>
+        {filteredNotSelected.length === 0 && <div className="italic text-gray-400 mb-2">Iedereen is geselecteerd.</div>}
         <div className="rounded-xl bg-red-50 overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr>
+                <th className="p-2 text-left"></th>
                 <th className="p-2 text-left">Naam speler</th>
                 <th className="p-2 text-left">Reden</th>
               </tr>
             </thead>
             <tbody>
-              {notSelected.map(player => (
+              {filteredNotSelected.map(player => (
                 <tr key={player}>
+                  <td className="p-2">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => handleSelect(player)}
+                      style={{ width: 22, height: 22, accentColor: "#38b000", verticalAlign: "middle", marginRight: 6 }}
+                    />
+                  </td>
                   <td className="p-2">{player}</td>
                   <td className="p-2">
                     <select
