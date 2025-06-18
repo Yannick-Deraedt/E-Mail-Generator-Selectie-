@@ -27,6 +27,8 @@ export default function App() {
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
   const [gatheringTime, setGatheringTime] = useState("");
+  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
+  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [preview, setPreview] = useState("");
@@ -35,26 +37,34 @@ export default function App() {
   // Selectie
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
 
   // Voor sticky preview
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Verzamelplaats + aankomstuur
-  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
-  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
-
   useEffect(() => {
-    if (matchType === "Uitwedstrijd") {
+    // Suggestie gathering place bij switch, maar altijd aanpasbaar
+    if (matchType === "Uitwedstrijd" && gatheringPlace === "Kleedkamer X") {
       setGatheringPlace("Parking KVE");
-      setArrivalTimeOpponent("");
-    } else {
-      setGatheringPlace("Kleedkamer X");
-      setArrivalTimeOpponent("");
     }
+    if (matchType === "Thuiswedstrijd" && gatheringPlace === "Parking KVE") {
+      setGatheringPlace("Kleedkamer X");
+    }
+    if (matchType === "Uitwedstrijd") setArrivalTimeOpponent(""); // reset bij switch
   }, [matchType]);
 
   // Helpers
   const notSelected = playerList.filter(p => !(p in selectedPlayers));
+  // Zoekfunctie
+  const filteredNotSelected = [...notSelected].sort((a, b) => a.localeCompare(b));
+  let visibleNotSelected = filteredNotSelected;
+  if (search.trim()) {
+    // Zet matchende bovenaan
+    visibleNotSelected = [
+      ...filteredNotSelected.filter(p => p.toLowerCase().includes(search.toLowerCase())),
+      ...filteredNotSelected.filter(p => !p.toLowerCase().includes(search.toLowerCase()))
+    ];
+  }
   // SORTEREN OP RUGNUMMER voor selectie
   const selectedSorted = Object.entries(selectedPlayers)
     .sort((a, b) => Number(a[1]) - Number(b[1]));
@@ -66,6 +76,7 @@ export default function App() {
       delete updated[player];
       return updated;
     });
+    setSearch(""); // Reset zoekveld na selectie
   }
 
   function handleDeselect(player: string) {
@@ -109,7 +120,7 @@ export default function App() {
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${nummer}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-            ${player === responsible ? "✅ Verantwoordelijk voor was, fruit & chocomelk meenemen" : ""}
+            ${player === responsible ? "✅ Was, fruit & chocomelk meenemen" : ""}
           </td>
         </tr>
       `).join("");
@@ -226,6 +237,10 @@ export default function App() {
         <label className="block">Verzameltijd
           <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
+        <label className="block">Verzamelplaats
+          <input type="text" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+          <span className="text-xs text-gray-400 ml-1">{matchType === "Thuiswedstrijd" ? "bv. Kleedkamer X" : "Parking KVE"}</span>
+        </label>
         {matchType === "Uitwedstrijd" && (
           <label className="block">Aankomstuur bij tegenstander
             <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
@@ -273,10 +288,10 @@ export default function App() {
                       type="radio"
                       checked={responsible === player}
                       onChange={() => setResponsible(player)}
-                      style={{ width: 22, height: 22, accentColor: "#22c55e", cursor: "pointer" }}
-                      title="Vink aan als verantwoordelijke"
-                    />{" "}
-                    <span className="ml-1">{responsible === player ? "✅ Was, fruit & chocomelk meenemen" : ""}</span>
+                      style={{ width: 20, height: 20, accentColor: "#fbbf24", cursor: "pointer", marginRight: 6 }}
+                      title="Vink aan als verantwoordelijk"
+                    />
+                    <span className="text-sm">{responsible === player ? "✅ Was, fruit & chocomelk" : ""}</span>
                   </td>
                 </tr>
               ))}
@@ -288,7 +303,18 @@ export default function App() {
       {/* NIET GESELECTEERDEN */}
       <div className="mb-10">
         <h2 className="font-bold text-lg mb-2">Niet-geselecteerden</h2>
-        {notSelected.length === 0 && <div className="italic text-gray-400 mb-2">Iedereen is geselecteerd.</div>}
+        <div className="mb-2 flex gap-2 items-center">
+          <input
+            type="text"
+            placeholder="Zoek speler..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="p-2 rounded text-black"
+            style={{ minWidth: 180 }}
+            autoComplete="off"
+          />
+          <span className="text-xs text-gray-400">(selecteren via checkbox)</span>
+        </div>
         <div className="rounded-xl bg-red-50 overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -299,15 +325,15 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
-              {notSelected.map(player => (
+              {visibleNotSelected.map(player => (
                 <tr key={player}>
                   <td className="p-2">
                     <input
                       type="checkbox"
                       checked={false}
                       onChange={() => handleSelect(player)}
-                      style={{ width: 22, height: 22, accentColor: "#f87171", cursor: "pointer" }}
-                      title="Selecteer speler"
+                      style={{ width: 22, height: 22, accentColor: "#ef4444", cursor: "pointer" }}
+                      title="Zet in selectie"
                     />
                   </td>
                   <td className="p-2">{player}</td>
@@ -332,7 +358,7 @@ export default function App() {
       <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
         <button
           onClick={generateEmail}
-          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow`}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow"
         >Genereer e-mail</button>
         <button
           onClick={copyToClipboard}
