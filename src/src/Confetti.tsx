@@ -40,10 +40,14 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
     }));
 
     let angle = 0;
-    let frame = 0;
 
     function drawConfetti() {
-      if (!ctx || !canvas) return;
+      // Check nogmaals canvas en ctx
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       particles.forEach(p => {
@@ -56,7 +60,6 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
       });
 
       updateConfetti();
-      frame++;
       animationRef.current = requestAnimationFrame(drawConfetti);
     }
 
@@ -70,7 +73,7 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
         p.tilt = Math.sin(p.tiltAngle) * 16;
 
         // Reset to top if out of view
-        if (p.y > canvas.height) {
+        if (canvas && p.y > canvas.height) {
           p.y = -10;
           p.x = Math.random() * canvas.width;
         }
@@ -82,6 +85,11 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
     // Stop after `duration`
     const stopTimeout = setTimeout(() => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      // check canvas/ctx again
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     }, duration);
 
@@ -89,6 +97,10 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
     return () => {
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
       clearTimeout(stopTimeout);
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
   }, [active, duration]);
