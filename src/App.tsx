@@ -37,20 +37,29 @@ export default function App() {
 
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
+    if (matchType !== "Uitwedstrijd") setArrivalTimeOpponent("");
   }, [matchType]);
 
+  // UI: eerst selectie, dan niet-geselecteerd
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
-    const updated = { ...nonSelectedReasons };
-    delete updated[player];
-    setNonSelectedReasons(updated);
+    setNonSelectedReasons(prev => {
+      const updated = { ...prev };
+      delete updated[player];
+      return updated;
+    });
+    if (!responsible) setResponsible(player);
   };
 
   const handleDeselect = (player: string) => {
-    const updated = { ...selectedPlayers };
-    delete updated[player];
-    setSelectedPlayers(updated);
+    setSelectedPlayers(prev => {
+      const updated = { ...prev };
+      delete updated[player];
+      return updated;
+    });
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
+    // Reset responsible if he is deselected
+    if (responsible === player) setResponsible("");
   };
 
   const setRugnummer = (player: string, nummer: string) =>
@@ -72,15 +81,17 @@ export default function App() {
     }
   };
 
+  // MAIL: Toon kruisje bij verantwoordelijke
   const generateEmail = () => {
-    const selectedList = Object.entries(selectedPlayers)
-      .sort((a, b) => Number(a[1]) - Number(b[1]))
-      .map(([name, number]) => `
-        <tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #ccc"><strong>#${number}</strong></td>
-          <td style="padding:6px 10px;border-bottom:1px solid #ccc">${name}</td>
-        </tr>
-      `).join("");
+    const selectedArr = Object.entries(selectedPlayers)
+      .sort((a, b) => Number(a[1]) - Number(b[1]));
+
+    const selectedList = selectedArr.map(([name, number]) => `
+      <tr>
+        <td style="padding:6px 10px;border-bottom:1px solid #ccc"><strong>#${number}</strong></td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ccc">${name}${responsible === name ? ' <span title="Verantwoordelijke" style="color:#159b29;font-weight:bold;font-size:20px;">&#10004;</span>' : ''}</td>
+      </tr>
+    `).join("");
 
     const nonSelectedList = playerList
       .filter(p => !(p in selectedPlayers))
@@ -92,8 +103,7 @@ export default function App() {
       `).join("");
 
     const arrivalRow = matchType === "Uitwedstrijd" && arrivalTimeOpponent
-      ? `<tr><td style="font-weight:bold">Aankomst bij tegenstander:</td><td>${arrivalTimeOpponent} (${opponent})</td></tr>`
-      : "";
+      ? `<tr><td style="font-weight:bold">Aankomst bij tegenstander:</td><td>${arrivalTimeOpponent} (${opponent})</td></tr>` : "";
 
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin:18px 0 12px 0;background:#e8f4fc;padding:10px;border-radius:6px;font-size:15px">
@@ -217,6 +227,18 @@ export default function App() {
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
 
+        <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
+        {Object.keys(selectedPlayers).map(player => (
+          <div key={player} className="flex items-center gap-2 mb-1">
+            <input type="checkbox" checked onChange={() => handleDeselect(player)} />
+            <span className="flex-1">{player}</span>
+            <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
+              {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
+            </select>
+            {responsible === player && <span title="Verantwoordelijke" className="ml-2 text-green-400 text-lg font-bold">✔</span>}
+          </div>
+        ))}
+
         <h2 className="text-xl font-bold mt-6">Niet-geselecteerden</h2>
         {playerList.filter(p => !(p in selectedPlayers)).map(player => (
           <div key={player} className="flex items-center gap-2 mb-1">
@@ -225,17 +247,6 @@ export default function App() {
             <select className="flex-1 text-black" value={nonSelectedReasons[player] || ""} onChange={e => setReason(player, e.target.value)}>
               <option value="">Reden niet geselecteerd</option>
               {nonSelectionReasons.map(r => (<option key={r} value={r}>{r}</option>))}
-            </select>
-          </div>
-        ))}
-
-        <h2 className="text-xl font-bold mt-6">Geselecteerden</h2>
-        {Object.keys(selectedPlayers).map(player => (
-          <div key={player} className="flex items-center gap-2 mb-1">
-            <input type="checkbox" checked onChange={() => handleDeselect(player)} />
-            <span className="flex-1">{player}</span>
-            <select className="w-20 text-black" value={selectedPlayers[player]} onChange={e => setRugnummer(player, e.target.value)}>
-              {jerseyNumbers.map(n => (<option key={n} value={n}>{n}</option>))}
             </select>
           </div>
         ))}
