@@ -133,7 +133,7 @@ export default function App() {
         new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
       ]);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 1000);
+      setTimeout(() => setSuccess(false), 1100);
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
@@ -491,19 +491,30 @@ export default function App() {
           <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
         </div>
       </div>
-      {/* ----------- ZWEVENDE KOPIEERKNOP ----------- */}
+      {/* ----------- ZWEVENDE LIQUID-GLASS KOPIEERKNOP ----------- */}
       <button
         onClick={copyToClipboard}
-        className={`fixed z-50 right-4 bottom-4 w-16 h-16 bg-green-600 hover:bg-green-700 flex flex-col items-center justify-center rounded-full shadow-2xl border-4 border-white transition-all duration-200
-        ${success ? "scale-110" : ""}`}
+        className={`
+          fixed z-50 right-5 bottom-7
+          w-16 h-16 flex flex-col items-center justify-center rounded-full
+          bg-white/30 backdrop-blur-lg border border-white/40
+          shadow-xl ring-2 transition-all duration-200
+          ${success ? "ring-4 ring-blue-300 bg-blue-300/60" : "hover:bg-blue-200/70 hover:ring-2 hover:ring-blue-400"}
+        `}
         style={{
-          boxShadow: "0 8px 40px 0 rgba(0,0,0,0.25)",
+          WebkitBackdropFilter: "blur(20px)",
+          backdropFilter: "blur(20px)",
+          boxShadow: "0 8px 40px 0 rgba(80,140,255,0.18), 0 0 0 3px rgba(255,255,255,0.11)",
+          cursor: "pointer",
+          border: "1px solid rgba(255,255,255,0.38)",
         }}
         aria-label="Kopieer e-mail"
       >
-        <span style={{ fontSize: "1.6rem" }}>📋</span>
-        <span className="text-xs font-bold mt-1">Kopieer</span>
-        {success && <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-green-300 font-bold text-lg animate-pulse">✔️</span>}
+        <span style={{ fontSize: "2.1rem", color: "#118b37", textShadow: "0 2px 12px #fff9" }}>📋</span>
+        <span className="text-[0.70rem] font-bold mt-1 text-green-900" style={{ textShadow: "0 1px 4px #fff8" }}>Kopieer</span>
+        {success && (
+          <span className="absolute -top-2 left-1/2 -translate-x-1/2 text-blue-700 font-bold text-base animate-pulse" style={{filter:"drop-shadow(0 1px 4px #fff8)"}}>✔️</span>
+        )}
       </button>
     </div>
   );
