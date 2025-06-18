@@ -1,107 +1,115 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 interface ConfettiProps {
   active: boolean;
-  duration?: number; // duur in ms
+  duration?: number; // in ms, default 5000
 }
 
 const COLORS = [
-  "#142c54", "#1679bc", "#71c7ec", "#f9dd16", "#e66472",
-  "#ffae00", "#aaffc3", "#fff", "#e7effb", "#cf65ff"
+  "#1565c0", "#42a5f5", "#64b5f6", "#90caf9", "#1de9b6", "#e040fb",
+  "#ffd600", "#ff4081", "#69f0ae", "#536dfe", "#ff1744", "#f50057"
 ];
 
 export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [show, setShow] = useState(false);
+  const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
-    let animationFrameId: number;
-    let timeoutId: NodeJS.Timeout;
+    if (!active) return;
 
-    if (active) {
-      setShow(true);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      // Basic confetti setup
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      const W = window.innerWidth;
-      const H = window.innerHeight;
-      canvas.width = W;
-      canvas.height = H;
+    // Setup size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-      // Confetti particles
-      const numConfetti = 800;
-      const confetti = Array.from({ length: numConfetti }).map(() => ({
-        x: Math.random() * W,
-        y: Math.random() * -H,
-        r: Math.random() * 6 + 5,
-        d: Math.random() * numConfetti,
-        color: COLORS[Math.floor(Math.random() * COLORS.length)],
-        tilt: Math.random() * 20 - 10,
-        tiltAngleIncremental: Math.random() * 0.07 + 0.05,
-        tiltAngle: 0
-      }));
+    const PARTICLE_COUNT = 220;
+    const particles = Array.from({ length: PARTICLE_COUNT }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * -canvas.height,
+      r: Math.random() * 10 + 6,
+      d: Math.random() * PARTICLE_COUNT,
+      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      tilt: Math.random() * 10 - 10,
+      tiltAngle: 0,
+      tiltAngleIncremental: Math.random() * 0.09 + 0.01
+    }));
 
-      function drawConfetti() {
-        ctx.clearRect(0, 0, W, H);
-        confetti.forEach((p, i) => {
-          ctx.beginPath();
-          ctx.lineWidth = p.r;
-          ctx.strokeStyle = p.color;
-          ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
-          ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r);
-          ctx.stroke();
-        });
-        updateConfetti();
-        animationFrameId = requestAnimationFrame(drawConfetti);
-      }
+    let angle = 0;
+    let frame = 0;
 
-      function updateConfetti() {
-        confetti.forEach(p => {
-          p.tiltAngle += p.tiltAngleIncremental;
-          p.y += (Math.cos(p.d) + 3 + p.r / 4) * 0.6;
-          p.x += Math.sin(0.5) + Math.sin(p.d);
-          p.tilt = Math.sin(p.tiltAngle - (p.d / 3)) * 15;
+    function drawConfetti() {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Recycle confetti when out of view
-          if (p.y > H + 20) {
-            p.y = -20;
-            p.x = Math.random() * W;
-          }
-        });
-      }
+      particles.forEach(p => {
+        ctx.beginPath();
+        ctx.lineWidth = p.r / 2;
+        ctx.strokeStyle = p.color;
+        ctx.moveTo(p.x + p.tilt + p.r, p.y);
+        ctx.lineTo(p.x + p.tilt, p.y + p.r);
+        ctx.stroke();
+      });
 
-      drawConfetti();
-
-      timeoutId = setTimeout(() => {
-        setShow(false);
-        cancelAnimationFrame(animationFrameId);
-      }, duration);
-
-      // Stop effect after duration
-      return () => {
-        setShow(false);
-        cancelAnimationFrame(animationFrameId);
-        if (timeoutId) clearTimeout(timeoutId);
-      };
+      updateConfetti();
+      frame++;
+      animationRef.current = requestAnimationFrame(drawConfetti);
     }
+
+    function updateConfetti() {
+      angle += 0.01;
+      for (let i = 0; i < PARTICLE_COUNT; i++) {
+        const p = particles[i];
+        p.y += (Math.cos(angle + p.d) + 2 + p.r / 2) / 1.7;
+        p.x += Math.sin(angle) * 2.2;
+        p.tiltAngle += p.tiltAngleIncremental;
+        p.tilt = Math.sin(p.tiltAngle) * 16;
+
+        // Reset to top if out of view
+        if (p.y > canvas.height) {
+          p.y = -10;
+          p.x = Math.random() * canvas.width;
+        }
+      }
+    }
+
+    drawConfetti();
+
+    // Stop after `duration`
+    const stopTimeout = setTimeout(() => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }, duration);
+
+    // Clean up
+    return () => {
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      clearTimeout(stopTimeout);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
   }, [active, duration]);
 
-  return show ? (
+  // Canvas is always present, but visible only when active
+  return (
     <canvas
       ref={canvasRef}
       style={{
-        position: "fixed",
         pointerEvents: "none",
-        top: 0,
+        position: "fixed",
         left: 0,
+        top: 0,
         width: "100vw",
         height: "100vh",
-        zIndex: 99,
+        zIndex: 1001,
+        display: active ? "block" : "none"
       }}
+      width={typeof window !== "undefined" ? window.innerWidth : 1920}
+      height={typeof window !== "undefined" ? window.innerHeight : 1080}
+      aria-hidden="true"
     />
-  ) : null;
+  );
 }
