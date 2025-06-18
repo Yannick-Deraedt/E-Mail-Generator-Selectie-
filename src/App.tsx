@@ -11,7 +11,8 @@ const playerList = [
   "Filemon Verstraete"
 ];
 
-const jerseyNumbers = Array.from({ length: 99 }, (_, i) => (i + 1).toString());
+// Alleen 1 t.e.m. 25!
+const jerseyNumbers = Array.from({ length: 25 }, (_, i) => (i + 1).toString());
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Rust", "Op vakantie",
   "GU15", "Stand-by GU15", "1x getraind", "Schoolverplichtingen",
@@ -40,25 +41,20 @@ export default function App() {
     if (matchType !== "Uitwedstrijd") setArrivalTimeOpponent("");
   }, [matchType]);
 
-  // UI: eerst selectie, dan niet-geselecteerd
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
-    setNonSelectedReasons(prev => {
-      const updated = { ...prev };
-      delete updated[player];
-      return updated;
-    });
+    const updated = { ...nonSelectedReasons };
+    delete updated[player];
+    setNonSelectedReasons(updated);
+    // Verantwoordelijke mag niet leeg zijn als niemand gekozen is
     if (!responsible) setResponsible(player);
   };
 
   const handleDeselect = (player: string) => {
-    setSelectedPlayers(prev => {
-      const updated = { ...prev };
-      delete updated[player];
-      return updated;
-    });
+    const updated = { ...selectedPlayers };
+    delete updated[player];
+    setSelectedPlayers(updated);
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
-    // Reset responsible if he is deselected
     if (responsible === player) setResponsible("");
   };
 
@@ -81,24 +77,29 @@ export default function App() {
     }
   };
 
-  // MAIL: Toon kruisje bij verantwoordelijke
   const generateEmail = () => {
+    // Geselecteerde spelers op rugnummer gesorteerd
     const selectedArr = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]));
 
+    // Tabel selectie met kruisje bij verantwoordelijke
     const selectedList = selectedArr.map(([name, number]) => `
       <tr>
-        <td style="padding:6px 10px;border-bottom:1px solid #ccc"><strong>#${number}</strong></td>
-        <td style="padding:6px 10px;border-bottom:1px solid #ccc">${name}${responsible === name ? ' <span title="Verantwoordelijke" style="color:#159b29;font-weight:bold;font-size:20px;">&#10004;</span>' : ''}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ececec"><strong>#${number}</strong></td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ececec">${name}</td>
+        <td style="padding:6px 10px;border-bottom:1px solid #ececec;text-align:center">
+          ${responsible === name ? '<span title="Verantwoordelijke" style="color:#159b29;font-weight:bold;font-size:20px;">&#10004;</span>' : ""}
+        </td>
       </tr>
     `).join("");
 
+    // Tabel niet-geselecteerden
     const nonSelectedList = playerList
       .filter(p => !(p in selectedPlayers))
       .map(p => `
         <tr>
-          <td style="padding:6px 10px;border-bottom:1px solid #ccc">${p}</td>
-          <td style="padding:6px 10px;border-bottom:1px solid #ccc">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #ffdede">${p}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #ffdede">${nonSelectedReasons[p] || "Geen reden opgegeven"}</td>
         </tr>
       `).join("");
 
@@ -115,8 +116,9 @@ export default function App() {
     const html = `
       <div style="font-family:sans-serif;line-height:1.7;max-width:650px;">
         <p style="margin-bottom:24px">
-          Beste spelers & ouders,<br/><br/>
-          Hieronder vinden jullie alle informatie voor de komende wedstrijd. Gelieve tijdig te bevestigen via ProSoccerData of via WhatsApp.
+          Beste spelers en ouders,<br/><br/>
+          Gelieve aandachtig alle informatie voor de komende wedstrijd hieronder te lezen. 
+          Bevestig tijdig je aanwezigheid via ProSoccerData of via WhatsApp.<br/><br/>
         </p>
         <div style="background:#f2f7fd;border-radius:8px;padding:18px 20px 14px 20px;margin-bottom:20px;border:1px solid #d2e3f7">
           <h2 style="font-size:19px;color:#134c87;margin-bottom:14px;">Wedstrijddetails</h2>
@@ -140,6 +142,7 @@ export default function App() {
               <tr style="background:#e6effa">
                 <th style="padding:6px 10px;border-bottom:2px solid #b2d1f1;text-align:left">Rugnr</th>
                 <th style="padding:6px 10px;border-bottom:2px solid #b2d1f1;text-align:left">Speler</th>
+                <th style="padding:6px 10px;border-bottom:2px solid #b2d1f1;text-align:center">Verantw.</th>
               </tr>
             </thead>
             <tbody>
@@ -160,9 +163,6 @@ export default function App() {
               ${nonSelectedList}
             </tbody>
           </table>
-        </div>
-        <div style="background:#f8f4e5;border-radius:8px;padding:12px 20px 9px 20px;margin-bottom:14px;border:1px solid #e2d3b2">
-          <strong>Verantwoordelijke voor was, fruit & chocomelk:</strong> ${responsible || "-"}
         </div>
         <div style="margin:0 0 24px 0;padding:8px 20px;">
           <strong>Opmerking:</strong> ${remark}
