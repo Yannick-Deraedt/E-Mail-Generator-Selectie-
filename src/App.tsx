@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
+
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
@@ -9,6 +10,7 @@ const playerList = [
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
+
 const jerseyNumbers = Array.from({ length: 99 }, (_, i) => (i + 1).toString());
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Rust", "Op vakantie",
@@ -33,13 +35,10 @@ export default function App() {
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [preview, setPreview] = useState("");
 
-  // Automatisch gathering place & reset arrival bij type
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
-    if (matchType !== "Uitwedstrijd") setArrivalTimeOpponent("");
   }, [matchType]);
 
-  // Selectie - niet-geselecteerd flow
   const handleSelect = (player: string) => {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     const updated = { ...nonSelectedReasons };
@@ -52,7 +51,6 @@ export default function App() {
     delete updated[player];
     setSelectedPlayers(updated);
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
-    if (responsible === player) setResponsible("");
   };
 
   const setRugnummer = (player: string, nummer: string) =>
@@ -61,7 +59,6 @@ export default function App() {
   const setReason = (player: string, reason: string) =>
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
 
-  // Kopieer preview als HTML
   const copyToClipboard = async () => {
     const el = document.querySelector("#preview-mail");
     if (el && navigator.clipboard && window.ClipboardItem) {
@@ -75,7 +72,6 @@ export default function App() {
     }
   };
 
-  // EMAIL GENERATIE volgens e-mailnormen
   const generateEmail = () => {
     const selectedList = Object.entries(selectedPlayers)
       .sort((a, b) => Number(a[1]) - Number(b[1]))
@@ -106,11 +102,10 @@ export default function App() {
         </div>`
       : "";
 
-    // Professionele aanspreking, witregels & afsluiting
     const html = `
       <div style="font-family:sans-serif;line-height:1.7;max-width:650px;">
         <p style="margin-bottom:24px">
-          Beste ouders,<br/><br/>
+          Beste spelers & ouders,<br/><br/>
           Hieronder vinden jullie alle informatie voor de komende wedstrijd. Gelieve tijdig te bevestigen via ProSoccerData of via WhatsApp.
         </p>
         <div style="background:#f2f7fd;border-radius:8px;padding:18px 20px 14px 20px;margin-bottom:20px;border:1px solid #d2e3f7">
@@ -173,53 +168,53 @@ export default function App() {
   };
 
   return (
-    <div className="p-4 max-w-2xl mx-auto text-white bg-gray-900 min-h-screen">
+    <div className="p-4 max-w-lg mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
       <div className="flex flex-col gap-4">
-        <label>Dag
-          <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
+        <label className="flex flex-col">Dag
+          <select value={day} onChange={e => setDay(e.target.value)} className="p-2 rounded text-black mt-1">
             <option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}
           </select>
         </label>
-        <label>Type wedstrijd
-          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black mt-1">
+        <label className="flex flex-col">Type wedstrijd
+          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="p-2 rounded text-black mt-1">
             <option>Thuiswedstrijd</option><option>Uitwedstrijd</option>
           </select>
         </label>
-        <label>Datum
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Datum
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
-        <label>Start wedstrijd
-          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Start wedstrijd
+          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
-        <label>Tegenstander
-          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Tegenstander
+          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
-        <label>Terrein
-          <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Terrein
+          <input type="text" value={field} onChange={e => setField(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
-        <label>Adres
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Adres
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
-        <label>Verzameltijd
-          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Verzameltijd
+          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
-        <label>Verzamelplaats
-          <input type="text" value={gatheringPlace} readOnly className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Verzamelplaats
+          <input type="text" value={gatheringPlace} readOnly className="p-2 rounded text-black mt-1" />
         </label>
         {matchType === "Uitwedstrijd" && (
-          <label>Aankomst bij tegenstander
-            <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+          <label className="flex flex-col">Aankomst bij tegenstander
+            <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="p-2 rounded text-black mt-1" />
           </label>
         )}
-        <label>Verantwoordelijke
-          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black mt-1">
+        <label className="flex flex-col">Verantwoordelijke
+          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="p-2 rounded text-black mt-1">
             <option value="">Kies een speler</option>
             {Object.keys(selectedPlayers).map(p => <option key={p}>{p}</option>)}
           </select>
         </label>
-        <label>Opmerking
-          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        <label className="flex flex-col">Opmerking
+          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="p-2 rounded text-black mt-1" />
         </label>
 
         <h2 className="text-xl font-bold mt-6">Niet-geselecteerden</h2>
