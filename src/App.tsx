@@ -17,7 +17,6 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
-  // Invoer velden
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -33,36 +32,42 @@ export default function App() {
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
 
-  // Selectie
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
-  const [searchSelect, setSearchSelect] = useState(""); // zoekveld niet-geselecteerden
+  const [searchSelect, setSearchSelect] = useState("");
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // Verzamelplaats altijd bewerkbaar, standaardwaarde
+  // Verzamelplaats automatisch aanpassen als je switcht tussen thuis/uit
   useEffect(() => {
-    if (!gatheringPlace) {
-      setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
+    if (matchType === "Uitwedstrijd") {
+      if (
+        gatheringPlace.trim() === "" ||
+        gatheringPlace.trim().toLowerCase() === "kleedkamer x"
+      ) {
+        setGatheringPlace("Parking KVE");
+      }
+    } else {
+      if (
+        gatheringPlace.trim() === "" ||
+        gatheringPlace.trim().toLowerCase() === "parking kve"
+      ) {
+        setGatheringPlace("Kleedkamer X");
+      }
     }
+    // eslint-disable-next-line
   }, [matchType]);
 
   // Selectie helpers
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
-  // Zoekfunctie: gesorteerd, zoekwoord altijd bovenaan, rest blijft zichtbaar
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
     const top = sortedNotSelected.filter(p => p.toLowerCase().includes(searchSelect.toLowerCase()));
     const rest = sortedNotSelected.filter(p => !p.toLowerCase().includes(searchSelect.toLowerCase()));
     sortedNotSelected = [...top, ...rest];
   }
+  const selected = Object.keys(selectedPlayers).sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]));
 
-  const selected = Object.keys(selectedPlayers).sort((a, b) => {
-    // sorteer op rugnummer
-    return Number(selectedPlayers[a]) - Number(selectedPlayers[b]);
-  });
-
-  // Selecteren/deselecteren
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     setNonSelectedReasons(prev => {
@@ -70,7 +75,7 @@ export default function App() {
       delete updated[player];
       return updated;
     });
-    setSearchSelect(""); // reset zoeken
+    setSearchSelect("");
   }
   function removeSelected(player: string) {
     setSelectedPlayers(prev => {
@@ -89,8 +94,6 @@ export default function App() {
   function handleResponsible(player: string) {
     setResponsible(player);
   }
-
-  // Kopieerfunctie met enkel mailinhoud
   const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && window.ClipboardItem) {
@@ -104,8 +107,6 @@ export default function App() {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
-
-  // Genereer email (met professionele opmaak, dark mode proof)
   function generateEmail() {
     const selectionTableRows = selected.map(player => `
         <tr>
@@ -122,19 +123,13 @@ export default function App() {
           <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedReasons[player] || "-"}</td>
         </tr>
       `).join("");
-
-    // Aankomstuur alleen bij uitwedstrijd
     const opponentArrival = matchType === "Uitwedstrijd" && opponent && arrivalTimeOpponent
       ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td>${arrivalTimeOpponent} (${opponent})</td></tr>`
       : "";
-
-    // Carpool
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
           <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
-
-    // Mail-opmaak (licht/donker proof)
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
         <div style="background:#f9fafb;border-radius:12px;padding:18px 24px 10px 24px;margin-bottom:20px;">
@@ -195,7 +190,6 @@ export default function App() {
   return (
     <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-3">E-mail Generator – KVE Drongen</h1>
-      {/* Invoer velden onder elkaar */}
       <div className="space-y-3 mb-7">
         <label className="block">Dag
           <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
@@ -245,8 +239,6 @@ export default function App() {
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
       </div>
-
-      {/* Selectieblok */}
       <div className="mb-6">
         <h2 className="font-bold text-lg mb-2">Selectie</h2>
         {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
@@ -282,12 +274,13 @@ export default function App() {
                   <td className="p-2 text-center">
                     <input
                       type="radio"
-                      name="responsible"
+                      name="verantwoordelijke"
                       checked={responsible === player}
                       onChange={() => handleResponsible(player)}
-                      className="w-5 h-5 align-middle"
-                      aria-label={`Maak ${player} verantwoordelijk`}
-                    /> {responsible === player ? "✅" : ""}
+                    />
+                    {responsible === player && (
+                      <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
+                    )}
                   </td>
                   <td className="p-2"></td>
                 </tr>
@@ -296,8 +289,6 @@ export default function App() {
           </table>
         </div>
       </div>
-
-      {/* Niet-geselecteerden + zoekfunctie */}
       <div className="mb-10">
         <h2 className="font-bold text-lg mb-2">Niet-geselecteerden</h2>
         <div className="font-semibold mb-1">Zoek en selecteer spelers</div>
@@ -347,8 +338,6 @@ export default function App() {
           </table>
         </div>
       </div>
-
-      {/* Actieknoppen */}
       <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
         <button
           onClick={generateEmail}
@@ -360,8 +349,6 @@ export default function App() {
         >Kopieer e-mail</button>
         {success && <span className="text-green-400 font-semibold px-3 self-center animate-pulse">✔️ Gekopieerd!</span>}
       </div>
-
-      {/* Preview */}
       <div className="bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef}>
         <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
