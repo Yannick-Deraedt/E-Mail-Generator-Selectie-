@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 
-// Spelers en keuzes
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
@@ -17,11 +16,8 @@ const nonSelectionReasons = [
 ];
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
-// Animatie voor feedback
-const fadeClass = "transition duration-500 ease-in-out";
-
 export default function App() {
-  // Invoervelden
+  // Input state
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -30,87 +26,73 @@ export default function App() {
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
   const [gatheringTime, setGatheringTime] = useState("");
+  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
+  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [preview, setPreview] = useState("");
-  const [success, setSuccess] = useState(false);
-
-  // Selectie
+  const [searchPlayer, setSearchPlayer] = useState("");
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
-  const [addPlayer, setAddPlayer] = useState("");
-  const [searchSelect, setSearchSelect] = useState(""); // voor dropdown type-ahead
-
-  // Voor sticky preview
   const previewRef = useRef<HTMLDivElement>(null);
-
-  // Verzamelplaats + aankomstuur
-  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
-  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
 
   useEffect(() => {
     setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
-    if (matchType === "Uitwedstrijd") setArrivalTimeOpponent(""); // reset bij switch
+    if (matchType === "Thuiswedstrijd") setArrivalTimeOpponent("");
   }, [matchType]);
 
-  // Player helpers
+  // Filter voor zoeken
+  const filteredNotSelected = playerList.filter(
+    p => !(p in selectedPlayers) &&
+      p.toLowerCase().includes(searchPlayer.toLowerCase())
+  );
+  const selected = Object.keys(selectedPlayers)
+    .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]));
   const notSelected = playerList.filter(p => !(p in selectedPlayers));
-  const selected = Object.keys(selectedPlayers);
 
-  // Toevoegen met dropdown, met type-ahead zoeken
-  function handleAddPlayer() {
-    if (addPlayer && notSelected.includes(addPlayer)) {
-      setSelectedPlayers(prev => ({ ...prev, [addPlayer]: "1" }));
-      setAddPlayer("");
-      setSearchSelect("");
-      // Animatie feedback
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 600);
+  // Selectie
+  function togglePlayer(player: string) {
+    if (player in selectedPlayers) {
+      const upd = { ...selectedPlayers };
+      delete upd[player];
+      setSelectedPlayers(upd);
+      setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
+    } else {
+      setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
     }
   }
-
-  function removeSelected(player: string) {
-    setSelectedPlayers(prev => {
-      const updated = { ...prev };
-      delete updated[player];
-      return updated;
-    });
-    setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
-  }
-
   function handleRugnummer(player: string, nummer: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
   }
-
   function handleNonSelectedReason(player: string, reason: string) {
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
   }
 
-  // Kopieerfunctie
+  // Verantwoordelijke: alleen uit selectie
+  const responsibleOptions = selected;
+
+  // Kopieerfunctie (enkel mail)
   const copyToClipboard = async () => {
-    const el = document.querySelector("#preview");
+    const el = document.getElementById("mailonly");
     if (el && navigator.clipboard && window.ClipboardItem) {
       const html = el.innerHTML;
       await navigator.clipboard.write([
         new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
       ]);
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 800);
+      alert("E-mail succesvol gekopieerd!");
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
 
-  // Genereer email (met professionele opmaak, dark mode proof)
   function generateEmail() {
     const selectionTableRows = selected
-      .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
       .map(player => `
         <tr>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player]}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-            ${player === responsible ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
+            ${player === responsible ? "Verantwoordelijke voor was, fruit & chocomelk" : ""}
           </td>
         </tr>
       `).join("");
@@ -134,7 +116,7 @@ export default function App() {
           <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
 
-    // Mail-opmaak (licht/donker proof)
+    // Mail
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;">
         <div style="background:#f9fafb;border-radius:12px;padding:18px 24px 10px 24px;margin-bottom:20px;box-shadow:0 2px 8px #0001;">
@@ -163,7 +145,7 @@ export default function App() {
               <tr style="background:#d1f7b3;">
                 <th style="text-align:left;padding:6px 12px;">Rugnummer</th>
                 <th style="text-align:left;padding:6px 12px;">Naam speler</th>
-                <th style="text-align:left;padding:6px 12px;">Verantwoordelijke</th>
+                <th style="text-align:left;padding:6px 12px;">Verantwoordelijke voor was, fruit & chocomelk</th>
               </tr>
             </thead>
             <tbody>${selectionTableRows}</tbody>
@@ -192,188 +174,120 @@ export default function App() {
     if (previewRef.current) previewRef.current.scrollIntoView({ behavior: "smooth" });
   }
 
-  // Validatie
-  function isValid() {
-    return !!(day && matchType && date && time && opponent && field && address && gatheringTime && selected.length > 0);
-  }
-
-  // Dropdown type-ahead
-  const filteredPlayers = notSelected.filter(p => p.toLowerCase().includes(searchSelect.toLowerCase()));
-
+  // Render UI
   return (
-    <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
-      <h1 className="text-3xl font-bold mb-3">E-mail Generator – KVE Drongen</h1>
-      {/* INVOERLIJST onder elkaar */}
-      <div className="space-y-3 mb-7">
-        <label className="block">Dag
-          <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
-            <option value="">Kies een dag</option>
-            {days.map(d => <option key={d}>{d}</option>)}
-          </select>
-        </label>
-        <label className="block">Type wedstrijd
-          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black mt-1">
-            <option>Thuiswedstrijd</option>
-            <option>Uitwedstrijd</option>
-          </select>
-        </label>
-        <label className="block">Datum
-          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
-        <label className="block">Start wedstrijd
-          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
-        <label className="block">Tegenstander
-          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
-        <label className="block">Terrein
-          <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
-        <label className="block">Adres
-          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
-        <label className="block">Verzameltijd
-          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
+    <div className="p-4 max-w-2xl mx-auto text-white bg-gray-900 min-h-screen">
+      <h1 className="text-3xl font-bold mb-4">E-mail Generator</h1>
+      <div className="space-y-3">
+        <label>Dag<select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1"><option value="">Kies een dag</option>{days.map(d => <option key={d}>{d}</option>)}</select></label>
+        <label>Type wedstrijd<select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black mt-1"><option>Thuiswedstrijd</option><option>Uitwedstrijd</option></select></label>
+        <label>Datum<input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
+        <label>Start wedstrijd<input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
+        <label>Tegenstander<input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
+        <label>Terrein<input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
+        <label>Adres<input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
+        <label>Verzameltijd<input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
         {matchType === "Uitwedstrijd" && (
-          <label className="block">Aankomstuur bij tegenstander
+          <label>
+            Aankomst bij tegenstander
             <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
           </label>
         )}
-        <label className="block">Verantwoordelijke voor was, fruit & chocomelk
+        <label>
+          Verantwoordelijke voor was, fruit & chocomelk
           <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black mt-1">
             <option value="">Kies een speler</option>
-            {selected.map(p => <option key={p}>{p}</option>)}
+            {responsibleOptions.map(p => <option key={p}>{p}</option>)}
           </select>
         </label>
-        <label className="block">Opmerking
-          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
-        </label>
+        <label>Opmerking<input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" /></label>
       </div>
 
-      {/* Selectie toevoegen */}
-      <div className="mb-6">
-        <div className="font-semibold mb-1">Voeg speler toe aan selectie</div>
-        <div className="flex gap-2 mb-2">
-          <input
-            type="text"
-            placeholder="Zoek speler..."
-            value={searchSelect}
-            onChange={e => setSearchSelect(e.target.value)}
-            className="p-2 rounded text-black flex-1"
-            autoComplete="off"
-          />
-          <select
-            value={addPlayer}
-            onChange={e => setAddPlayer(e.target.value)}
-            className="p-2 rounded text-black flex-1"
-          >
-            <option value="">Kies een speler</option>
-            {filteredPlayers.map(p => (
-              <option key={p}>{p}</option>
-            ))}
-          </select>
-          <button
-            onClick={handleAddPlayer}
-            className={`bg-blue-600 px-3 py-2 rounded text-white font-bold shadow ${success ? "scale-105 bg-green-600" : ""} ${fadeClass}`}
-          >Toevoegen</button>
-        </div>
-        <div className="text-xs text-gray-400 mb-2">Tip: type om te zoeken. Toevoegen alleen mogelijk als niet geselecteerd.</div>
-      </div>
-
-      {/* SELECTIEBLOK */}
-      <div className="mb-6">
-        <h2 className="font-bold text-lg mb-2">Selectie</h2>
-        {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
-        <div className="rounded-xl bg-green-50 overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="p-2 text-left">Rugnummer</th>
-                <th className="p-2 text-left">Naam speler</th>
-                <th className="p-2 text-left">Verantwoordelijk</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {selected
-                .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
-                .map(player => (
-                  <tr key={player} className="hover:bg-green-100 transition">
-                    <td className="p-2">
-                      <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
-                        {jerseyNumbers.map(n => <option key={n}>{n}</option>)}
-                      </select>
-                    </td>
-                    <td className="p-2">{player}</td>
-                    <td className="p-2 text-center">
-                      {responsible === player ? "Verantwoordelijk voor was, fruit & chocomelk" : ""}
-                    </td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => removeSelected(player)}
-                        className="text-red-500 hover:text-red-700 font-bold text-lg"
-                        aria-label="Verwijder uit selectie"
-                      >✖</button>
-                    </td>
-                  </tr>
+      <h2 className="text-xl font-bold mt-8 mb-2">Selectie</h2>
+      <div className="mb-4">
+        {selected.length === 0 && <div className="text-gray-400 mb-2 text-sm">Nog geen spelers geselecteerd</div>}
+        <div className="space-y-2">
+          {selected.map(player => (
+            <div key={player} className="flex items-center gap-2 bg-green-100 rounded p-2">
+              <input
+                type="checkbox"
+                checked
+                onChange={() => togglePlayer(player)}
+                className="accent-green-500"
+              />
+              <span className="flex-1 text-black">{player}</span>
+              <select
+                className="w-16 text-black"
+                value={selectedPlayers[player]}
+                onChange={e => handleRugnummer(player, e.target.value)}
+              >
+                {jerseyNumbers.map(n => (
+                  <option key={n} value={n}>{n}</option>
                 ))}
-            </tbody>
-          </table>
+              </select>
+              {player === responsible && (
+                <span className="text-xs bg-yellow-200 px-2 py-1 rounded text-black ml-2">
+                  Verantwoordelijke voor was, fruit & chocomelk
+                </span>
+              )}
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* NIET GESELECTEERDEN */}
-      <div className="mb-10">
-        <h2 className="font-bold text-lg mb-2">Niet-geselecteerden</h2>
-        {notSelected.length === 0 && <div className="italic text-gray-400 mb-2">Iedereen is geselecteerd.</div>}
-        <div className="rounded-xl bg-red-50 overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="p-2 text-left">Naam speler</th>
-                <th className="p-2 text-left">Reden</th>
-              </tr>
-            </thead>
-            <tbody>
-              {notSelected.map(player => (
-                <tr key={player}>
-                  <td className="p-2">{player}</td>
-                  <td className="p-2">
-                    <select
-                      className="w-full text-black"
-                      value={nonSelectedReasons[player] || ""}
-                      onChange={e => handleNonSelectedReason(player, e.target.value)}
-                    >
-                      <option value="">Reden niet geselecteerd</option>
-                      {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <h2 className="text-xl font-bold mt-8 mb-2">Niet geselecteerd</h2>
+      <div className="mb-4">
+        <input
+          type="text"
+          placeholder="Zoek speler…"
+          value={searchPlayer}
+          onChange={e => setSearchPlayer(e.target.value)}
+          className="w-full mb-3 p-2 rounded text-black"
+        />
+        <div className="space-y-2">
+          {filteredNotSelected.map(player => (
+            <div key={player} className="flex items-center gap-2 bg-red-100 rounded p-2">
+              <input
+                type="checkbox"
+                checked={false}
+                onChange={() => togglePlayer(player)}
+                className="accent-red-500"
+              />
+              <span className="flex-1 text-black">{player}</span>
+              <select
+                className="flex-1 text-black"
+                value={nonSelectedReasons[player] || ""}
+                onChange={e => handleNonSelectedReason(player, e.target.value)}
+              >
+                <option value="">Reden niet geselecteerd</option>
+                {nonSelectionReasons.map(r => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* ACTIEKNOPPEN */}
-      <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
+      <div className="flex flex-col md:flex-row gap-4 mt-6">
         <button
           onClick={generateEmail}
-          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow ${fadeClass} ${isValid() ? "" : "opacity-60 cursor-not-allowed"}`}
-          disabled={!isValid()}
-        >Genereer e-mail</button>
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-semibold"
+        >
+          Genereer e-mail
+        </button>
         <button
           onClick={copyToClipboard}
-          className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-bold shadow ${success ? "scale-110" : ""} ${fadeClass}`}
-        >Kopieer e-mail</button>
-        {success && <span className="text-green-400 font-semibold px-3 self-center animate-pulse">✔️ Gekopieerd!</span>}
+          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded font-semibold"
+        >
+          Kopieer e-mail
+        </button>
       </div>
 
-      {/* PREVIEW */}
-      <div className="bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef} id="preview">
-        <h2 className="text-xl font-bold mb-2">Preview e-mail</h2>
-        <div dangerouslySetInnerHTML={{ __html: preview }} />
+      <div ref={previewRef} className="mt-8">
+        <div id="mailonly" className="bg-white text-black p-4 rounded">
+          <div dangerouslySetInnerHTML={{ __html: preview }} />
+        </div>
       </div>
     </div>
   );
