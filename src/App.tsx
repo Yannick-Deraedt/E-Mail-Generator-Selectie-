@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import FloatingCopyButton from "./FloatingCopyButton";
+import { useTheme } from "./ThemeContext";
 import Confetti from "./Confetti";
 import clublogo from "./assets/clublogo.png";
 
@@ -20,6 +21,9 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
+  // THEME
+  const { theme, toggleTheme } = useTheme();
+
   // STATES
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
@@ -46,7 +50,6 @@ export default function App() {
   const [showSelection, setShowSelection] = useState(true);
   const [showNotSelected, setShowNotSelected] = useState(true);
 
-  // --- Verzamelplaats automatisch invullen ---
   useEffect(() => {
     if (!customGatheringPlace) {
       if (matchType === "Uitwedstrijd") {
@@ -132,7 +135,7 @@ export default function App() {
       ]);
       setSuccess(true);
       setShowConfetti(true);
-      setTimeout(() => setSuccess(false), 900);
+      setTimeout(() => setSuccess(false), 1000);
       setTimeout(() => setShowConfetti(false), 2000);
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
@@ -147,8 +150,8 @@ export default function App() {
     }
     // Themekleur afhankelijk van matchtype
     const hoofdKleur = matchType === "Uitwedstrijd"
-      ? "#1679bc"
-      : "#142c54";
+      ? "#1679bc" // Lichter blauw voor uit
+      : "#142c54"; // Donker voor thuis
 
     const selectionTableRows = selected.map(player => `
       <tr style="${responsible === player ? 'background:#e6ffe6;' : ''}">
@@ -246,348 +249,316 @@ export default function App() {
     arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
   ]);
 
+  // --------- EASTER EGG: Squad complete! ----------
   useEffect(() => {
     if (selected.length === 15) {
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 1700);
+      setTimeout(() => setShowConfetti(false), 2000);
     }
   }, [selected.length]);
 
-  // ============ CLUB WATERMERK BACKGROUND =============
+  // --------- RENDER: SPLIT LAYOUT & CLUBSTIJL ---------
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        width: "100vw",
-        background:
-          "radial-gradient(circle at 68vw 30vh, rgba(32,89,190,0.12) 0, rgba(16,40,60,0.18) 100%), #162337",
-        position: "relative",
-        overflowX: "hidden"
-      }}
-    >
-      {/* WATERMERK */}
-      <img
-        src={clublogo}
-        alt="watermerk"
-        style={{
-          position: "fixed",
-          zIndex: 0,
-          right: "7vw",
-          top: "10vh",
-          width: "43vw",
-          minWidth: 320,
-          opacity: 0.055,
-          pointerEvents: "none",
-          filter: "blur(0.5px) grayscale(20%)",
-          userSelect: "none"
-        }}
-        draggable={false}
-      />
-      <Confetti active={showConfetti} />
-      {/* TITEL */}
+    <div className="relative min-h-screen bg-white dark:bg-[#181d26]">
+      {/* --- WATERMERK LAYER --- */}
       <div
-        className="flex items-center mb-8"
+        aria-hidden
+        className="fixed top-0 left-0 w-full h-full flex items-center justify-center pointer-events-none select-none z-0"
         style={{
-          minHeight: 88,
-          background: "linear-gradient(90deg,#1558a7 60%,#68c6fa 100%)",
-          borderRadius: 18,
-          boxShadow: "0 2px 22px #1558a74a",
-          padding: "12px 18px",
-          margin: "0 auto 28px auto",
-          maxWidth: 1100,
-          width: "96vw",
-          zIndex: 2,
-          position: "relative",
+          opacity: 0.09,
+          background: "none",
+          zIndex: 0,
         }}
       >
         <img
           src={clublogo}
-          alt="KVE Drongen logo"
+          alt="clublogo"
           style={{
-            height: 62,
-            marginRight: 24,
-            borderRadius: 14,
-            boxShadow: "0 2px 14px #0002, 0 0px 4px #2a90e6"
+            width: "40vw",
+            minWidth: 330,
+            maxWidth: 520,
+            height: "auto",
+            objectFit: "contain",
+            filter: "drop-shadow(0 3px 12px #2228) grayscale(0.1) contrast(0.85)",
+            userSelect: "none",
           }}
+          draggable={false}
         />
-        <div>
-          <div
-            style={{
-              fontSize: "2.1rem",
-              fontWeight: 900,
-              letterSpacing: "1.5px",
-              color: "#fff",
-              textShadow: "0 3px 14px #1c397a85, 0 2px 2px #1558a7c8",
-              fontFamily: "system-ui,Segoe UI,sans-serif"
-            }}
-          >
-            E-mail Generator{" "}
-            <span
-              style={{
-                fontWeight: 700,
-                letterSpacing: 0,
-                color: "#f7cf00",
-                textShadow: "0 1px 2px #5557"
-              }}
-            >
-              – KVE Drongen
-            </span>
-          </div>
-          <div
-            style={{
-              fontSize: "1.10rem",
-              fontWeight: 400,
-              color: "#f3f8ff",
-              textShadow: "0 1px 2px #2226"
-            }}
-          >
-            Maak je selectie & verzend je clubmail in echte KVE-stijl
-          </div>
-        </div>
       </div>
-      {/* MAIN BODY */}
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          gap: 20,
-          maxWidth: 1100,
-          margin: "0 auto",
-          padding: "10px 10px 64px 10px",
-          zIndex: 2,
-          position: "relative"
-        }}
-      >
-        {/* LINKS */}
-        <div className="w-full md:w-1/2 p-2 md:pl-8">
-          <div
-            className="bg-white dark:bg-[#212f44] rounded-xl shadow p-4 mb-7"
-            style={{
-              border: "1.5px solid #c9e7fe",
-              minWidth: 260,
-              maxWidth: 460
-            }}
-          >
-            <ul className="space-y-3">
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Dag <span className="text-red-500">*</span></label>
-                <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black">
-                  <option value="">Kies een dag</option>
-                  {days.map(d => <option key={d}>{d}</option>)}
-                </select>
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Type wedstrijd</label>
-                <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
-                  <option>Thuiswedstrijd</option>
-                  <option>Uitwedstrijd</option>
-                </select>
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Datum <span className="text-red-500">*</span></label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Start wedstrijd <span className="text-red-500">*</span></label>
-                <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Tegenstander <span className="text-red-500">*</span></label>
-                <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Terrein</label>
-                <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Adres</label>
-                <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Verzameltijd</label>
-                <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Verzamelplaats</label>
-                {!customGatheringPlace ? (
-                  <select
-                    value={gatheringPlace}
-                    onChange={e => {
-                      if (e.target.value === "__custom") setCustomGatheringPlace(true);
-                      else setGatheringPlace(e.target.value);
-                    }}
-                    className="w-full p-2 rounded text-black"
-                  >
-                    <option value="">Kies verzamelplaats</option>
-                    <option value="Kleedkamer X">Kleedkamer X</option>
-                    <option value="Parking KVE">Parking KVE</option>
-                    <option value="__custom">Andere (manueel invullen)</option>
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={gatheringPlace}
-                    onChange={e => setGatheringPlace(e.target.value)}
-                    className="w-full p-2 rounded text-black"
-                    placeholder="Geef verzamelplaats op"
-                    onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
-                  />
-                )}
-              </li>
-              {matchType === "Uitwedstrijd" && (
+
+      {/* --- MAIN CONTENT --- */}
+      <div className="relative z-10">
+        <Confetti active={showConfetti} />
+        <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0">
+          {/* LINKERDEEL: INPUT */}
+          <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
+            <div className="flex items-center mb-4">
+              <img src={clublogo} alt="clublogo" style={{
+                height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55"
+              }} />
+              <span style={{
+                fontSize: "2.15rem", fontWeight: 800,
+                letterSpacing: "1px", color: theme === "dark" ? "#b6dbfc" : "#1460a8",
+                textShadow: theme === "dark"
+                  ? "0 2px 14px #081623cc, 0 1px 10px #222e"
+                  : "0 1px 10px #fff7"
+              }}>
+                E-mail Generator – KVE Drongen
+              </span>
+            </div>
+            {/* ------ alle inputvelden, selectie, niet-geselecteerd, buttons, ... ------ */}
+            {/* --- JOUW VOLLEDIGE CODE TUSSEN DEZE COMMENTAAR EN HET EINDE --- */}
+            {/* --- (GEEN wijzigingen nodig hieronder) --- */}
+            <div className="bg-blue-50 dark:bg-[#1e3050] rounded-xl p-4 shadow mb-6">
+              <ul className="space-y-4">
                 <li>
-                  <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Aankomstuur bij tegenstander</label>
-                  <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Dag <span className="text-red-500">*</span></label>
+                  <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black">
+                    <option value="">Kies een dag</option>
+                    {days.map(d => <option key={d}>{d}</option>)}
+                  </select>
                 </li>
-              )}
-              <li>
-                <label className="block font-semibold mb-1 text-blue-900 dark:text-blue-200">Opmerking (algemeen)</label>
-                <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-            </ul>
-          </div>
-          {/* SELECTIE */}
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="font-bold text-lg">Selectie</h2>
-              <button
-                onClick={autoToewijzen}
-                className="bg-blue-700 hover:bg-blue-800 text-white px-2 py-1 rounded text-xs font-semibold"
-              >Auto-toewijs rugnummers</button>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Type wedstrijd <span className="text-red-500">*</span></label>
+                  <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
+                    <option>Thuiswedstrijd</option>
+                    <option>Uitwedstrijd</option>
+                  </select>
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Datum <span className="text-red-500">*</span></label>
+                  <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Start wedstrijd <span className="text-red-500">*</span></label>
+                  <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Tegenstander <span className="text-red-500">*</span></label>
+                  <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Terrein</label>
+                  <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Adres</label>
+                  <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Verzameltijd</label>
+                  <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Verzamelplaats</label>
+                  {!customGatheringPlace ? (
+                    <select
+                      value={gatheringPlace}
+                      onChange={e => {
+                        if (e.target.value === "__custom") setCustomGatheringPlace(true);
+                        else setGatheringPlace(e.target.value);
+                      }}
+                      className="w-full p-2 rounded text-black"
+                    >
+                      <option value="">Kies verzamelplaats</option>
+                      <option value="Kleedkamer X">Kleedkamer X</option>
+                      <option value="Parking KVE">Parking KVE</option>
+                      <option value="__custom">Andere (manueel invullen)</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={gatheringPlace}
+                      onChange={e => setGatheringPlace(e.target.value)}
+                      className="w-full p-2 rounded text-black"
+                      placeholder="Geef verzamelplaats op"
+                      onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
+                    />
+                  )}
+                </li>
+                {matchType === "Uitwedstrijd" && (
+                  <li>
+                    <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Aankomstuur bij tegenstander</label>
+                    <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+                  </li>
+                )}
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Opmerking (algemeen)</label>
+                  <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
+                </li>
+              </ul>
             </div>
-            {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
-            <input
-              type="text"
-              placeholder="Zoek speler in selectie..."
-              value={searchRugnummer}
-              onChange={e => setSearchRugnummer(e.target.value)}
-              className="p-2 rounded text-black w-full mb-2"
-              autoComplete="off"
-            />
-            <div className="rounded-xl bg-green-50 overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th className="p-2 text-left">Verwijder</th>
-                    <th className="p-2 text-left">Rugnummer</th>
-                    <th className="p-2 text-left">Naam speler</th>
-                    <th className="p-2 text-left">Verantwoordelijk</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selected
-                    .filter(player => !searchRugnummer || player.toLowerCase().includes(searchRugnummer.toLowerCase()))
-                    .map(player => (
-                    <tr key={player} className="hover:bg-green-100 transition">
-                      <td className="p-2">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6"
-                          checked={true}
-                          onChange={() => removeSelected(player)}
-                          aria-label={`Verwijder ${player} uit selectie`}
-                        />
-                      </td>
-                      <td className="p-2">
-                        <select
-                          className="w-14 text-black"
-                          value={selectedPlayers[player]}
-                          onChange={e => handleRugnummer(player, e.target.value)}
-                        >
-                          <option value="">Kies</option>
-                          {jerseyNumbers.filter(n => !usedNumbers.has(n) || selectedPlayers[player] === n)
-                            .map(n => <option key={n}>{n}</option>)}
-                        </select>
-                      </td>
-                      <td className="p-2">{player}</td>
-                      <td className="p-2 text-center">
-                        <input
-                          type="radio"
-                          name="verantwoordelijke"
-                          checked={responsible === player}
-                          onChange={() => handleResponsible(player)}
-                        />
-                        {responsible === player && (
-                          <span className="ml-2">✅</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="mb-2 text-lg text-blue-900 dark:text-blue-100">
+              Geselecteerd: <span className="font-bold">{selected.length}</span> / {playerList.length}
+              {selected.length > maxSpelers &&
+                <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">⚠️ Meer dan 15 geselecteerd!</span>
+              }
             </div>
-          </div>
-          {/* NIET-GESELECTEERDEN */}
-          <div className="mb-8">
-            <div className="font-semibold mb-1">Niet-geselecteerden</div>
-            <div className="font-semibold mb-1">Zoek & voeg spelers toe aan selectie</div>
-            <input
-              type="text"
-              placeholder="Zoek speler..."
-              value={searchSelect}
-              onChange={e => setSearchSelect(e.target.value)}
-              className="p-2 rounded text-black w-full mb-2"
-              autoComplete="off"
-            />
-            <div className="rounded-xl bg-red-50 overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th className="p-2 text-left">Selecteer</th>
-                    <th className="p-2 text-left">Naam speler</th>
-                    <th className="p-2 text-left">Reden niet geselecteerd</th>
-                    <th className="p-2 text-left">Opmerking</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedNotSelected.map(player => (
-                    <tr key={player}>
-                      <td className="p-2">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6"
-                          checked={false}
-                          onChange={() => handleSelect(player)}
-                          aria-label={`Selecteer ${player}`}
-                        />
-                      </td>
-                      <td className="p-2">{player}</td>
-                      <td className="p-2">
-                        <select
-                          className="w-full text-black"
-                          value={nonSelectedReasons[player] || ""}
-                          onChange={e => handleNonSelectedReason(player, e.target.value)}
-                        >
-                          <option value="">Reden niet geselecteerd</option>
-                          {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                      </td>
-                      <td className="p-2">
-                        <input
-                          type="text"
-                          className="w-full p-1 rounded text-black"
-                          placeholder="Opmerking"
-                          value={nonSelectedComments[player] || ""}
-                          onChange={e => handleNonSelectedComment(player, e.target.value)}
-                        />
-                      </td>
+            {selected.length > 0 && (
+              <div className={`mb-2 px-2 py-1 rounded font-bold 
+                ${alleRugnummersUniek 
+                ? 'bg-green-200 text-green-900' 
+                : 'bg-red-200 text-red-900 animate-pulse'}`}>
+                {alleRugnummersUniek
+                  ? '✅ Alle rugnummers zijn uniek'
+                  : '❌ Er zijn dubbele of ontbrekende rugnummers'}
+              </div>
+            )}
+            <button className="font-bold mb-2 px-2 py-1 bg-blue-700 hover:bg-blue-900 rounded text-white transition-all"
+              onClick={() => setShowSelection(s => !s)}>
+              {showSelection ? "▼" : "►"} Selectie ({selected.length})
+            </button>
+            {showSelection && (
+            <div className="mb-6">
+              <div className="mb-2 flex flex-col md:flex-row gap-2 items-center">
+                <input
+                  type="text"
+                  className="p-2 rounded text-black w-40"
+                  placeholder="Zoek rugnummer..."
+                  value={searchRugnummer}
+                  onChange={e => setSearchRugnummer(e.target.value)}
+                />
+                <button
+                  onClick={autoToewijzen}
+                  className="bg-blue-600 text-white px-3 py-2 rounded ml-2 font-bold hover:bg-blue-900 transition-all"
+                >
+                  Vul rugnummers op volgorde
+                </button>
+              </div>
+              <div className="rounded-xl bg-green-50 dark:bg-green-950 overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="p-2 text-left">Selectie</th>
+                      <th className="p-2 text-left">Rugnummer</th>
+                      <th className="p-2 text-left">Naam speler</th>
+                      <th className="p-2 text-left">Verantwoordelijk</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selected
+                      .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
+                      .map(player => (
+                      <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
+                        <td className="p-2">
+                          <input
+                            type="checkbox"
+                            className="w-6 h-6"
+                            checked={true}
+                            onChange={() => removeSelected(player)}
+                            aria-label={`Verwijder ${player} uit selectie`}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
+                            <option value="">--</option>
+                            {jerseyNumbers.map(n => (
+                              <option key={n} value={n} disabled={usedNumbers.has(n) && selectedPlayers[player] !== n}>{n}</option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="p-2">{player}</td>
+                        <td className="p-2 text-center">
+                          <input
+                            type="radio"
+                            name="verantwoordelijke"
+                            checked={responsible === player}
+                            onChange={() => handleResponsible(player)}
+                          />
+                          {responsible === player && (
+                            <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
+                          )}
+                        </td>
+                        <td className="p-2"></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            )}
+            <button className="font-bold mb-2 px-2 py-1 bg-red-700 hover:bg-red-900 rounded text-white transition-all"
+              onClick={() => setShowNotSelected(s => !s)}>
+              {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
+            </button>
+            {showNotSelected && (
+            <div className="mb-10">
+              <div className="font-semibold mb-1 text-blue-900 dark:text-blue-200">Zoek en selecteer spelers</div>
+              <input
+                type="text"
+                placeholder="Zoek speler..."
+                value={searchSelect}
+                onChange={e => setSearchSelect(e.target.value)}
+                className="p-2 rounded text-black w-full mb-2"
+                autoComplete="off"
+              />
+              <div className="rounded-xl bg-red-50 dark:bg-red-900 overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="p-2 text-left">Selecteer</th>
+                      <th className="p-2 text-left">Naam speler</th>
+                      <th className="p-2 text-left">Reden niet geselecteerd & Opmerking</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedNotSelected.map(player => (
+                      <tr key={player}>
+                        <td className="p-2">
+                          <input
+                            type="checkbox"
+                            className="w-6 h-6"
+                            checked={false}
+                            onChange={() => handleSelect(player)}
+                            aria-label={`Selecteer ${player}`}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <span className={player.toLowerCase().includes(searchSelect.toLowerCase()) && searchSelect ? "bg-yellow-200 px-1 rounded" : ""}>
+                            {player}
+                          </span>
+                        </td>
+                        <td className="p-2">
+                          <select
+                            className="w-full text-black"
+                            value={nonSelectedReasons[player] || ""}
+                            onChange={e => handleNonSelectedReason(player, e.target.value)}
+                          >
+                            <option value="">Reden niet geselecteerd</option>
+                            {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            className="w-full mt-1 p-1 rounded text-black"
+                            placeholder="Extra opmerking (optioneel)"
+                            value={nonSelectedComments[player] || ""}
+                            onChange={e => handleNonSelectedComment(player, e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            )}
+            {selected.some(p => !selectedPlayers[p]) && (
+              <p className="text-yellow-400 font-semibold mb-2 animate-pulse">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
+            )}
+          </div>
+
+          {/* RECHTS: LIVE PREVIEW */}
+          <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
+            <div className="bg-white dark:bg-[#172a45] text-black dark:text-blue-100 p-4 rounded-xl shadow border border-blue-200 dark:border-blue-900"
+              style={{ minHeight: 420 }}>
+              <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
             </div>
           </div>
         </div>
-        {/* RECHTS: LIVE PREVIEW */}
-        <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
-          <div className="bg-white dark:bg-[#172a45] text-black dark:text-blue-100 p-4 rounded-xl shadow border border-blue-200 dark:border-blue-900"
-            style={{ minHeight: 420 }}>
-            <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
-          </div>
-        </div>
+        {/* FLOATING COPY BUTTON */}
+        <FloatingCopyButton onClick={copyToClipboard} success={success} />
       </div>
-      {/* FLOATING COPY BUTTON */}
-      <FloatingCopyButton onClick={copyToClipboard} success={success} />
     </div>
   );
 }
