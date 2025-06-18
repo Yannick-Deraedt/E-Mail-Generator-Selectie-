@@ -2,8 +2,6 @@ import { useState, useEffect } from "react";
 import FloatingCopyButton from "./FloatingCopyButton";
 import { useTheme } from "./ThemeContext";
 import Confetti from "./Confetti";
-
-// Clublogo import
 import clublogo from "./assets/clublogo.png";
 
 const playerList = [
@@ -66,7 +64,7 @@ export default function App() {
     }
   }, [matchType, customGatheringPlace]);
 
-    // --------- SELECTIE LOGICA ---------
+  // --------- SELECTIE LOGICA ---------
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
