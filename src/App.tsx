@@ -22,7 +22,7 @@ const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterda
 
 export default function App() {
   // THEME
-  const { theme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
 
   // STATES
   const [day, setDay] = useState("");
