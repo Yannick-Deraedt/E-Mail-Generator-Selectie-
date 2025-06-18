@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
-import FloatingCopyButton from "./FloatingCopyButton"; // Dit is het zwevende knopje
+import FloatingCopyButton from "./FloatingCopyButton";
+import { useTheme } from "./ThemeContext";
+import Confetti from "./Confetti";
+
+// Clublogo import
+import clublogo from "./assets/clublogo.png";
 
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
@@ -18,6 +23,10 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
+  // THEME
+  const { theme, toggleTheme } = useTheme();
+
+  // STATES
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -33,6 +42,7 @@ export default function App() {
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
@@ -54,9 +64,9 @@ export default function App() {
         }
       }
     }
-    // eslint-disable-next-line
   }, [matchType, customGatheringPlace]);
 
+    // --------- SELECTIE LOGICA ---------
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
@@ -117,6 +127,7 @@ export default function App() {
       return nieuw;
     });
   }
+  // ---------- KOPIEER + KONFETTI ----------
   const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && window.ClipboardItem) {
@@ -125,17 +136,24 @@ export default function App() {
         new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
       ]);
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 1100);
+      setShowConfetti(true);
+      setTimeout(() => setSuccess(false), 900);
+      setTimeout(() => setShowConfetti(false), 1800);
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
 
+  // -------- GENERATE EMAIL & LIVE PREVIEW --------
   function generateEmail() {
     if (!day || !date || !time || !opponent) {
       setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul dag, datum, tijd en tegenstander in.</div>`);
       return;
     }
+    // Themekleur afhankelijk van matchtype
+    const hoofdKleur = matchType === "Uitwedstrijd"
+      ? "#1679bc" // Lichter blauw voor uit
+      : "#142c54"; // Donker voor thuis
 
     const selectionTableRows = selected.map(player => `
       <tr style="${responsible === player ? 'background:#e6ffe6;' : ''}">
@@ -165,13 +183,16 @@ export default function App() {
         </div>` : "";
 
     const html = `
-      <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
-        <div style="background:#f9fafb;border-radius:12px;padding:18px 24px 10px 24px;margin-bottom:20px;">
-          <p style="margin:0 0 12px 0;font-size:1.05em">Beste spelers en ouders,</p>
-          <p style="margin:0 0 16px 0;">Hieronder vinden jullie de info, selectie en afspraken voor de komende wedstrijd. Lees alles goed na en laat weten als er vragen zijn.</p>
+      <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
+        <div style="background:${hoofdKleur};border-radius:12px 12px 0 0;padding:16px 24px 12px 24px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
+          <img src="${clublogo}" alt="logo" style="height:46px;margin-right:18px;border-radius:12px;box-shadow:0 1px 7px #0003"/>
+          <div>
+            <div style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
+            <div style="font-size:1.02em;font-weight:400;opacity:0.97;">Wedstrijddetails & selectie</div>
+          </div>
         </div>
-        <div style="background:#e7effb;border-radius:10px;padding:16px 20px;margin-bottom:20px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:600;">Wedstrijddetails</h2>
+        <div style="background:#e7effb;border-radius:10px;padding:14px 20px 8px 20px;margin-bottom:20px;">
+          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
           <table style="width:100%;border-collapse:collapse;">
             <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
             <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
@@ -185,8 +206,8 @@ export default function App() {
           </table>
           ${carpoolText}
         </div>
-        <div style="background:#f1ffe9;border-radius:10px;padding:16px 20px;margin-bottom:18px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:600;">Selectie</h2>
+        <div style="background:#f1ffe9;border-radius:10px;padding:14px 20px;margin-bottom:16px;">
+          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#178530;">Selectie</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#d1f7b3;">
@@ -198,8 +219,8 @@ export default function App() {
             <tbody>${selectionTableRows}</tbody>
           </table>
         </div>
-        <div style="background:#fff7f7;border-radius:10px;padding:16px 20px;margin-bottom:16px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:600;">Niet geselecteerd</h2>
+        <div style="background:#fff7f7;border-radius:10px;padding:14px 20px;margin-bottom:14px;">
+          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#ffd7d7;">
@@ -230,53 +251,83 @@ export default function App() {
     arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
   ]);
 
+  // --------- EASTER EGG: Squad complete! ----------
+  useEffect(() => {
+    if (selected.length === 15) {
+      setShowConfetti(true);
+      setTimeout(() => setShowConfetti(false), 1600);
+    }
+  }, [selected.length]);
+
+  // --------- RENDER: SPLIT LAYOUT & CLUBSTIJL ---------
   return (
     <>
-      <div className="bg-gray-900 min-h-screen w-full flex flex-col items-center py-4">
-        <div className="w-full max-w-3xl">
-          <h1 className="text-3xl font-bold mb-5 text-center text-white">E-mail Generator – KVE Drongen</h1>
-          <div className="bg-gray-800 rounded-xl p-4 md:p-8 shadow-md mb-7">
+      <Confetti active={showConfetti} />
+      <div className={`flex flex-col md:flex-row gap-4 w-full p-0 m-0`}>
+        {/* LINKERDEEL: INPUT */}
+        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
+          <div className="flex items-center mb-4">
+            <img src={clublogo} alt="clublogo" style={{
+              height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55"
+            }} />
+            <span style={{
+              fontSize: "2.15rem", fontWeight: 800,
+              letterSpacing: "1px", color: "#1460a8",
+              textShadow: "0 1px 10px #fff7"
+            }}>
+              E-mail Generator – KVE Drongen
+            </span>
+            <button onClick={toggleTheme}
+              className="ml-auto p-2 rounded-lg"
+              style={{
+                background: theme === "dark" ? "#263d5e" : "#f3f8ff",
+                border: "1.5px solid #9be7ff"
+              }}>
+              {theme === "dark" ? "🌙" : "☀️"}
+            </button>
+          </div>
+          <div className="bg-blue-50 dark:bg-[#1e3050] rounded-xl p-4 shadow mb-6">
             <ul className="space-y-4">
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Dag</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Dag <span className="text-red-500">*</span></label>
                 <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black">
                   <option value="">Kies een dag</option>
                   {days.map(d => <option key={d}>{d}</option>)}
                 </select>
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Type wedstrijd</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Type wedstrijd <span className="text-red-500">*</span></label>
                 <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
                   <option>Thuiswedstrijd</option>
                   <option>Uitwedstrijd</option>
                 </select>
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Datum</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Datum <span className="text-red-500">*</span></label>
                 <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Start wedstrijd</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Start wedstrijd <span className="text-red-500">*</span></label>
                 <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Tegenstander</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Tegenstander <span className="text-red-500">*</span></label>
                 <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Terrein</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Adres</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Adres</label>
                 <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Verzameltijd</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Verzameltijd</label>
                 <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Verzamelplaats</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Verzamelplaats</label>
                 {!customGatheringPlace ? (
                   <select
                     value={gatheringPlace}
@@ -304,33 +355,33 @@ export default function App() {
               </li>
               {matchType === "Uitwedstrijd" && (
                 <li>
-                  <label className="block text-gray-100 font-semibold mb-1">Aankomstuur bij tegenstander</label>
+                  <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Aankomstuur bij tegenstander</label>
                   <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
                 </li>
               )}
               <li>
-                <label className="block text-gray-100 font-semibold mb-1">Opmerking (algemeen)</label>
+                <label className="block font-semibold mb-1 text-blue-800 dark:text-blue-200">Opmerking (algemeen)</label>
                 <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
             </ul>
           </div>
-          <div className="mb-2 text-lg text-white">
+          <div className="mb-2 text-lg text-blue-900 dark:text-blue-100">
             Geselecteerd: <span className="font-bold">{selected.length}</span> / {playerList.length}
             {selected.length > maxSpelers &&
-              <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold">⚠️ Meer dan 15 geselecteerd!</span>
+              <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">⚠️ Meer dan 15 geselecteerd!</span>
             }
           </div>
           {selected.length > 0 && (
             <div className={`mb-2 px-2 py-1 rounded font-bold 
               ${alleRugnummersUniek 
               ? 'bg-green-200 text-green-900' 
-              : 'bg-red-200 text-red-900'}`}>
+              : 'bg-red-200 text-red-900 animate-pulse'}`}>
               {alleRugnummersUniek
                 ? '✅ Alle rugnummers zijn uniek'
                 : '❌ Er zijn dubbele of ontbrekende rugnummers'}
             </div>
           )}
-          <button className="font-bold mb-2 px-2 py-1 bg-blue-800 hover:bg-blue-700 rounded"
+          <button className="font-bold mb-2 px-2 py-1 bg-blue-700 hover:bg-blue-900 rounded text-white transition-all"
             onClick={() => setShowSelection(s => !s)}>
             {showSelection ? "▼" : "►"} Selectie ({selected.length})
           </button>
@@ -346,12 +397,12 @@ export default function App() {
               />
               <button
                 onClick={autoToewijzen}
-                className="bg-blue-600 text-white px-3 py-2 rounded ml-2 font-bold"
+                className="bg-blue-600 text-white px-3 py-2 rounded ml-2 font-bold hover:bg-blue-900 transition-all"
               >
                 Vul rugnummers op volgorde
               </button>
             </div>
-            <div className="rounded-xl bg-green-50 overflow-x-auto">
+            <div className="rounded-xl bg-green-50 dark:bg-green-950 overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -366,7 +417,7 @@ export default function App() {
                   {selected
                     .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
                     .map(player => (
-                    <tr key={player} className={`transition ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
+                    <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -404,13 +455,13 @@ export default function App() {
             </div>
           </div>
           )}
-          <button className="font-bold mb-2 px-2 py-1 bg-red-800 hover:bg-red-700 rounded"
+          <button className="font-bold mb-2 px-2 py-1 bg-red-700 hover:bg-red-900 rounded text-white transition-all"
             onClick={() => setShowNotSelected(s => !s)}>
             {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
           </button>
           {showNotSelected && (
           <div className="mb-10">
-            <div className="font-semibold mb-1 text-white">Zoek en selecteer spelers</div>
+            <div className="font-semibold mb-1 text-blue-900 dark:text-blue-200">Zoek en selecteer spelers</div>
             <input
               type="text"
               placeholder="Zoek speler..."
@@ -419,7 +470,7 @@ export default function App() {
               className="p-2 rounded text-black w-full mb-2"
               autoComplete="off"
             />
-            <div className="rounded-xl bg-red-50 overflow-x-auto">
+            <div className="rounded-xl bg-red-50 dark:bg-red-900 overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -470,14 +521,19 @@ export default function App() {
           </div>
           )}
           {selected.some(p => !selectedPlayers[p]) && (
-            <p className="text-yellow-300 font-semibold mb-2">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
+            <p className="text-yellow-400 font-semibold mb-2 animate-pulse">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
           )}
-          <div className="overflow-x-auto bg-white text-black p-4 rounded mt-7 shadow">
+        </div>
+
+        {/* RECHTS: LIVE PREVIEW */}
+        <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
+          <div className="bg-white dark:bg-[#172a45] text-black dark:text-blue-100 p-4 rounded-xl shadow border border-blue-200 dark:border-blue-900"
+            style={{ minHeight: 420 }}>
             <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
           </div>
         </div>
       </div>
-      {/* HIER ZWEVENDE BUTTON, DUS BUITEN JE LAYOUT! */}
+      {/* FLOATING COPY BUTTON */}
       <FloatingCopyButton onClick={copyToClipboard} success={success} />
     </>
   );
