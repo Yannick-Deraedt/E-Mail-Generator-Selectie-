@@ -368,7 +368,7 @@ export default function App() {
       </div>
 
       {/* PREVIEW */}
-     <div
+    <div
   ref={previewRef}
   id="preview"
   style={{
