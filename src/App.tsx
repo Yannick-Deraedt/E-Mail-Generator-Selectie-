@@ -38,7 +38,6 @@ export default function App() {
 
   const previewRef = useRef<HTMLDivElement>(null);
 
-  // 🔁 4. Verzamelplaats automatisch aanpassen als je switcht tussen thuis/uit, maar enkel als leeg of standaard
   useEffect(() => {
     if (matchType === "Uitwedstrijd") {
       if (!gatheringPlace || gatheringPlace.trim().toLowerCase().includes("kleedkamer")) {
@@ -51,7 +50,6 @@ export default function App() {
     }
   }, [matchType]);
 
-  // 🔎 Zoekfunctie en selectiehelpers
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
@@ -93,7 +91,8 @@ export default function App() {
   function handleResponsible(player: string) {
     setResponsible(player);
   }
-    const copyToClipboard = async () => {
+
+  const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && window.ClipboardItem) {
       const html = el.innerHTML;
@@ -196,14 +195,61 @@ export default function App() {
     setPreview(html);
     if (previewRef.current) previewRef.current.scrollIntoView({ behavior: "smooth" });
   }
-    return (
+
+  return (
     <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-3">E-mail Generator – KVE Drongen</h1>
-      
-      {/* --- FORMULIEREN: dag, type, tijd, tegenstander, enz. (ongewijzigd) --- */}
-      {/* Laat jouw bestaande form-sectie hier gewoon staan zoals je ze had */}
-
-      {/* --- SELECTIE --- */}
+      {/* ----------- FORM START ----------- */}
+      <div className="space-y-3 mb-7">
+        <label className="block">Dag
+          <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
+            <option value="">Kies een dag</option>
+            {days.map(d => <option key={d}>{d}</option>)}
+          </select>
+        </label>
+        <label className="block">Type wedstrijd
+          <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black mt-1">
+            <option>Thuiswedstrijd</option>
+            <option>Uitwedstrijd</option>
+          </select>
+        </label>
+        <label className="block">Datum
+          <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+        <label className="block">Start wedstrijd
+          <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+        <label className="block">Tegenstander
+          <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+        <label className="block">Terrein
+          <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+        <label className="block">Adres
+          <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+        <label className="block">Verzameltijd
+          <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+        <label className="block">Verzamelplaats
+          <input
+            type="text"
+            value={gatheringPlace}
+            onChange={e => setGatheringPlace(e.target.value)}
+            className="w-full p-2 rounded text-black mt-1"
+            placeholder={matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE"}
+          />
+        </label>
+        {matchType === "Uitwedstrijd" && (
+          <label className="block">Aankomstuur bij tegenstander
+            <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+          </label>
+        )}
+        <label className="block">Opmerking
+          <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
+        </label>
+      </div>
+      {/* ----------- SELECTIE ----------- */}
       <div className="mb-6">
         <h2 className="font-bold text-lg mb-2">Selectie</h2>
         {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
@@ -255,8 +301,7 @@ export default function App() {
           </table>
         </div>
       </div>
-
-      {/* --- NIET-GESELECTEERDEN --- */}
+      {/* ----------- NIET-GESELECTEERDEN ----------- */}
       <div className="mb-10">
         <h2 className="font-bold text-lg mb-2">Niet-geselecteerden</h2>
         <div className="font-semibold mb-1">Zoek en selecteer spelers</div>
@@ -310,8 +355,7 @@ export default function App() {
           </table>
         </div>
       </div>
-
-      {/* --- KNOPPEN ONDERAAN --- */}
+      {/* ----------- WAARSCHUWING + KNOPPEN ----------- */}
       {selected.some(p => !selectedPlayers[p]) && (
         <p className="text-yellow-300 font-semibold mb-2">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
       )}
@@ -326,8 +370,7 @@ export default function App() {
         >Kopieer e-mail</button>
         {success && <span className="text-green-400 font-semibold px-3 self-center animate-pulse">✔️ Gekopieerd!</span>}
       </div>
-
-      {/* --- EMAIL PREVIEW --- */}
+      {/* ----------- PREVIEW ----------- */}
       <div className="overflow-x-auto bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef}>
         <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
