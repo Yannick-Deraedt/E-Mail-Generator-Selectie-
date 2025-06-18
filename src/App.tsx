@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 
+// Data
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
@@ -25,10 +26,9 @@ export default function App() {
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
-  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
   const [gatheringTime, setGatheringTime] = useState("");
+  const [gatheringPlace, setGatheringPlace] = useState("Kleedkamer X");
   const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
-  const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
@@ -36,31 +36,36 @@ export default function App() {
   // Selectie
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
-  const [searchSelect, setSearchSelect] = useState(""); // zoekveld
+  const [searchSelect, setSearchSelect] = useState("");
+  const [responsible, setResponsible] = useState("");
   const previewRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (matchType === "Uitwedstrijd") {
-      setGatheringPlace("Parking KVE");
-    }
+    setGatheringPlace(matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE");
+    if (matchType === "Uitwedstrijd") setArrivalTimeOpponent(""); // reset
   }, [matchType]);
 
-  // Helpers
+  // Lijsten
   const notSelected = playerList.filter(p => !(p in selectedPlayers));
   const selected = Object.keys(selectedPlayers);
 
-  // Filter voor zoekfunctie NIET-GESELECTEERDEN
-  const filteredNotSelected = searchSelect.trim()
-    ? notSelected.filter(p => p.toLowerCase().includes(searchSelect.trim().toLowerCase()))
-      .sort((a, b) => a.localeCompare(b))
+  // Zoekfunctie: highlight match bovenaan, rest blijft staan
+  const sortedNotSelected = searchSelect
+    ? [
+        ...notSelected.filter(p => p.toLowerCase().includes(searchSelect.toLowerCase())),
+        ...notSelected.filter(p => !p.toLowerCase().includes(searchSelect.toLowerCase()))
+      ].filter((v, i, arr) => arr.indexOf(v) === i)
     : notSelected;
 
-  // Functies selectie
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "1" }));
-    setSearchSelect(""); // Reset na toevoegen
+    const updated = { ...nonSelectedReasons };
+    delete updated[player];
+    setNonSelectedReasons(updated);
+    setSearchSelect(""); // reset zoekbalk!
   }
-  function handleDeselect(player: string) {
+
+  function removeSelected(player: string) {
     setSelectedPlayers(prev => {
       const updated = { ...prev };
       delete updated[player];
@@ -68,15 +73,22 @@ export default function App() {
     });
     setNonSelectedReasons(prev => ({ ...prev, [player]: "" }));
   }
+
   function handleRugnummer(player: string, nummer: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
   }
+
   function handleNonSelectedReason(player: string, reason: string) {
     setNonSelectedReasons(prev => ({ ...prev, [player]: reason }));
   }
-  // Kopieerfunctie
+
+  function handleResponsible(player: string) {
+    setResponsible(player);
+  }
+
+  // Kopiëren (html) – preview zonder titel
   const copyToClipboard = async () => {
-    const el = document.querySelector("#preview-html-content");
+    const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && window.ClipboardItem) {
       const html = el.innerHTML;
       await navigator.clipboard.write([
@@ -89,7 +101,7 @@ export default function App() {
     }
   };
 
-  // Genereer mail (layout als vorige versie)
+  // Genereer mail
   function generateEmail() {
     const selectionTableRows = selected
       .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
@@ -98,7 +110,7 @@ export default function App() {
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player]}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-            ${player === responsible ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
+            ${responsible === player ? "✅ Was, fruit & chocomelk" : ""}
           </td>
         </tr>
       `).join("");
@@ -111,7 +123,7 @@ export default function App() {
         </tr>
       `).join("");
 
-    // Aankomstuur alleen bij uitwedstrijd
+    // Aankomstuur
     const opponentArrival = matchType === "Uitwedstrijd" && opponent && arrivalTimeOpponent
       ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td>${arrivalTimeOpponent} (${opponent})</td></tr>`
       : "";
@@ -122,9 +134,10 @@ export default function App() {
           <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
 
+    // Mail-opmaak (licht én donker leesbaar)
     const html = `
-      <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;">
-        <div style="background:#f9fafb;border-radius:12px;padding:18px 24px 10px 24px;margin-bottom:20px;box-shadow:0 2px 8px #0001;">
+      <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;background:#fff;color:#111;border-radius:12px;box-shadow:0 2px 8px #0001;">
+        <div style="background:#f9fafb;border-radius:12px 12px 0 0;padding:18px 24px 10px 24px;margin-bottom:10px;">
           <p style="margin:0 0 12px 0;font-size:1.05em">Beste spelers en ouders,</p>
           <p style="margin:0 0 16px 0;">Hieronder vinden jullie de info, selectie en afspraken voor de komende wedstrijd. Lees alles goed na en laat weten als er vragen zijn.</p>
         </div>
@@ -150,7 +163,7 @@ export default function App() {
               <tr style="background:#d1f7b3;">
                 <th style="text-align:left;padding:6px 12px;">Rugnummer</th>
                 <th style="text-align:left;padding:6px 12px;">Naam speler</th>
-                <th style="text-align:left;padding:6px 12px;">Verantwoordelijk voor was, fruit & chocomelk</th>
+                <th style="text-align:left;padding:6px 12px;">Verantwoordelijke</th>
               </tr>
             </thead>
             <tbody>${selectionTableRows}</tbody>
@@ -168,7 +181,7 @@ export default function App() {
             <tbody>${nonSelectedTableRows}</tbody>
           </table>
         </div>
-        <div style="background:#fff8df;border-radius:8px;padding:14px 18px;">
+        <div style="background:#fffbe0;border-radius:8px;padding:14px 18px;">
           <p style="margin:0;"><strong>Opmerking:</strong> ${remark}</p>
         </div>
         <p style="margin-top:34px;margin-bottom:6px;">Sportieve groeten,</p>
@@ -179,10 +192,10 @@ export default function App() {
     if (previewRef.current) previewRef.current.scrollIntoView({ behavior: "smooth" });
   }
 
+  // UI
   return (
     <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-3">E-mail Generator – KVE Drongen</h1>
-      {/* INVOERLIJST */}
       <div className="space-y-3 mb-7">
         <label className="block">Dag
           <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black mt-1">
@@ -215,7 +228,7 @@ export default function App() {
           <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
         <label className="block">Verzamelplaats
-          <input type="text" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} className="w-full p-2 rounded text-black mt-1" placeholder={matchType === "Thuiswedstrijd" ? "Kleedkamer X" : "Parking KVE"} />
+          <input type="text" value={gatheringPlace} onChange={e => setGatheringPlace(e.target.value)} className="w-full p-2 rounded text-black mt-1" placeholder={matchType === "Thuiswedstrijd" ? "bv. Kleedkamer X" : "Parking KVE"} />
         </label>
         {matchType === "Uitwedstrijd" && (
           <label className="block">Aankomstuur bij tegenstander
@@ -227,93 +240,37 @@ export default function App() {
         </label>
       </div>
 
-      {/* SELECTIE */}
+      {/* Selectie toevoegen met zoekfunctie */}
       <div className="mb-6">
-        <h2 className="font-bold text-lg mb-2">Selectie</h2>
-        {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
-        <div className="rounded-xl bg-green-50 overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="p-2 text-left">Rugnummer</th>
-                <th className="p-2 text-left">Naam speler</th>
-                <th className="p-2 text-left">Verantwoordelijk</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {selected
-                .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
-                .map(player => (
-                  <tr key={player} className="hover:bg-green-100 transition">
-                    <td className="p-2">
-                      <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
-                        {jerseyNumbers.map(n => <option key={n}>{n}</option>)}
-                      </select>
-                    </td>
-                    <td className="p-2">{player}</td>
-                    <td className="p-2 text-center">
-                      <select
-                        className="w-full text-black p-1 rounded"
-                        value={responsible === player ? player : ""}
-                        onChange={e => setResponsible(e.target.value)}
-                      >
-                        <option value="">Kies verantwoordelijke</option>
-                        {selected
-                          .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
-                          .map(p => (
-                            <option key={p} value={p}>
-                              {p} {responsible === p ? "✅" : ""}
-                            </option>
-                          ))}
-                      </select>
-                    </td>
-                    <td className="p-2">
-                      <button
-                        onClick={() => handleDeselect(player)}
-                        className="text-red-500 hover:text-red-700 font-bold text-lg"
-                        aria-label="Verwijder uit selectie"
-                      >✖</button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* NIET GESELECTEERDEN */}
-      <div className="mb-10">
-        <div className="flex items-center mb-2 gap-2">
-          <h2 className="font-bold text-lg">Niet-geselecteerden</h2>
-          <input
-            type="text"
-            placeholder="Zoek speler…"
-            value={searchSelect}
-            onChange={e => setSearchSelect(e.target.value)}
-            className="p-2 rounded text-black ml-3 flex-1"
-            style={{ minWidth: 160, maxWidth: 250 }}
-          />
-        </div>
-        {filteredNotSelected.length === 0 && <div className="italic text-gray-400 mb-2">Iedereen is geselecteerd.</div>}
+        <div className="font-semibold mb-1">Zoek en selecteer spelers</div>
+        <input
+          type="text"
+          placeholder="Zoek speler..."
+          value={searchSelect}
+          onChange={e => setSearchSelect(e.target.value)}
+          className="p-2 rounded text-black w-full mb-2"
+          autoComplete="off"
+        />
+        {/* NIET-GESELECTEERD MET CHECKBOX */}
         <div className="rounded-xl bg-red-50 overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr>
-                <th className="p-2 text-left"></th>
+                <th className="p-2 text-left">Selecteer</th>
                 <th className="p-2 text-left">Naam speler</th>
-                <th className="p-2 text-left">Reden</th>
+                <th className="p-2 text-left">Reden niet geselecteerd</th>
               </tr>
             </thead>
             <tbody>
-              {filteredNotSelected.map(player => (
+              {sortedNotSelected.map(player => (
                 <tr key={player}>
                   <td className="p-2">
                     <input
                       type="checkbox"
+                      className="w-5 h-5"
                       checked={false}
                       onChange={() => handleSelect(player)}
-                      style={{ width: 22, height: 22, accentColor: "#38b000", verticalAlign: "middle", marginRight: 6 }}
+                      aria-label={`Selecteer ${player}`}
                     />
                   </td>
                   <td className="p-2">{player}</td>
@@ -334,11 +291,64 @@ export default function App() {
         </div>
       </div>
 
+      {/* SELECTIEBLOK MET RADIO VOOR VERANTWOORDELIJKE */}
+      <div className="mb-6">
+        <h2 className="font-bold text-lg mb-2">Selectie</h2>
+        {selected.length === 0 && <div className="italic text-gray-400 mb-2">Nog geen selectie.</div>}
+        <div className="rounded-xl bg-green-50 overflow-x-auto">
+          <table className="min-w-full">
+            <thead>
+              <tr>
+                <th className="p-2 text-left">Selectie</th>
+                <th className="p-2 text-left">Rugnummer</th>
+                <th className="p-2 text-left">Naam speler</th>
+                <th className="p-2 text-left">Verantwoordelijk</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {selected
+                .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
+                .map(player => (
+                  <tr key={player} className="hover:bg-green-100 transition">
+                    <td className="p-2">
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5"
+                        checked={true}
+                        onChange={() => removeSelected(player)}
+                        aria-label={`Verwijder ${player} uit selectie`}
+                      />
+                    </td>
+                    <td className="p-2">
+                      <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
+                        {jerseyNumbers.map(n => <option key={n}>{n}</option>)}
+                      </select>
+                    </td>
+                    <td className="p-2">{player}</td>
+                    <td className="p-2 text-center">
+                      <input
+                        type="radio"
+                        name="responsible"
+                        checked={responsible === player}
+                        onChange={() => handleResponsible(player)}
+                        className="w-5 h-5 align-middle"
+                        aria-label={`Maak ${player} verantwoordelijk`}
+                      /> {responsible === player ? "✅" : ""}
+                    </td>
+                    <td className="p-2"></td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       {/* ACTIEKNOPPEN */}
       <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
         <button
           onClick={generateEmail}
-          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow`}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow"
         >Genereer e-mail</button>
         <button
           onClick={copyToClipboard}
@@ -348,19 +358,8 @@ export default function App() {
       </div>
 
       {/* PREVIEW */}
-      <div
-        ref={previewRef}
-        id="preview-html-content"
-        style={{
-          background: "#fff",
-          color: "#111",
-          borderRadius: "16px",
-          padding: "1.5rem",
-          marginTop: "1.75rem",
-          boxShadow: "0 2px 10px #0002"
-        }}
-      >
-        <div dangerouslySetInnerHTML={{ __html: preview }} />
+      <div className="bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef}>
+        <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
     </div>
   );
