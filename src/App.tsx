@@ -53,7 +53,6 @@ export default function App() {
   // Selectie helpers
   const selectedSorted = Object.entries(selectedPlayers).sort((a, b) => a[0].localeCompare(b[0]));
   let nonSelected = playerList.filter(p => !(p in selectedPlayers));
-  // Live zoekfunctie (gevonden naam bovenaan, rest blijft staan)
   if (search.trim() !== "") {
     const first = nonSelected.filter(p => p.toLowerCase().includes(search.toLowerCase()));
     const rest = nonSelected.filter(p => !p.toLowerCase().includes(search.toLowerCase()));
@@ -80,7 +79,7 @@ export default function App() {
     if (responsible === player) setResponsible("");
   };
 
-  // Genereer preview mail
+  // Genereer preview mail (DONKER/LIGHT proof, emoji, gele opmerking)
   function generateEmail() {
     const selectionTableRows = selectedSorted
       .map(([player, num]) => `
@@ -88,9 +87,8 @@ export default function App() {
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${num}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-            ${player === responsible ? "✔️" : ""}
+            ${player === responsible ? "✅ Was, fruit & chocomelk" : ""}
           </td>
-          <td></td>
         </tr>
       `).join("");
     const nonSelectedTableRows = nonSelected
@@ -108,7 +106,7 @@ export default function App() {
           <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
     const html = `
-      <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;">
+      <div style="font-family:sans-serif;line-height:1.6;max-width:600px;margin:auto;background:#fff;border-radius:20px;padding-bottom:14px;">
         <div style="background:#f9fafb;border-radius:12px;padding:18px 24px 10px 24px;margin-bottom:20px;box-shadow:0 2px 8px #0001;">
           <p style="margin:0 0 12px 0;font-size:1.05em">Beste spelers en ouders,</p>
           <p style="margin:0 0 16px 0;">Hieronder vinden jullie de info, selectie en afspraken voor de komende wedstrijd. Lees alles goed na en laat weten als er vragen zijn.</p>
@@ -135,7 +133,7 @@ export default function App() {
               <tr style="background:#d1f7b3;">
                 <th style="text-align:left;padding:6px 12px;">Rugnummer</th>
                 <th style="text-align:left;padding:6px 12px;">Naam speler</th>
-                <th style="text-align:left;padding:6px 12px;">Verantwoordelijke</th>
+                <th style="text-align:left;padding:6px 12px;">Verantwoordelijk</th>
               </tr>
             </thead>
             <tbody>${selectionTableRows}</tbody>
@@ -153,8 +151,8 @@ export default function App() {
             <tbody>${nonSelectedTableRows}</tbody>
           </table>
         </div>
-        <div style="background:#f8fafc;border-radius:8px;padding:14px 18px;">
-          <p style="margin:0;"><strong>Opmerking:</strong> ${remark}</p>
+        <div style="background:#fffbe0;border-radius:8px;padding:14px 18px;margin-bottom:8px;border:1.5px solid #ffeb3b;">
+          <p style="margin:0;font-weight:500;"><strong>Opmerking:</strong> ${remark}</p>
         </div>
         <p style="margin-top:34px;margin-bottom:6px;">Sportieve groeten,</p>
         <p style="margin:0;font-weight:600;">Yannick Deraedt<br/>Trainer U15 IP – KVE Drongen</p>
@@ -163,6 +161,7 @@ export default function App() {
     setPreview(html);
     if (previewRef.current) previewRef.current.scrollIntoView({ behavior: "smooth" });
   }
+
   // Kopieerfunctie
   const copyToClipboard = async () => {
     const el = document.querySelector("#preview-mail");
@@ -177,11 +176,8 @@ export default function App() {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
-  // Validatie
-  function isValid() {
-    return !!(day && matchType && date && time && opponent && field && address && gatheringTime && selectedSorted.length > 0);
-  }
 
+  // Geen validatie meer: je kan altijd genereren
   return (
     <div className="p-3 md:p-8 max-w-3xl mx-auto text-white bg-gray-900 min-h-screen">
       <h1 className="text-3xl font-bold mb-3">E-mail Generator – KVE Drongen</h1>
@@ -225,12 +221,6 @@ export default function App() {
             <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
           </label>
         )}
-        <label className="block">Verantwoordelijke voor was, fruit & chocomelk
-          <select value={responsible} onChange={e => setResponsible(e.target.value)} className="w-full p-2 rounded text-black mt-1">
-            <option value="">Kies een speler</option>
-            {selectedSorted.map(([player]) => <option key={player}>{player}</option>)}
-          </select>
-        </label>
         <label className="block">Opmerking
           <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black mt-1" />
         </label>
@@ -263,7 +253,14 @@ export default function App() {
                     </td>
                     <td className="p-2">{player}</td>
                     <td className="p-2 text-center">
-                      {responsible === player ? "✔️" : ""}
+                      <input
+                        type="radio"
+                        checked={responsible === player}
+                        onChange={() => setResponsible(player)}
+                        className="w-7 h-7 accent-green-500"
+                        title="Klik om deze speler verantwoordelijk te maken"
+                      />{" "}
+                      {responsible === player && <span className="ml-2 font-medium text-green-700">✅ Was, fruit & chocomelk</span>}
                     </td>
                     <td className="p-2">
                       <button
@@ -304,7 +301,13 @@ export default function App() {
               {nonSelected.map(player => (
                 <tr key={player}>
                   <td className="p-2">
-                    <input type="checkbox" checked={false} onChange={() => handleSelect(player)} />
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      onChange={() => handleSelect(player)}
+                      className="w-7 h-7 accent-green-500"
+                      title="Toevoegen aan selectie"
+                    />
                   </td>
                   <td className="p-2">{player}</td>
                   <td className="p-2">
@@ -328,8 +331,7 @@ export default function App() {
       <div className="sticky bottom-0 bg-gray-900 py-4 z-10 flex gap-4 border-t border-gray-700">
         <button
           onClick={generateEmail}
-          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow ${isValid() ? "" : "opacity-60 cursor-not-allowed"}`}
-          disabled={!isValid()}
+          className={`bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold mr-2 shadow`}
         >Genereer e-mail</button>
         <button
           onClick={copyToClipboard}
@@ -339,7 +341,7 @@ export default function App() {
       </div>
 
       {/* PREVIEW */}
-      <div className="bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef} id="preview-mail">
+      <div className="bg-white text-black p-4 rounded mt-7 shadow" ref={previewRef} id="preview-mail" style={{ background: "#fff", color: "#222" }}>
         <div dangerouslySetInnerHTML={{ __html: preview }} />
       </div>
     </div>
