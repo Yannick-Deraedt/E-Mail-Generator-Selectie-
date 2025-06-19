@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FloatingCopyButton from "./FloatingCopyButton";
 import Confetti from "./Confetti";
 import clublogo from "./assets/clublogo.png";
@@ -6,9 +6,9 @@ import clublogo from "./assets/clublogo.png";
 // DATA
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
@@ -21,7 +21,7 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
-  // STATE
+  // STATES
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -46,6 +46,8 @@ export default function App() {
   const [searchRugnummer, setSearchRugnummer] = useState("");
   const [showSelection, setShowSelection] = useState(true);
   const [showNotSelected, setShowNotSelected] = useState(true);
+
+  const justSelected = useRef<string | null>(null);
 
   // Automatische verzamelplaats
   useEffect(() => {
@@ -91,6 +93,7 @@ export default function App() {
       delete updated[player];
       return updated;
     });
+    justSelected.current = player;
     setSearchSelect("");
   }
   function removeSelected(player: string) {
@@ -146,9 +149,37 @@ export default function App() {
       setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul dag, datum, tijd en tegenstander in.</div>`);
       return;
     }
+    // Themekleur afhankelijk van matchtype
     const hoofdKleur = matchType === "Uitwedstrijd"
       ? "#1679bc"
       : "#142c54";
+
+    // Volgorde aangepast zoals gewenst:
+    const detailsRows = [
+      `<tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>`,
+      `<tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>`,
+      `<tr><td style="font-weight:600;">Datum:</td><td><strong>${date}</strong></td></tr>`,
+      `<tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>`,
+      `<tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>`,
+      `<tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>`,
+      ...(matchType === "Uitwedstrijd"
+        ? [
+          `<tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>`,
+          arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : "",
+          `<tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>`
+        ]
+        : [
+          // Geen adres/aankomsttijd bij thuiswedstrijd
+          gatheringTime && gatheringPlace
+            ? `<tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>`
+            : ""
+        ])
+    ];
+
+    const carpoolText = matchType === "Uitwedstrijd"
+      ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
+          <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
+        </div>` : "";
 
     const selectionTableRows = selected.map(player => `
       <tr style="${responsible === player ? 'background:#e6ffe6;' : ''}">
@@ -168,48 +199,24 @@ export default function App() {
       </tr>
     `).join("");
 
-    const opponentArrival = matchType === "Uitwedstrijd" && opponent && arrivalTimeOpponent
-      ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>`
-      : "";
-
-    // Let op: "Adres" alleen bij UITwedstrijd!
-    const adresRow = matchType === "Uitwedstrijd" && address
-      ? `<tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>`
-      : "";
-
-    // Carpool
-    const carpoolText = matchType === "Uitwedstrijd"
-      ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
-          <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
-        </div>` : "";
-
-    // Preview volgorde: dag, type, datum, start, tegenstander, terrein, (adres), (aankomsttijd), verzameltijd, verzamelplaats
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
         <div style="background:${hoofdKleur};border-radius:12px 12px 0 0;padding:16px 24px 12px 24px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
           <img src="https://i.imgur.com/cgvdj96.png" alt="logo" style="height:46px;margin-right:18px;border-radius:12px;box-shadow:0 1px 7px #0003"/>
           <div>
-            <div style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
+            <div class="glow-title" style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
             <div style="font-size:1.02em;font-weight:400;opacity:0.97;">Wedstrijddetails & selectie</div>
           </div>
         </div>
         <div style="background:#e7effb;border-radius:10px;padding:14px 20px 8px 20px;margin-bottom:20px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
+          <h2 class="glow-title" style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
           <table style="width:100%;border-collapse:collapse;">
-            <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
-            <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
-            <tr><td style="font-weight:600;">Datum:</td><td><strong>${date}</strong></td></tr>
-            <tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>
-            <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
-            <tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>
-            ${adresRow}
-            ${opponentArrival}
-            <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+            ${detailsRows.join("")}
           </table>
           ${carpoolText}
         </div>
         <div style="background:#f1ffe9;border-radius:10px;padding:14px 20px;margin-bottom:16px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#178530;">Selectie</h2>
+          <h2 class="glow-title" style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#178530;">Selectie</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#d1f7b3;">
@@ -222,7 +229,7 @@ export default function App() {
           </table>
         </div>
         <div style="background:#fff7f7;border-radius:10px;padding:14px 20px;margin-bottom:14px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
+          <h2 class="glow-title" style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#ffd7d7;">
@@ -273,26 +280,26 @@ export default function App() {
           zIndex: 0,
           background: `url(${clublogo}) center center no-repeat`,
           backgroundSize: "60vw",
-          opacity: 0.11,
+          opacity: 0.09,
           pointerEvents: "none"
         }}
       />
       <Confetti active={showConfetti} duration={5000} />
       <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0" style={{ position: "relative", zIndex: 1 }}>
         {/* LINKERDEEL: INPUT */}
-        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
+        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col section-card fade-in-up shadow-strong">
           <div className="flex items-center mb-4" style={{ position: "relative", zIndex: 2 }}>
             <img src={clublogo} alt="clublogo" style={{
               height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55"
             }} />
-            <span style={{
+            <span className="glow-title" style={{
               fontSize: "2.1rem", fontWeight: 900, letterSpacing: "1.5px", color: "#142c54",
               textShadow: "0 1px 16px #fff7, 0 1px 2px #0d183799", padding: "2px 7px", borderRadius: "8px"
             }}>
               E-mail Generator – KVE Drongen
             </span>
           </div>
-          <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
+          <div className="bg-blue-50 rounded-xl p-4 shadow mb-6 section-card fade-in-up">
             <ul className="space-y-4">
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Dag <span className="text-red-500">*</span></label>
@@ -324,7 +331,6 @@ export default function App() {
                 <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
-              {/* Adres alleen tonen bij uitwedstrijd */}
               {matchType === "Uitwedstrijd" && (
                 <li>
                   <label className="block font-semibold mb-1 text-blue-800">Adres</label>
@@ -395,7 +401,7 @@ export default function App() {
             {showSelection ? "▼" : "►"} Selectie ({selected.length})
           </button>
           {showSelection && (
-          <div className="mb-6">
+          <div className="mb-6 section-card fade-in-up">
             <div className="mb-2 flex flex-col md:flex-row gap-2 items-center">
               <input
                 type="text"
@@ -411,7 +417,7 @@ export default function App() {
                 Vul rugnummers op volgorde
               </button>
             </div>
-            <div className="rounded-xl bg-green-50 overflow-x-auto">
+            <div className="rounded-xl bg-green-50 overflow-x-auto shadow-strong">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -426,7 +432,11 @@ export default function App() {
                   {selected
                     .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
                     .map(player => (
-                    <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
+                    <tr
+                      key={player}
+                      className={`transition-all table-row-hover rounded ${responsible === player ? "bg-green-200" : ""} ${justSelected.current === player ? "selected-row-anim" : ""}`}
+                      onAnimationEnd={() => { if (justSelected.current === player) justSelected.current = null; }}
+                    >
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -469,7 +479,7 @@ export default function App() {
             {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
           </button>
           {showNotSelected && (
-          <div className="mb-10">
+          <div className="mb-10 section-card fade-in-up">
             <div className="font-semibold mb-1 text-blue-900">Zoek en selecteer spelers</div>
             <input
               type="text"
@@ -479,7 +489,7 @@ export default function App() {
               className="p-2 rounded text-black w-full mb-2"
               autoComplete="off"
             />
-            <div className="rounded-xl bg-red-50 overflow-x-auto">
+            <div className="rounded-xl bg-red-50 overflow-x-auto shadow-strong">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -490,7 +500,7 @@ export default function App() {
                 </thead>
                 <tbody>
                   {sortedNotSelected.map(player => (
-                    <tr key={player}>
+                    <tr key={player} className="table-row-hover">
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -534,13 +544,13 @@ export default function App() {
           )}
         </div>
         {/* RECHTS: LIVE PREVIEW */}
-        <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
+        <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col section-card fade-in-up shadow-strong">
           <div className="bg-white text-black p-4 rounded-xl shadow border border-blue-200" style={{ minHeight: 420 }}>
             <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
           </div>
         </div>
       </div>
-      <FloatingCopyButton onClick={copyToClipboard} success={success} />
+      <FloatingCopyButton onClick={copyToClipboard} success={success} className="copy-btn-pulse" />
     </>
   );
 }
