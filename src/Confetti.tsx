@@ -44,6 +44,8 @@ export default function Confetti({ active, duration = 5000 }: Props) {
 
     function draw() {
       if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       for (let i = 0; i < particles.length; i++) {
         let p = particles[i];
@@ -87,7 +89,8 @@ export default function Confetti({ active, duration = 5000 }: Props) {
     return () => {
       running = false;
       clearTimeout(fadeTimeout);
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      const ctx = canvas.getContext("2d");
+      if (ctx) ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     };
   }, [active, duration, fade]);
 
