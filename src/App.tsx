@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import FloatingCopyButton from "./FloatingCopyButton";
 import Confetti from "./Confetti";
 import clublogo from "./assets/clublogo.png";
 
-// DATA
+// ------- DATA
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
   "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
@@ -46,8 +46,6 @@ export default function App() {
   const [searchRugnummer, setSearchRugnummer] = useState("");
   const [showSelection, setShowSelection] = useState(true);
   const [showNotSelected, setShowNotSelected] = useState(true);
-
-  const justSelected = useRef<string | null>(null);
 
   // Automatische verzamelplaats
   useEffect(() => {
@@ -93,7 +91,6 @@ export default function App() {
       delete updated[player];
       return updated;
     });
-    justSelected.current = player;
     setSearchSelect("");
   }
   function removeSelected(player: string) {
@@ -154,27 +151,28 @@ export default function App() {
       ? "#1679bc"
       : "#142c54";
 
-    // Volgorde aangepast zoals gewenst:
-    const detailsRows = [
-      `<tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>`,
-      `<tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>`,
-      `<tr><td style="font-weight:600;">Datum:</td><td><strong>${date}</strong></td></tr>`,
-      `<tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>`,
-      `<tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>`,
-      `<tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>`,
-      ...(matchType === "Uitwedstrijd"
-        ? [
-          `<tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>`,
-          arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : "",
-          `<tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>`
-        ]
-        : [
-          // Geen adres/aankomsttijd bij thuiswedstrijd
-          gatheringTime && gatheringPlace
-            ? `<tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>`
-            : ""
-        ])
-    ];
+    // Details-opbouw: volgorde
+    let wedstrijddetailsRows = `
+      <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
+      <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
+      <tr><td style="font-weight:600;">Datum:</td><td><strong>${date}</strong></td></tr>
+      <tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>
+      <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
+      <tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>
+    `;
+
+    // Alleen adres en aankomst bij uitwedstrijd
+    if (matchType === "Uitwedstrijd") {
+      wedstrijddetailsRows += `
+        <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
+        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
+        <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+      `;
+    } else {
+      wedstrijddetailsRows += `
+        <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+      `;
+    }
 
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
@@ -204,19 +202,19 @@ export default function App() {
         <div style="background:${hoofdKleur};border-radius:12px 12px 0 0;padding:16px 24px 12px 24px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
           <img src="https://i.imgur.com/cgvdj96.png" alt="logo" style="height:46px;margin-right:18px;border-radius:12px;box-shadow:0 1px 7px #0003"/>
           <div>
-            <div class="glow-title" style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
+            <div style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
             <div style="font-size:1.02em;font-weight:400;opacity:0.97;">Wedstrijddetails & selectie</div>
           </div>
         </div>
         <div style="background:#e7effb;border-radius:10px;padding:14px 20px 8px 20px;margin-bottom:20px;">
-          <h2 class="glow-title" style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
+          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
           <table style="width:100%;border-collapse:collapse;">
-            ${detailsRows.join("")}
+            ${wedstrijddetailsRows}
           </table>
           ${carpoolText}
         </div>
         <div style="background:#f1ffe9;border-radius:10px;padding:14px 20px;margin-bottom:16px;">
-          <h2 class="glow-title" style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#178530;">Selectie</h2>
+          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#178530;">Selectie</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#d1f7b3;">
@@ -229,7 +227,7 @@ export default function App() {
           </table>
         </div>
         <div style="background:#fff7f7;border-radius:10px;padding:14px 20px;margin-bottom:14px;">
-          <h2 class="glow-title" style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
+          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#ffd7d7;">
@@ -280,26 +278,26 @@ export default function App() {
           zIndex: 0,
           background: `url(${clublogo}) center center no-repeat`,
           backgroundSize: "60vw",
-          opacity: 0.09,
+          opacity: 0.11,
           pointerEvents: "none"
         }}
       />
       <Confetti active={showConfetti} duration={5000} />
       <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0" style={{ position: "relative", zIndex: 1 }}>
         {/* LINKERDEEL: INPUT */}
-        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col section-card fade-in-up shadow-strong">
+        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
           <div className="flex items-center mb-4" style={{ position: "relative", zIndex: 2 }}>
             <img src={clublogo} alt="clublogo" style={{
               height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55"
             }} />
-            <span className="glow-title" style={{
+            <span style={{
               fontSize: "2.1rem", fontWeight: 900, letterSpacing: "1.5px", color: "#142c54",
               textShadow: "0 1px 16px #fff7, 0 1px 2px #0d183799", padding: "2px 7px", borderRadius: "8px"
             }}>
               E-mail Generator – KVE Drongen
             </span>
           </div>
-          <div className="bg-blue-50 rounded-xl p-4 shadow mb-6 section-card fade-in-up">
+          <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
             <ul className="space-y-4">
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Dag <span className="text-red-500">*</span></label>
@@ -331,17 +329,18 @@ export default function App() {
                 <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
+              {/* Alleen bij uitwedstrijd: Adres, aankomsttijd tegenstander */}
               {matchType === "Uitwedstrijd" && (
-                <li>
-                  <label className="block font-semibold mb-1 text-blue-800">Adres</label>
-                  <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
-                </li>
-              )}
-              {matchType === "Uitwedstrijd" && (
-                <li>
-                  <label className="block font-semibold mb-1 text-blue-800">Aankomstuur bij tegenstander</label>
-                  <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
-                </li>
+                <>
+                  <li>
+                    <label className="block font-semibold mb-1 text-blue-800">Adres (uitwedstrijd)</label>
+                    <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
+                  </li>
+                  <li>
+                    <label className="block font-semibold mb-1 text-blue-800">Aankomstuur bij tegenstander</label>
+                    <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+                  </li>
+                </>
               )}
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Verzameltijd</label>
@@ -401,7 +400,7 @@ export default function App() {
             {showSelection ? "▼" : "►"} Selectie ({selected.length})
           </button>
           {showSelection && (
-          <div className="mb-6 section-card fade-in-up">
+          <div className="mb-6">
             <div className="mb-2 flex flex-col md:flex-row gap-2 items-center">
               <input
                 type="text"
@@ -417,7 +416,7 @@ export default function App() {
                 Vul rugnummers op volgorde
               </button>
             </div>
-            <div className="rounded-xl bg-green-50 overflow-x-auto shadow-strong">
+            <div className="rounded-xl bg-green-50 overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -432,11 +431,7 @@ export default function App() {
                   {selected
                     .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
                     .map(player => (
-                    <tr
-                      key={player}
-                      className={`transition-all table-row-hover rounded ${responsible === player ? "bg-green-200" : ""} ${justSelected.current === player ? "selected-row-anim" : ""}`}
-                      onAnimationEnd={() => { if (justSelected.current === player) justSelected.current = null; }}
-                    >
+                    <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -479,7 +474,7 @@ export default function App() {
             {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
           </button>
           {showNotSelected && (
-          <div className="mb-10 section-card fade-in-up">
+          <div className="mb-10">
             <div className="font-semibold mb-1 text-blue-900">Zoek en selecteer spelers</div>
             <input
               type="text"
@@ -489,7 +484,7 @@ export default function App() {
               className="p-2 rounded text-black w-full mb-2"
               autoComplete="off"
             />
-            <div className="rounded-xl bg-red-50 overflow-x-auto shadow-strong">
+            <div className="rounded-xl bg-red-50 overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr>
@@ -500,7 +495,7 @@ export default function App() {
                 </thead>
                 <tbody>
                   {sortedNotSelected.map(player => (
-                    <tr key={player} className="table-row-hover">
+                    <tr key={player}>
                       <td className="p-2">
                         <input
                           type="checkbox"
@@ -544,13 +539,13 @@ export default function App() {
           )}
         </div>
         {/* RECHTS: LIVE PREVIEW */}
-        <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col section-card fade-in-up shadow-strong">
+        <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
           <div className="bg-white text-black p-4 rounded-xl shadow border border-blue-200" style={{ minHeight: 420 }}>
             <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
           </div>
         </div>
       </div>
-      <FloatingCopyButton onClick={copyToClipboard} success={success} className="copy-btn-pulse" />
+      <FloatingCopyButton onClick={copyToClipboard} success={success} />
     </>
   );
 }
