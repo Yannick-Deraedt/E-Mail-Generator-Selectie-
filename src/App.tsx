@@ -276,7 +276,7 @@ export default function App() {
           zIndex: 0,
           background: `url(${clublogo}) center center no-repeat`,
           backgroundSize: "56vw",
-          opacity: 0.14,
+          opacity: 0.3,
           animation: "watermark-fade 7s ease-in-out infinite alternate",
           pointerEvents: "none"
         }}
