@@ -1,116 +1,129 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
-type Props = {
+type ConfettiProps = {
   active: boolean;
   duration?: number;
+  amount?: number;
 };
 
 const COLORS = [
-  "#FFD700", "#1E90FF", "#32CD32", "#FF69B4", "#FFA500", "#7B68EE", "#DC143C"
+  "#FFDF6C", "#87E6C5", "#FF6F91", "#6A89CC", "#F6C6EA", "#45AAF2",
+  "#FF7F50", "#FFD93D", "#4BCFFA", "#F78FB3", "#A8E063", "#E17055"
 ];
 
 function random(min: number, max: number) {
   return Math.random() * (max - min) + min;
 }
 
-export default function Confetti({ active, duration = 5000 }: Props) {
+export default function Confetti({
+  active,
+  duration = 7000,      // <<---- standaard 7 seconden
+  amount = 250           // <<---- aantal confettideeltjes
+}: ConfettiProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const [fade, setFade] = useState(false);
+  const animation = useRef<number>();
+  const fadeTimeout = useRef<number>();
 
   useEffect(() => {
     if (!active) return;
-    setFade(false);
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const particles = Array.from({ length: 140 }).map(() => ({
-      x: random(0, window.innerWidth),
-      y: random(-150, -30),
-      r: random(7, 14),
-      d: random(16, 39),
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
+    // Maak véél meer confetti
+    let confetti = Array.from({ length: amount }, () => ({
+      x: random(0, width),
+      y: random(-height, 0),
+      r: random(6, 15),
+      d: random(15, 37),
       color: COLORS[Math.floor(random(0, COLORS.length))],
-      tilt: random(-12, 12),
+      tilt: random(-15, 15),
       tiltAngle: random(0, 2 * Math.PI),
-      speed: random(2.8, 5.2),
-      swing: random(0.9, 2.3),
+      tiltAngleIncrement: random(0.03, 0.08),
+      wave: random(0, 2 * Math.PI),
     }));
 
-    let angle = 0;
-    let running = true;
-    let fadeTimeout: ReturnType<typeof setTimeout>;
+    let fade = 1;
+    let fading = false;
 
-    function draw() {
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-      for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
+    function drawConfetti() {
+      ctx.clearRect(0, 0, width, height);
+      ctx.globalAlpha = fade;
+      for (let i = 0; i < confetti.length; i++) {
+        let c = confetti[i];
         ctx.beginPath();
         ctx.ellipse(
-          p.x,
-          p.y,
-          p.r,
-          p.r / random(1.2, 1.6),
-          p.tiltAngle,
+          c.x + Math.sin(c.wave) * 20,
+          c.y,
+          c.r,
+          c.r * 0.55,
+          c.tilt,
           0,
           2 * Math.PI
         );
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = fade ? 0.22 : 0.82;
+        ctx.fillStyle = c.color;
         ctx.fill();
-        ctx.globalAlpha = 1;
       }
-      update();
-      if (running) requestAnimationFrame(draw);
+      ctx.globalAlpha = 1;
     }
 
-    function update() {
-      angle += 0.015;
-      for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
-        p.y += (Math.cos(angle + p.d) + p.speed + 0.6) * 1.6;
-        p.x += Math.sin(angle) * p.swing;
-        p.tiltAngle += 0.1 * Math.sin(angle);
-        if (p.y > window.innerHeight) {
-          p.y = random(-40, -10);
-          p.x = random(0, window.innerWidth);
+    function animateConfetti() {
+      for (let i = 0; i < confetti.length; i++) {
+        let c = confetti[i];
+        c.y += Math.cos(c.wave) + c.d / 17;
+        c.x += Math.sin(Date.now() / 370 + c.wave) * 2.1;
+        c.wave += 0.014;
+        c.tiltAngle += c.tiltAngleIncrement;
+        c.tilt = Math.sin(c.tiltAngle) * 14;
+
+        // Opnieuw bovenaan als beneden uit beeld
+        if (c.y > height + 20) {
+          c.x = random(0, width);
+          c.y = random(-30, 0);
         }
       }
+      drawConfetti();
+
+      if (!fading) animation.current = requestAnimationFrame(animateConfetti);
+      else if (fade > 0) {
+        fade -= 0.014;   // <<--- fade snelheid (lager = langzamer, dus langer zichtbaar)
+        drawConfetti();
+        animation.current = requestAnimationFrame(animateConfetti);
+      }
     }
 
-    draw();
+    animation.current = requestAnimationFrame(animateConfetti);
 
-    fadeTimeout = setTimeout(() => setFade(true), duration - 1100);
+    // Start fade na x seconden
+    fadeTimeout.current = window.setTimeout(() => {
+      fading = true;
+    }, duration);
 
     return () => {
-      running = false;
-      clearTimeout(fadeTimeout);
-      const ctx = canvas.getContext("2d");
-      if (ctx) ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      if (animation.current) cancelAnimationFrame(animation.current);
+      if (fadeTimeout.current) clearTimeout(fadeTimeout.current);
     };
-  }, [active, duration, fade]);
+  }, [active, duration, amount]);
 
   return (
     <canvas
       ref={canvasRef}
       style={{
-        pointerEvents: "none",
         position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        zIndex: 9000,
-        opacity: active ? 1 : 0,
-        transition: "opacity 0.8s"
+        top: 0, left: 0,
+        width: "100vw", height: "100vh",
+        zIndex: 10000,
+        pointerEvents: "none",
+        display: active ? "block" : "none"
       }}
-      width={window.innerWidth}
-      height={window.innerHeight}
-      aria-hidden
     />
   );
 }
