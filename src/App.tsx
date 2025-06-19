@@ -133,8 +133,8 @@ export default function App() {
       ]);
       setSuccess(true);
       setShowConfetti(true);
-      setTimeout(() => setSuccess(false), 1200);
-      setTimeout(() => setShowConfetti(false), 5000);
+      setTimeout(() => setSuccess(false), 1700);
+      setTimeout(() => setShowConfetti(false), 7000);
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
@@ -260,7 +260,7 @@ export default function App() {
   useEffect(() => {
     if (selected.length === 15) {
       setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 5000);
+      setTimeout(() => setShowConfetti(false), 7000);
     }
   }, [selected.length]);
 
@@ -282,7 +282,7 @@ export default function App() {
         }}
       />
       {/* Confetti */}
-      <Confetti active={showConfetti} duration={5000} />
+      <Confetti active={showConfetti} duration={7000} />
       <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0" style={{ position: "relative", zIndex: 1 }}>
         {/* LINKERDEEL: INPUT */}
         <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
