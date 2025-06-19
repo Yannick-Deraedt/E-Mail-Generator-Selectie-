@@ -6,9 +6,9 @@ import clublogo from "./assets/clublogo.png";
 // DATA
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré",
   "Lander Helderweirt", "Tuur Heyerick", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat",
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
   "Filemon Verstraete"
 ];
@@ -21,7 +21,7 @@ const nonSelectionReasons = [
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
 
 export default function App() {
-  // STATES
+  // STATE
   const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
@@ -62,7 +62,7 @@ export default function App() {
     }
   }, [matchType, customGatheringPlace]);
 
-  // SELECTIE LOGICA
+  // --------- SELECTIE LOGICA ---------
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
@@ -123,8 +123,7 @@ export default function App() {
       return nieuw;
     });
   }
-
-  // KOPIEER + KONFETTI
+  // ---------- KOPIEER + KONFETTI ----------
   const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && window.ClipboardItem) {
@@ -141,7 +140,7 @@ export default function App() {
     }
   };
 
-  // EMAIL GENERATIE & LIVE PREVIEW
+  // -------- GENERATE EMAIL & LIVE PREVIEW --------
   function generateEmail() {
     if (!day || !date || !time || !opponent) {
       setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul dag, datum, tijd en tegenstander in.</div>`);
@@ -150,14 +149,6 @@ export default function App() {
     const hoofdKleur = matchType === "Uitwedstrijd"
       ? "#1679bc"
       : "#142c54";
-
-    const addressRow = matchType === "Uitwedstrijd" && address
-      ? `<tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>`
-      : "";
-
-    const arrivalTimeRow = matchType === "Uitwedstrijd" && arrivalTimeOpponent
-      ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>`
-      : "";
 
     const selectionTableRows = selected.map(player => `
       <tr style="${responsible === player ? 'background:#e6ffe6;' : ''}">
@@ -177,12 +168,22 @@ export default function App() {
       </tr>
     `).join("");
 
+    const opponentArrival = matchType === "Uitwedstrijd" && opponent && arrivalTimeOpponent
+      ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>`
+      : "";
+
+    // Let op: "Adres" alleen bij UITwedstrijd!
+    const adresRow = matchType === "Uitwedstrijd" && address
+      ? `<tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>`
+      : "";
+
+    // Carpool
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
           <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
 
-    // VOLGORDE AANGEPAST NAAR JOUW LIJST!
+    // Preview volgorde: dag, type, datum, start, tegenstander, terrein, (adres), (aankomsttijd), verzameltijd, verzamelplaats
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
         <div style="background:${hoofdKleur};border-radius:12px 12px 0 0;padding:16px 24px 12px 24px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
@@ -201,8 +202,8 @@ export default function App() {
             <tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>
             <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
             <tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>
-            ${addressRow}
-            ${arrivalTimeRow}
+            ${adresRow}
+            ${opponentArrival}
             <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
           </table>
           ${carpoolText}
@@ -252,6 +253,7 @@ export default function App() {
     arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
   ]);
 
+  // --------- EASTER EGG: Squad complete! ----------
   useEffect(() => {
     if (selected.length === 15) {
       setShowConfetti(true);
@@ -322,14 +324,13 @@ export default function App() {
                 <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
-              {/* Alleen adres tonen bij uitwedstrijd */}
+              {/* Adres alleen tonen bij uitwedstrijd */}
               {matchType === "Uitwedstrijd" && (
                 <li>
                   <label className="block font-semibold mb-1 text-blue-800">Adres</label>
                   <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
                 </li>
               )}
-              {/* Alleen aankomsttijd tonen bij uitwedstrijd */}
               {matchType === "Uitwedstrijd" && (
                 <li>
                   <label className="block font-semibold mb-1 text-blue-800">Aankomstuur bij tegenstander</label>
@@ -373,7 +374,6 @@ export default function App() {
               </li>
             </ul>
           </div>
-          {/* De rest blijft gelijk */}
           <div className="mb-2 text-lg text-blue-900">
             Geselecteerd: <span className="font-bold">{selected.length}</span> / {playerList.length}
             {selected.length > maxSpelers &&
