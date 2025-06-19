@@ -1,112 +1,139 @@
-import { useRef, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-type ConfettiProps = {
-  active: boolean;
-  duration?: number;
+type ConfettiParticle = {
+  x: number;
+  y: number;
+  r: number;
+  d: number;
+  color: string;
+  tilt: number;
+  tiltAngle: number;
+  tiltAngleIncremental: number;
 };
 
-const COLORS = ["#f6d743", "#2db4e7", "#5fd37e", "#fd5b78", "#fff", "#9966cc", "#fa7921"];
+const COLORS = [
+  "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5",
+  "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50",
+  "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+];
 
-function randomBetween(a: number, b: number): number {
-  return a + Math.random() * (b - a);
+function randomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
 
-export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const anim = useRef<number>();
+function randomInt(min: number, max: number) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+interface ConfettiProps {
+  active: boolean;
+  duration: number; // in ms
+}
+
+const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [fade, setFade] = useState(false);
 
   useEffect(() => {
-    let running = true;
-    const canvas = ref.current;
-    if (!canvas || !active) return;
+    if (!active) return;
+    setFade(false);
 
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+    const W = window.innerWidth;
+    const H = window.innerHeight;
+    const count = Math.floor(W / 8); // responsive aantal
+    const particles: ConfettiParticle[] = [];
 
-    const width = typeof window !== "undefined" ? window.innerWidth : 1280;
-    const height = typeof window !== "undefined" ? window.innerHeight : 800;
-    const dpr = typeof window !== "undefined" && window.devicePixelRatio ? window.devicePixelRatio : 1;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-
-    const confetti = Array.from({ length: 140 }).map(() => ({
-      x: randomBetween(0, width),
-      y: randomBetween(-100, height / 2),
-      r: randomBetween(7, 14),
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
-      angle: randomBetween(0, Math.PI * 2),
-      speed: randomBetween(2, 6),
-      swing: randomBetween(0.8, 2.4),
-      swingPhase: Math.random() * Math.PI * 2,
-    }));
-
-    const startTime = Date.now();
-
-    function draw() {
-      if (!running || !ctx || !canvas) return;
-      const elapsed = Date.now() - startTime;
-      let alpha = 0.82;
-
-      // FADE-OUT: laatste seconde wordt alpha minder
-      if (duration > 0 && elapsed > duration - 1000) {
-        alpha = Math.max(0, 0.82 * (1 - (elapsed - (duration - 1000)) / 1000));
-      }
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (const p of confetti) {
-        p.y += p.speed;
-        p.x += Math.sin(p.y / 30 + p.swingPhase) * p.swing; // heen-en-weer
-        if (p.y > height + 20) {
-          p.y = -10;
-          p.x = randomBetween(0, width);
-        }
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = alpha;
-        ctx.fill();
-        ctx.restore();
-      }
-      anim.current = window.requestAnimationFrame(draw);
+    for (let i = 0; i < count; i++) {
+      particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H - H,
+        r: randomInt(7, 15),
+        d: randomInt(10, 40),
+        color: randomColor(),
+        tilt: Math.floor(Math.random() * 10) - 10,
+        tiltAngle: 0,
+        tiltAngleIncremental: Math.random() * 0.07 + 0.05,
+      });
     }
+
+    let angle = 0;
+    let animationFrame: number;
+
+    const draw = () => {
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.clearRect(0, 0, W, H);
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        ctx.beginPath();
+        ctx.lineWidth = p.r;
+        ctx.strokeStyle = p.color;
+        ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
+        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 3);
+        ctx.stroke();
+      }
+
+      update();
+      animationFrame = requestAnimationFrame(draw);
+    };
+
+    const update = () => {
+      angle += 0.02;
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        p.y += (Math.cos(angle + p.d) + 3 + p.r / 3) / 2;
+        p.x += Math.sin(angle);
+        p.tiltAngle += p.tiltAngleIncremental;
+        p.tilt = Math.sin(p.tiltAngle) * 15;
+
+        // weer op bovenkant als buiten scherm
+        if (p.y > H) {
+          p.x = Math.random() * W;
+          p.y = -20;
+          p.tilt = Math.floor(Math.random() * 10) - 10;
+        }
+      }
+    };
 
     draw();
 
-    // FIX: Correct type for timer!
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    if (duration > 0) {
-      timer = setTimeout(() => {
-        running = false;
-        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
-      }, duration);
-    }
+    // Fade-out laten starten laatste 500ms
+    const fadeTimeout = setTimeout(() => setFade(true), duration - 500);
+    // Stop en clean-up na duration
+    const stopTimeout = setTimeout(() => {
+      cancelAnimationFrame(animationFrame);
+      setFade(false);
+    }, duration);
+
     return () => {
-      running = false;
-      if (anim.current) window.cancelAnimationFrame(anim.current);
-      if (timer) clearTimeout(timer);
-      if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      clearTimeout(fadeTimeout);
+      clearTimeout(stopTimeout);
+      cancelAnimationFrame(animationFrame);
+      setFade(false);
     };
   }, [active, duration]);
 
-  return (
+  // canvas altijd op top van layout
+  return active ? (
     <canvas
-      ref={ref}
+      ref={canvasRef}
+      width={window.innerWidth}
+      height={window.innerHeight}
       style={{
-        pointerEvents: "none",
         position: "fixed",
-        top: 0,
         left: 0,
-        width: "100vw",
-        height: "100vh",
+        top: 0,
+        pointerEvents: "none",
         zIndex: 9999,
-        display: active ? "block" : "none"
+        opacity: fade ? 0 : 1,
+        transition: "opacity 0.5s linear",
       }}
-      width={typeof window !== "undefined" ? window.innerWidth : 1280}
-      height={typeof window !== "undefined" ? window.innerHeight : 800}
-      aria-hidden
     />
-  );
-}
+  ) : null;
+};
+
+export default Confetti;
