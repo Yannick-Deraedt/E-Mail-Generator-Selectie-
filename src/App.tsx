@@ -151,8 +151,8 @@ export default function App() {
       ? "#1679bc"
       : "#142c54";
 
-    // Details-opbouw: volgorde
-    let wedstrijddetailsRows = `
+    // Details in correcte volgorde (en logica)
+    let detailsRows = `
       <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
       <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
       <tr><td style="font-weight:600;">Datum:</td><td><strong>${date}</strong></td></tr>
@@ -160,16 +160,14 @@ export default function App() {
       <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
       <tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>
     `;
-
-    // Alleen adres en aankomst bij uitwedstrijd
     if (matchType === "Uitwedstrijd") {
-      wedstrijddetailsRows += `
+      detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
         ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
         <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
       `;
     } else {
-      wedstrijddetailsRows += `
+      detailsRows += `
         <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
       `;
     }
@@ -180,7 +178,7 @@ export default function App() {
         </div>` : "";
 
     const selectionTableRows = selected.map(player => `
-      <tr style="${responsible === player ? 'background:#e6ffe6;' : ''}">
+      <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
@@ -198,23 +196,23 @@ export default function App() {
     `).join("");
 
     const html = `
-      <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:14px;box-shadow:0 2px 8px #0001;">
-        <div style="background:${hoofdKleur};border-radius:12px 12px 0 0;padding:16px 24px 12px 24px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
-          <img src="https://i.imgur.com/cgvdj96.png" alt="logo" style="height:46px;margin-right:18px;border-radius:12px;box-shadow:0 1px 7px #0003"/>
+      <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:16px;box-shadow:0 8px 32px #284cff11;">
+        <div style="background:${hoofdKleur};border-radius:16px 16px 0 0;padding:18px 28px 14px 28px;margin-bottom:20px; color:#fff;display:flex;align-items:center;">
+          <img src="https://i.imgur.com/cgvdj96.png" alt="logo" style="height:48px;margin-right:18px;border-radius:13px;box-shadow:0 1px 7px #0003"/>
           <div>
-            <div style="font-size:1.20em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
-            <div style="font-size:1.02em;font-weight:400;opacity:0.97;">Wedstrijddetails & selectie</div>
+            <div style="font-size:1.22em;font-weight:700;letter-spacing:1px;">KVE Drongen</div>
+            <div style="font-size:1.05em;font-weight:400;opacity:0.97;">Wedstrijddetails & selectie</div>
           </div>
         </div>
-        <div style="background:#e7effb;border-radius:10px;padding:14px 20px 8px 20px;margin-bottom:20px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
+        <div style="background:#e7effb;border-radius:11px;padding:16px 22px 10px 22px;margin-bottom:20px;">
+          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:${hoofdKleur};">Wedstrijddetails</h2>
           <table style="width:100%;border-collapse:collapse;">
-            ${wedstrijddetailsRows}
+            ${detailsRows}
           </table>
           ${carpoolText}
         </div>
-        <div style="background:#f1ffe9;border-radius:10px;padding:14px 20px;margin-bottom:16px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#178530;">Selectie</h2>
+        <div style="background:#f1ffe9;border-radius:11px;padding:15px 22px;margin-bottom:16px;">
+          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#178530;">Selectie</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#d1f7b3;">
@@ -226,8 +224,8 @@ export default function App() {
             <tbody>${selectionTableRows}</tbody>
           </table>
         </div>
-        <div style="background:#fff7f7;border-radius:10px;padding:14px 20px;margin-bottom:14px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.1em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
+        <div style="background:#fff7f7;border-radius:11px;padding:15px 22px;margin-bottom:14px;">
+          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#ffd7d7;">
@@ -269,7 +267,7 @@ export default function App() {
   // --------- RENDER ---------
   return (
     <>
-      {/* Clublogo als watermerk/canvas */}
+      {/* Clublogo als watermerk/canvas, met subtiele fade-animatie */}
       <div
         aria-hidden
         style={{
@@ -277,11 +275,13 @@ export default function App() {
           top: 0, left: 0, width: "100vw", height: "100vh",
           zIndex: 0,
           background: `url(${clublogo}) center center no-repeat`,
-          backgroundSize: "60vw",
-          opacity: 0.11,
+          backgroundSize: "56vw",
+          opacity: 0.14,
+          animation: "watermark-fade 7s ease-in-out infinite alternate",
           pointerEvents: "none"
         }}
       />
+      {/* Confetti */}
       <Confetti active={showConfetti} duration={5000} />
       <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0" style={{ position: "relative", zIndex: 1 }}>
         {/* LINKERDEEL: INPUT */}
@@ -329,11 +329,10 @@ export default function App() {
                 <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
-              {/* Alleen bij uitwedstrijd: Adres, aankomsttijd tegenstander */}
               {matchType === "Uitwedstrijd" && (
                 <>
                   <li>
-                    <label className="block font-semibold mb-1 text-blue-800">Adres (uitwedstrijd)</label>
+                    <label className="block font-semibold mb-1 text-blue-800">Adres</label>
                     <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
                   </li>
                   <li>
@@ -540,12 +539,43 @@ export default function App() {
         </div>
         {/* RECHTS: LIVE PREVIEW */}
         <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
-          <div className="bg-white text-black p-4 rounded-xl shadow border border-blue-200" style={{ minHeight: 420 }}>
+          <div className="bg-white text-black p-4 rounded-2xl shadow-xl border border-blue-200" style={{ minHeight: 420, transition: "box-shadow 0.33s" }}>
             <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
           </div>
         </div>
       </div>
+      {/* Sticky kopieerknop */}
       <FloatingCopyButton onClick={copyToClipboard} success={success} />
+      {/* Kleine CSS extra voor animatie */}
+      <style>{`
+        @keyframes watermark-fade {
+          0% { opacity: 0.10; }
+          50% { opacity: 0.19; }
+          100% { opacity: 0.13; }
+        }
+        .shadow-xl {
+          box-shadow: 0 8px 32px #2166aa18, 0 2px 16px #284cff17 !important;
+        }
+        .rounded-2xl {
+          border-radius: 18px !important;
+        }
+        button[aria-label="Kopieer e-mail"] {
+          animation: ${success ? "copy-pulse 1.2s" : "none"};
+        }
+        @keyframes copy-pulse {
+          0% { box-shadow: 0 0 0 0 #4ec5fc66; }
+          70% { box-shadow: 0 0 0 10px #4ec5fc00; }
+          100% { box-shadow: 0 0 0 0 #4ec5fc00; }
+        }
+        /* Hover effects knoppen */
+        button, select, input[type="button"], input[type="submit"] {
+          transition: box-shadow 0.15s, background 0.17s;
+        }
+        button:hover:not(:disabled) {
+          box-shadow: 0 2px 10px #1469a155 !important;
+          background: #1c58b022 !important;
+        }
+      `}</style>
     </>
   );
 }
