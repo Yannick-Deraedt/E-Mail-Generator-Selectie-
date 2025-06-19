@@ -549,8 +549,8 @@ export default function App() {
       {/* Kleine CSS extra voor animatie */}
       <style>{`
         @keyframes watermark-fade {
-          0% { opacity: 0.10; }
-          50% { opacity: 0.19; }
+          0% { opacity: 0.13; }
+          50% { opacity: 0.44; }
           100% { opacity: 0.13; }
         }
         .shadow-xl {
