@@ -9,9 +9,9 @@ type ConfettiParticle = {
   tilt: number;
   tiltAngle: number;
   tiltAngleIncremental: number;
-  wiggleOffset: number;
-  wiggleAmplitude: number;
-  wiggleSpeed: number;
+  landed: boolean;
+  landedTime: number | null;
+  opacity: number;
 };
 
 const COLORS = [
@@ -23,6 +23,7 @@ const COLORS = [
 function randomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
+
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -42,22 +43,27 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
 
     const W = window.innerWidth;
     const H = window.innerHeight;
-    const count = Math.floor(W / 3); // meer confetti!
+    const count = Math.floor(W / 8); // responsive aantal
+
+    // Instellingen voor liggen en uitfaden
+    const LANDING_DURATION = 2000; // 2 sec blijven liggen
+    const FADE_DURATION = 600;     // 0.6 sec fade out
+
     const particles: ConfettiParticle[] = [];
 
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * W,
-        y: -Math.random() * H,
+        y: Math.random() * H - H,
         r: randomInt(7, 15),
         d: randomInt(10, 40),
         color: randomColor(),
         tilt: Math.floor(Math.random() * 10) - 10,
         tiltAngle: 0,
         tiltAngleIncremental: Math.random() * 0.07 + 0.05,
-        wiggleOffset: Math.random() * Math.PI * 2,
-        wiggleAmplitude: randomInt(8, 32),
-        wiggleSpeed: Math.random() * 0.15 + 0.07,
+        landed: false,
+        landedTime: null,
+        opacity: 1
       });
     }
 
@@ -72,42 +78,69 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
 
       ctx.clearRect(0, 0, W, H);
 
+      const now = Date.now();
+
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
+
+        // Set opacity (for fade-out)
+        ctx.globalAlpha = p.opacity;
+
+        // Draw confetti as lines (zoals origineel)
         ctx.beginPath();
         ctx.lineWidth = p.r;
         ctx.strokeStyle = p.color;
         ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
         ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 3);
         ctx.stroke();
-      }
 
-      update();
-      animationFrame = requestAnimationFrame(draw);
-    };
+        ctx.globalAlpha = 1; // reset voor volgende particle
 
-    const update = () => {
-      angle += 0.02;
-      for (let i = 0; i < particles.length; i++) {
-        let p = particles[i];
-        p.y += (Math.cos(angle + p.d) + 3 + p.r / 3) / 2;
-        // --- Hier zigzag (uniek per particle) ---
-        p.x += Math.sin(angle * p.wiggleSpeed + p.wiggleOffset) * p.wiggleAmplitude * 0.015;
-        p.tiltAngle += p.tiltAngleIncremental;
-        p.tilt = Math.sin(p.tiltAngle) * 15;
-
-        // Opnieuw boven als uit beeld
-        if (p.y > H) {
-          p.x = Math.random() * W;
-          p.y = -20;
-          p.tilt = Math.floor(Math.random() * 10) - 10;
+        // Update particle logic
+        if (!p.landed) {
+          // Beweeg zigzag naar beneden
+          p.y += (Math.cos(angle + p.d) + 3 + p.r / 3) / 2;
+          p.x += Math.sin(angle);
+          p.tiltAngle += p.tiltAngleIncremental;
+          p.tilt = Math.sin(p.tiltAngle) * 15;
+          // Check bodem
+          if (p.y + p.r > H) {
+            p.y = H - p.r;
+            p.landed = true;
+            p.landedTime = now;
+            p.opacity = 1;
+          }
+        } else {
+          // Ligt op bodem: eerst wachten, dan langzaam uitfaden
+          if (p.landedTime && now - p.landedTime > LANDING_DURATION) {
+            let fadeElapsed = now - p.landedTime - LANDING_DURATION;
+            p.opacity = Math.max(0, 1 - fadeElapsed / FADE_DURATION);
+            if (p.opacity <= 0) {
+              // reset particle van bovenaf opnieuw
+              p.x = Math.random() * W;
+              p.y = -20;
+              p.landed = false;
+              p.landedTime = null;
+              p.opacity = 1;
+              // kleine randomization voor variatie
+              p.r = randomInt(7, 15);
+              p.d = randomInt(10, 40);
+              p.color = randomColor();
+              p.tilt = Math.floor(Math.random() * 10) - 10;
+              p.tiltAngle = 0;
+              p.tiltAngleIncremental = Math.random() * 0.07 + 0.05;
+            }
+          }
         }
       }
+
+      angle += 0.02;
+      animationFrame = requestAnimationFrame(draw);
     };
 
     draw();
 
-    // Fade-out laten starten laatste 500ms
+    // Fade-out laten starten laatste 500ms (optioneel, mag je weglaten)
     const fadeTimeout = setTimeout(() => setFade(true), duration - 500);
     // Stop en clean-up na duration
     const stopTimeout = setTimeout(() => {
@@ -123,6 +156,7 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
     };
   }, [active, duration]);
 
+  // canvas altijd op top van layout
   return active ? (
     <canvas
       ref={canvasRef}
