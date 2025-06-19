@@ -9,6 +9,9 @@ type ConfettiParticle = {
   tilt: number;
   tiltAngle: number;
   tiltAngleIncremental: number;
+  wiggleOffset: number;
+  wiggleAmplitude: number;
+  wiggleSpeed: number;
 };
 
 const COLORS = [
@@ -20,7 +23,6 @@ const COLORS = [
 function randomColor() {
   return COLORS[Math.floor(Math.random() * COLORS.length)];
 }
-
 function randomInt(min: number, max: number) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
@@ -40,19 +42,22 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
 
     const W = window.innerWidth;
     const H = window.innerHeight;
-    const count = Math.floor(W / 8); // responsive aantal
+    const count = Math.floor(W / 3); // meer confetti!
     const particles: ConfettiParticle[] = [];
 
     for (let i = 0; i < count; i++) {
       particles.push({
         x: Math.random() * W,
-        y: Math.random() * H - H,
+        y: -Math.random() * H,
         r: randomInt(7, 15),
         d: randomInt(10, 40),
         color: randomColor(),
         tilt: Math.floor(Math.random() * 10) - 10,
         tiltAngle: 0,
         tiltAngleIncremental: Math.random() * 0.07 + 0.05,
+        wiggleOffset: Math.random() * Math.PI * 2,
+        wiggleAmplitude: randomInt(8, 32),
+        wiggleSpeed: Math.random() * 0.15 + 0.07,
       });
     }
 
@@ -86,11 +91,12 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
       for (let i = 0; i < particles.length; i++) {
         let p = particles[i];
         p.y += (Math.cos(angle + p.d) + 3 + p.r / 3) / 2;
-        p.x += Math.sin(angle);
+        // --- Hier zigzag (uniek per particle) ---
+        p.x += Math.sin(angle * p.wiggleSpeed + p.wiggleOffset) * p.wiggleAmplitude * 0.015;
         p.tiltAngle += p.tiltAngleIncremental;
         p.tilt = Math.sin(p.tiltAngle) * 15;
 
-        // weer op bovenkant als buiten scherm
+        // Opnieuw boven als uit beeld
         if (p.y > H) {
           p.x = Math.random() * W;
           p.y = -20;
@@ -117,7 +123,6 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
     };
   }, [active, duration]);
 
-  // canvas altijd op top van layout
   return active ? (
     <canvas
       ref={canvasRef}
