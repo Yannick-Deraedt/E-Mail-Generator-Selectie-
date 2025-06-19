@@ -75,9 +75,10 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
 
     draw();
 
-    let timer: number | undefined;
+    // FIX: Correct type for timer!
+    let timer: ReturnType<typeof setTimeout> | undefined;
     if (duration > 0) {
-      timer = window.setTimeout(() => {
+      timer = setTimeout(() => {
         running = false;
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
       }, duration);
@@ -85,7 +86,7 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
     return () => {
       running = false;
       if (anim.current) window.cancelAnimationFrame(anim.current);
-      if (timer) window.clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
   }, [active, duration]);
