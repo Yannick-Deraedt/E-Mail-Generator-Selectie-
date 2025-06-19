@@ -1,139 +1,113 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
-type ConfettiParticle = {
-  x: number;
-  y: number;
-  r: number;
-  d: number;
-  color: string;
-  tilt: number;
-  tiltAngle: number;
-  tiltAngleIncremental: number;
+type Props = {
+  active: boolean;
+  duration?: number;
 };
 
 const COLORS = [
-  "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5",
-  "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50",
-  "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+  "#FFD700", "#1E90FF", "#32CD32", "#FF69B4", "#FFA500", "#7B68EE", "#DC143C"
 ];
 
-function randomColor() {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
+function random(min: number, max: number) {
+  return Math.random() * (max - min) + min;
 }
 
-function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-interface ConfettiProps {
-  active: boolean;
-  duration: number; // in ms
-}
-
-const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
+export default function Confetti({ active, duration = 5000 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [fade, setFade] = useState(false);
 
   useEffect(() => {
     if (!active) return;
     setFade(false);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const count = Math.floor(W / 8); // responsive aantal
-    const particles: ConfettiParticle[] = [];
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * W,
-        y: Math.random() * H - H,
-        r: randomInt(7, 15),
-        d: randomInt(10, 40),
-        color: randomColor(),
-        tilt: Math.floor(Math.random() * 10) - 10,
-        tiltAngle: 0,
-        tiltAngleIncremental: Math.random() * 0.07 + 0.05,
-      });
-    }
+    const particles = Array.from({ length: 140 }).map(() => ({
+      x: random(0, window.innerWidth),
+      y: random(-150, -30),
+      r: random(7, 14),
+      d: random(16, 39),
+      color: COLORS[Math.floor(random(0, COLORS.length))],
+      tilt: random(-12, 12),
+      tiltAngle: random(0, 2 * Math.PI),
+      speed: random(2.8, 5.2),
+      swing: random(0.9, 2.3),
+    }));
 
     let angle = 0;
-    let animationFrame: number;
+    let running = true;
+    let fadeTimeout: ReturnType<typeof setTimeout>;
 
-    const draw = () => {
-      const canvas = canvasRef.current;
+    function draw() {
       if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-
-      ctx.clearRect(0, 0, W, H);
-
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        ctx.beginPath();
-        ctx.lineWidth = p.r;
-        ctx.strokeStyle = p.color;
-        ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
-        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 3);
-        ctx.stroke();
-      }
-
-      update();
-      animationFrame = requestAnimationFrame(draw);
-    };
-
-    const update = () => {
-      angle += 0.02;
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
       for (let i = 0; i < particles.length; i++) {
         let p = particles[i];
-        p.y += (Math.cos(angle + p.d) + 3 + p.r / 3) / 2;
-        p.x += Math.sin(angle);
-        p.tiltAngle += p.tiltAngleIncremental;
-        p.tilt = Math.sin(p.tiltAngle) * 15;
+        ctx.beginPath();
+        ctx.ellipse(
+          p.x,
+          p.y,
+          p.r,
+          p.r / random(1.2, 1.6),
+          p.tiltAngle,
+          0,
+          2 * Math.PI
+        );
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = fade ? 0.22 : 0.82;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+      update();
+      if (running) requestAnimationFrame(draw);
+    }
 
-        // weer op bovenkant als buiten scherm
-        if (p.y > H) {
-          p.x = Math.random() * W;
-          p.y = -20;
-          p.tilt = Math.floor(Math.random() * 10) - 10;
+    function update() {
+      angle += 0.015;
+      for (let i = 0; i < particles.length; i++) {
+        let p = particles[i];
+        p.y += (Math.cos(angle + p.d) + p.speed + 0.6) * 1.6;
+        p.x += Math.sin(angle) * p.swing;
+        p.tiltAngle += 0.1 * Math.sin(angle);
+        if (p.y > window.innerHeight) {
+          p.y = random(-40, -10);
+          p.x = random(0, window.innerWidth);
         }
       }
-    };
+    }
 
     draw();
 
-    // Fade-out laten starten laatste 500ms
-    const fadeTimeout = setTimeout(() => setFade(true), duration - 500);
-    // Stop en clean-up na duration
-    const stopTimeout = setTimeout(() => {
-      cancelAnimationFrame(animationFrame);
-      setFade(false);
-    }, duration);
+    fadeTimeout = setTimeout(() => setFade(true), duration - 1100);
 
     return () => {
+      running = false;
       clearTimeout(fadeTimeout);
-      clearTimeout(stopTimeout);
-      cancelAnimationFrame(animationFrame);
-      setFade(false);
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
     };
-  }, [active, duration]);
+  }, [active, duration, fade]);
 
-  // canvas altijd op top van layout
-  return active ? (
+  return (
     <canvas
       ref={canvasRef}
+      style={{
+        pointerEvents: "none",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        zIndex: 9000,
+        opacity: active ? 1 : 0,
+        transition: "opacity 0.8s"
+      }}
       width={window.innerWidth}
       height={window.innerHeight}
-      style={{
-        position: "fixed",
-        left: 0,
-        top: 0,
-        pointerEvents: "none",
-        zIndex: 9999,
-        opacity: fade ? 0 : 1,
-        transition: "opacity 0.5s linear",
-      }}
+      aria-hidden
     />
-  ) : null;
-};
-
-export default Confetti;
+  );
+}
