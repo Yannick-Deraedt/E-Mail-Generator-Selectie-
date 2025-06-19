@@ -46,8 +46,8 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
     const count = Math.floor(W / 8); // responsive aantal
 
     // Instellingen voor liggen en uitfaden
-    const LANDING_DURATION = 2000; // 2 sec blijven liggen
-    const FADE_DURATION = 600;     // 0.6 sec fade out
+    const LANDING_DURATION = 4; // 2 sec blijven liggen
+    const FADE_DURATION = 1000;     // 0.6 sec fade out
 
     const particles: ConfettiParticle[] = [];
 
