@@ -22,20 +22,24 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const dpr = window.devicePixelRatio || 1;
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
+    // Voor SSR (Vercel): haal pas breedte/hoogte uit window als window bestaat
+    const width = typeof window !== "undefined" ? window.innerWidth : 1280;
+    const height = typeof window !== "undefined" ? window.innerHeight : 800;
+
+    const dpr = typeof window !== "undefined" && window.devicePixelRatio ? window.devicePixelRatio : 1;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Confetti partjes
     const confetti = Array.from({ length: 140 }).map(() => ({
-      x: randomBetween(0, window.innerWidth),
-      y: randomBetween(-100, window.innerHeight / 2),
+      x: randomBetween(0, width),
+      y: randomBetween(-100, height / 2),
       r: randomBetween(7, 14),
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       angle: randomBetween(0, Math.PI * 2),
       speed: randomBetween(2, 6),
-      swing: randomBetween(0.8, 2.4), // geeft een kleine zigzag/heen-en-weer beweging
+      swing: randomBetween(0.8, 2.4), // zigzag
       swingPhase: Math.random() * Math.PI * 2
     }));
 
@@ -44,12 +48,10 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       for (const p of confetti) {
         p.y += p.speed;
-        // Verticale zigzag
-        p.x += Math.sin(p.y / 30 + p.swingPhase) * p.swing;
-        // Herbegin bovenaan als onderaan uit beeld
-        if (p.y > window.innerHeight + 20) {
+        p.x += Math.sin(p.y / 30 + p.swingPhase) * p.swing; // heen-en-weer
+        if (p.y > height + 20) {
           p.y = -10;
-          p.x = randomBetween(0, window.innerWidth);
+          p.x = randomBetween(0, width);
         }
         ctx.save();
         ctx.beginPath();
@@ -59,12 +61,12 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
         ctx.fill();
         ctx.restore();
       }
-      anim.current = requestAnimationFrame(draw);
+      anim.current = window.requestAnimationFrame(draw);
     }
 
     draw();
 
-    let timer: NodeJS.Timeout;
+    let timer: any;
     if (duration > 0) {
       timer = setTimeout(() => {
         running = false;
@@ -73,12 +75,13 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
     }
     return () => {
       running = false;
-      cancelAnimationFrame(anim.current!);
+      if (anim.current) cancelAnimationFrame(anim.current);
       if (timer) clearTimeout(timer);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
     };
   }, [active, duration]);
 
+  // Gebruik 'window' niet bij SSR (initial render)
   return (
     <canvas
       ref={ref}
@@ -92,8 +95,8 @@ export default function Confetti({ active, duration = 5000 }: ConfettiProps) {
         zIndex: 9999,
         display: active ? "block" : "none"
       }}
-      width={window.innerWidth}
-      height={window.innerHeight}
+      width={typeof window !== "undefined" ? window.innerWidth : 1280}
+      height={typeof window !== "undefined" ? window.innerHeight : 800}
       aria-hidden
     />
   );
