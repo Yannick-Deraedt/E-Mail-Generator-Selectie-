@@ -6,12 +6,12 @@ import clublogo from "./assets/clublogo.png";
 // ------- DATA
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Aron D'Hoore", "Ferran Dhuyvetter", "Arthur Germonpré", 
-  "Lander Helderweirt", "Jef Lambers", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Moussa Sabir", "Mauro Savat", 
+  "Nicolas Desaver", "Mauro Dewitte", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Lander Helderweirt", "Andro Martens", "Lukas Onderbeke",
+  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Mauro Savat", 
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
-  "Filemon Verstraete", "Alexander Genbrugge", "Sam Van De Gehuchte", "Thias Holle", "Steffen Opstaele", 
-  "Karel Van Iseghem", "Marwan Tahri", "Mathis Vindevogel", "Milan Van Weehaege", "Rémi Lippens", "Simon De Clercq", "Evan Tinyih"
+  "Filemon Verstraete", "Thias Holle", "Steffen Opstaele", 
+  "Milan Van Weehaege",
 ];
 const jerseyNumbers = Array.from({ length: 25 }, (_, i) => (i + 1).toString());
 const nonSelectionReasons = [
