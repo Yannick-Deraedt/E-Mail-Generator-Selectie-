@@ -6,7 +6,7 @@ import clublogo from "./assets/clublogo.png";
 // ------- DATA
 const playerList = [
   "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Mauro Dewitte", "Ferran Dhuyvetter", "Arthur Germonpré", 
+  "Nicolas Desaver", "Ferran Dhuyvetter", "Arthur Germonpré", 
   "Lander Helderweirt", "Andro Martens", "Lukas Onderbeke",
   "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Mauro Savat", 
   "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
