@@ -1,54 +1,24 @@
-# React + TypeScript + Vite
+# Selectie generator KVE Drongen
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Hoe gebruik je dit?
+- installeer een IDE voor webdevelopment (zoals [Webstorm](https://www.jetbrains.com/webstorm/download/?section=windows))
+- Git clone of download dit project naar een map
+- Open de map via de IDE
+- Ga naar het bestand package.json en voer het dev script uit (groene driehoekje ernaast)
+- Open de lokale website (localhost/...)
 
-Currently, two official plugins are available:
+## Hoe voeg ik spelers toe?
+- Pas het bestand public/squad_players.txt aan
+- Per lijn zet je de volledige naam van een speler
+- Keepers voeg je op dezelfde manier toe in het bestand public/keepers.txt
+  - Keepers worden enkel getoond in de niet-selectie als ze een reden of opmerking hebben
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Hoe voeg ik extra redenen toe voor niet-selectie
+- De lijst staat in het bestand src/App.tsx
+- Je kan zelf elementen toevoegen/verwijderen/aanpassen
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+## Hoe deel ik dit op ProSoccerData?
+- Vul alles in
+- Druk op de kopieer-knop
+- Plak het in een psd-mail
+    - Je kan handmatig nog zaken aanpassen in psd
