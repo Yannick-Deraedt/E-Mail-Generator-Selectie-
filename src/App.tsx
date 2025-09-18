@@ -18,13 +18,21 @@ const nonSelectionReasons = [
   "IP14", "IP15", "1x getraind", "Schoolverplichtingen",
   "Te laat afgemeld/niet verwittigd", "Geschorst", "Andere reden"
 ];
-const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
+const days = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
 
 export default function App() {
   // STATES
-  const [day, setDay] = useState("");
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
+  const [day, setDay] = useState("");
+
+  // zorgt voor automatische update van weekdag bij update datum:
+  const handleDateChange = (date: string) => {
+    setDate(date);
+    const parsed = new Date(date);
+    setDay(days[parsed.getDay()]);
+  }
+
   const [time, setTime] = useState("");
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
@@ -34,7 +42,7 @@ export default function App() {
   const [gatheringTime, setGatheringTime] = useState("");
   const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [responsible, setResponsible] = useState("");
-  const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen!");
+  const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!");
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -60,7 +68,7 @@ export default function App() {
         }
       }
     }
-  }, [matchType, customGatheringPlace]);
+  }, [matchType, customGatheringPlace, gatheringPlace]);
 
   // --------- SELECTIE LOGICA ---------
   const allNotSelected = playerList.filter(p => !(p in selectedPlayers));
@@ -142,8 +150,8 @@ export default function App() {
 
   // -------- GENERATE EMAIL & LIVE PREVIEW --------
   function generateEmail() {
-    if (!day || !date || !time || !opponent) {
-      setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul dag, datum, tijd en tegenstander in.</div>`);
+    if (!date || !time || !opponent) {
+      setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul datum, tijd en tegenstander in.</div>`);
       return;
     }
     // Themekleur afhankelijk van matchtype
@@ -155,7 +163,16 @@ export default function App() {
     let detailsRows = `
       <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
       <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
-      <tr><td style="font-weight:600;">Datum:</td><td><strong>${date}</strong></td></tr>
+      <tr>
+        <td style="font-weight:600;">Datum:</td>
+        <td><strong>
+          ${new Date(date).toLocaleDateString("nl-BE", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })}
+        </strong></td>
+      </tr>
       <tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>
       <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
       <tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>
@@ -253,7 +270,7 @@ export default function App() {
     generateEmail();
     // eslint-disable-next-line
   }, [
-    day, matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
+    matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
     arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
   ]);
 
@@ -301,13 +318,6 @@ export default function App() {
           <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
             <ul className="space-y-4">
               <li>
-                <label className="block font-semibold mb-1 text-blue-800">Dag <span className="text-red-500">*</span></label>
-                <select value={day} onChange={e => setDay(e.target.value)} className="w-full p-2 rounded text-black">
-                  <option value="">Kies een dag</option>
-                  {days.map(d => <option key={d}>{d}</option>)}
-                </select>
-              </li>
-              <li>
                 <label className="block font-semibold mb-1 text-blue-800">Type wedstrijd <span className="text-red-500">*</span></label>
                 <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
                   <option>Thuiswedstrijd</option>
@@ -316,7 +326,7 @@ export default function App() {
               </li>
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Datum <span className="text-red-500">*</span></label>
-                <input type="date" value={date} onChange={e => setDate(e.target.value)} className="w-full p-2 rounded text-black" />
+                <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Start wedstrijd <span className="text-red-500">*</span></label>
