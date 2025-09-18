@@ -6,7 +6,8 @@ import clublogo from "./assets/clublogo.png";
 // ------- DATA
 const maxSpelers = 16;
 
-const jerseyNumbers = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
+const jerseyNumbers = Array.from({length:17}, (_, i) => i + 1)
+jerseyNumbers.push(31) //tweede keeperstrui
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Beurtrol", "Op vakantie",
   "IP14", "IP15", "1x getraind", "Schoolverplichtingen",
@@ -159,12 +160,15 @@ export default function App() {
     setResponsible(player);
   }
   function autoToewijzen() {
-    const vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n));
+    const vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n.toString()));
     let i = 0;
     setSelectedPlayers(prev => {
       const nieuw = {...prev};
       for (const p of Object.keys(nieuw)) {
-        if (!nieuw[p] && vrijeNummers[i]) nieuw[p] = vrijeNummers[i++];
+        if (!nieuw[p] && vrijeNummers[i]){
+          nieuw[p] = vrijeNummers[i].toString();
+          i += 1;
+        }
       }
       return nieuw;
     });
@@ -502,7 +506,7 @@ export default function App() {
                         <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
                           <option value="">--</option>
                           {jerseyNumbers.map(n => (
-                            <option key={n} value={n} disabled={usedNumbers.has(n) && selectedPlayers[player] !== n}>{n}</option>
+                            <option key={n} value={n} disabled={usedNumbers.has(n.toString()) && selectedPlayers[player] !== n.toString()}>{n}</option>
                           ))}
                         </select>
                       </td>
