@@ -443,7 +443,7 @@ export default function App() {
           <div className="mb-2 text-lg text-blue-900">
             Geselecteerd: <span className="font-bold">{selected.length}</span> / {maxSpelers}
             {selected.length > maxSpelers &&
-              <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">⚠️ Meer dan 15 geselecteerd!</span>
+              <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">⚠️ Meer dan {maxSpelers.toString()} geselecteerd!</span>
             }
           </div>
           {selected.length > 0 && (
