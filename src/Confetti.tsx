@@ -113,7 +113,7 @@ const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
         } else {
           // Ligt op bodem: eerst wachten, dan langzaam uitfaden
           if (p.landedTime && now - p.landedTime > LANDING_DURATION) {
-            let fadeElapsed = now - p.landedTime - LANDING_DURATION;
+            const fadeElapsed = now - p.landedTime - LANDING_DURATION;
             p.opacity = Math.max(0, 1 - fadeElapsed / FADE_DURATION);
             if (p.opacity <= 0) {
               // reset particle van bovenaf opnieuw

@@ -5,18 +5,17 @@ import clublogo from "./assets/clublogo.png";
 
 // ------- DATA
 const playerList = [
-  "Jerome Belpaeme", "Leon Boone", "Wolf Cappan", "Leon De Backer", "Mateo De Tremerie",
-  "Nicolas Desaver", "Ferran Dhuyvetter", "Arthur Germonpré", 
-  "Lander Helderweirt", "Andro Martens", "Lukas Onderbeke",
-  "Siebe Passchyn", "Viktor Poelman", "Lav Rajkovic", "Mauro Savat", 
-  "Mattias Smet", "Guillaume Telleir", "Otis Vanbiervliet", "Michiel Van Melkebeke", "Rube Verhille",
-  "Filemon Verstraete", "Thias Holle", "Steffen Opstaele", 
-  "Milan Van Weehaege",
+  "Aron D'Hoore", "Simon De Clercq", "Mauro Dewitte", "Kiyaan El Houari", "Alexander Genbrugge",
+    "Louie Hoet", "Jef Lambers", "Rémi Lippens", "Aaron Ruiz Van Steenberge", "Moussa Sabir",
+    "Tunahan Sengönül", "Marwan Tahri", "Evan Tinyih", "Sam Van De Gehuchte", "Karel Van Iseghem",
+    "Stijn Van Iseghem", "Maxime Vermeiren", "Mathis Vindevogel", "Marouane Zyadi",
+    "Mats Danckaert"
 ];
-const jerseyNumbers = Array.from({ length: 25 }, (_, i) => (i + 1).toString());
+
+const jerseyNumbers = Array.from({ length: 31 }, (_, i) => (i + 1).toString());
 const nonSelectionReasons = [
-  "Geblesseerd", "Ziek", "Afwezig", "Rust", "Op vakantie",
-  "GU15", "Stand-by GU15", "1x getraind", "Schoolverplichtingen",
+  "Geblesseerd", "Ziek", "Afwezig", "Beurtrol", "Op vakantie",
+  "IP14", "IP15", "1x getraind", "Schoolverplichtingen",
   "Te laat afgemeld/niet verwittigd", "Geschorst", "Andere reden"
 ];
 const days = ["Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag", "Zondag"];
@@ -78,7 +77,7 @@ export default function App() {
   const alleRugnummersUniek =
     selected.length === new Set(Object.values(selectedPlayers).filter(Boolean)).size
     && !selected.some(p => !selectedPlayers[p]);
-  const maxSpelers = 15;
+  const maxSpelers = 16;
 
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "" }));
@@ -114,11 +113,11 @@ export default function App() {
     setResponsible(player);
   }
   function autoToewijzen() {
-    let vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n));
+    const vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n));
     let i = 0;
     setSelectedPlayers(prev => {
       const nieuw = {...prev};
-      for (let p of Object.keys(nieuw)) {
+      for (const p of Object.keys(nieuw)) {
         if (!nieuw[p] && vrijeNummers[i]) nieuw[p] = vrijeNummers[i++];
       }
       return nieuw;
@@ -164,8 +163,8 @@ export default function App() {
     if (matchType === "Uitwedstrijd") {
       detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
-        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
-        <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
+        <tr><td style="font-weight:600;">Meerijden?</td><td>Om <strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
       `;
     } else {
       detailsRows += `
@@ -175,7 +174,7 @@ export default function App() {
 
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
-          <strong>Carpool:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
+          <strong>Vervoer:</strong> Jongens die willen meerijden kunnen een berichtje sturen. 
         </div>` : "";
 
     const selectionTableRows = selected.map(player => `
@@ -183,7 +182,7 @@ export default function App() {
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-          ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
+          ${responsible === player ? "✅ Verantwoordelijk voor was van de shirts na de wedstrijd" : ""}
         </td>
       </tr>
     `).join("");
@@ -243,7 +242,8 @@ export default function App() {
         </div>
         <br/><br/>
         <p style="margin-top:34px;margin-bottom:6px;">Sportieve groeten,</p>
-        <p style="margin:0;font-weight:600;">Yannick Deraedt<br/>Trainer U15 IP – KVE Drongen</p>
+        <p style="margin:0;font-weight:600;">Arne Dierick<br/>Trainer G U15 – KVE Drongen</p>
+        <p style="margin:0;font-weight:600;">0495279260</p>
       </div>
     `;
     setPreview(html);
@@ -458,7 +458,7 @@ export default function App() {
                           onChange={() => handleResponsible(player)}
                         />
                         {responsible === player && (
-                          <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
+                          <span className="ml-2">✅ Verantwoordelijk voor was</span>
                         )}
                       </td>
                       <td className="p-2"></td>
