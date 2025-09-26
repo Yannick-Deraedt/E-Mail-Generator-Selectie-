@@ -7,10 +7,10 @@ import clublogo from "./assets/clublogo.png";
 const maxSpelers = 16;
 
 const jerseyNumbers = Array.from({length:17}, (_, i) => i + 1)
-jerseyNumbers.push(31) //tweede keeperstrui
+jerseyNumbers.push(25) //tweede keeperstrui
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Beurtrol", "Op vakantie",
-  "IP14", "IP15", "1x getraind", "Schoolverplichtingen",
+  "GU15","Stand-by GU15", "1x getraind", "Schoolverplichtingen",
   "Te laat afgemeld/niet verwittigd", "Geschorst", "Andere reden"
 ];
 const days = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
@@ -239,7 +239,7 @@ export default function App() {
 
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
-          <strong>Vervoer:</strong> Jongens die willen meerijden kunnen een berichtje sturen. 
+          <strong>Vervoer:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll. 
         </div>` : "";
 
     const selectionTableRows = selected.map(player => `
@@ -249,7 +249,7 @@ export default function App() {
       ${player}${isKeeper(player) ? " (k)" : ""}
     </td>
     <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-      ${responsible === player ? "✅ Verantwoordelijk voor was van de shirts na de wedstrijd" : ""}
+      ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
     </td>
   </tr>
 `).join("");
@@ -310,8 +310,8 @@ export default function App() {
         </div>
         <br/><br/>
         <p style="margin-top:34px;margin-bottom:6px;">Sportieve groeten,</p>
-        <p style="margin:0;font-weight:600;">Arne Dierick<br/>Trainer G U15 – KVE Drongen</p>
-        <p style="margin:0;font-weight:600;">0495279260</p>
+        <p style="margin:0;font-weight:600;">Yannick Deraedt<br/>Trainer IPU15 – KVE Drongen</p>
+        <p style="margin:0;font-weight:600;">0487888086</p>
       </div>
     `;
     setPreview(html);
@@ -519,7 +519,7 @@ export default function App() {
                           onChange={() => handleResponsible(player)}
                         />
                         {responsible === player && (
-                          <span className="ml-2">✅ Verantwoordelijk voor was</span>
+                          <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
                         )}
                       </td>
                       <td className="p-2"></td>
