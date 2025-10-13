@@ -57,10 +57,7 @@ export default function App() {
   const [day, setDay] = useState("");
   const [time, setTime] = useState("");
 
-  // Verzameltijd is ALTIJD handmatig (geen auto meer)
-  const [gatheringTime, setGatheringTime] = useState("");
-
-  // Aankomsttijd wordt automatisch = start - 75' (maar kan manueel overschreven)
+  // Aankomsttijd = start - 75' (overschrijfbaar)
   const [arrivalTime, setArrivalTime] = useState("");
   const [autoArrivalEnabled, setAutoArrivalEnabled] = useState(true);
   const prevTimeRef = useRef<string>("");
@@ -121,7 +118,7 @@ export default function App() {
   // ====== LOGICA ======
   const isKeeper = (name: string) => keeperList.includes(name);
 
-  // Niet-geselecteerd (veldspelers) – keepers beheren we apart in een eigen sectie
+  // Niet-geselecteerd (veldspelers) – keepers beheren apart
   const allNotSelectedField = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelectedField = [...allNotSelectedField];
   if (searchSelect.trim()) {
@@ -201,8 +198,6 @@ export default function App() {
       return;
     }
     const hoofdKleur = matchType === "Uitwedstrijd" ? "#1679bc" : "#142c54";
-
-    // label voor aankomst
     const arrivalLabel = matchType === "Uitwedstrijd" ? "Aankomst bij tegenstander" : "Aankomst (kleedkamer)";
 
     let detailsRows = `
@@ -221,20 +216,18 @@ export default function App() {
     if (matchType === "Uitwedstrijd") {
       detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
-        <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+        <tr><td style="font-weight:600;">Verzamelplaats:</td><td><strong>${gatheringPlace}</strong></td></tr>
       `;
     } else {
       detailsRows += `
-        <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+        <tr><td style="font-weight:600;">Kleedkamer:</td><td><strong>${gatheringPlace || "Kleedkamer X"}</strong></td></tr>
       `;
     }
 
     const selectionTableRows = selected.map(player => `
       <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">
-          ${player}${keeperList.includes(player) ? ' <span style="display:inline-block;padding:2px 6px;border-radius:8px;background:#e8f4ff;color:#1769aa;border:1px solid #bcdcff;font-size:0.85em;margin-left:6px;">keeper</span>' : ""}
-        </td>
+        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">${player}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
           ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
         </td>
@@ -308,7 +301,7 @@ export default function App() {
     generateEmail();
     // eslint-disable-next-line
   }, [
-    matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
+    matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace,
     responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day, arrivalTime
   ]);
 
@@ -359,9 +352,106 @@ export default function App() {
             </span>
           </div>
 
-          {/* Keepers (eerst selecteren) */}
+          {/* Wedstrijdgegevens */}
+          <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
+            <ul className="space-y-4">
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">Type wedstrijd <span className="text-red-500">*</span></label>
+                <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
+                  <option>Thuiswedstrijd</option>
+                  <option>Uitwedstrijd</option>
+                </select>
+              </li>
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">Datum <span className="text-red-500">*</span></label>
+                <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} className="w-full p-2 rounded text-black" />
+              </li>
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">Start wedstrijd <span className="text-red-500">*</span></label>
+                <input
+                  type="time"
+                  value={time}
+                  onChange={e => { setTime(e.target.value); setAutoArrivalEnabled(true); }}
+                  className="w-full p-2 rounded text-black"
+                />
+                <small className="text-blue-900 block mt-1 opacity-80">
+                  <strong>Aankomsttijd</strong> wordt automatisch op {AUTO_ARRIVAL_OFFSET_MIN} min vóór de aftrap gezet (kan je overschrijven).
+                </small>
+              </li>
+
+              {/* Aankomsttijd (auto –75') */}
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">
+                  {matchType === "Uitwedstrijd" ? "Aankomst bij tegenstander" : "Aankomst (kleedkamer)"}
+                </label>
+                <input
+                  type="time"
+                  value={arrivalTime}
+                  onChange={e => { setArrivalTime(e.target.value); setAutoArrivalEnabled(false); }}
+                  className="w-full p-2 rounded text-black"
+                />
+              </li>
+
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">Tegenstander <span className="text-red-500">*</span></label>
+                <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
+              </li>
+
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
+                <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
+              </li>
+
+              {matchType === "Uitwedstrijd" && (
+                <>
+                  <li>
+                    <label className="block font-semibold mb-1 text-blue-800">Adres</label>
+                    <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
+                  </li>
+                </>
+              )}
+
+              {/* Verzamelplaats (blijft bestaan, zonder tijd) */}
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">
+                  {matchType === "Uitwedstrijd" ? "Verzamelplaats" : "Kleedkamer"}
+                </label>
+                {!customGatheringPlace ? (
+                  <select
+                    value={gatheringPlace}
+                    onChange={e => {
+                      if (e.target.value === "__custom") setCustomGatheringPlace(true);
+                      else setGatheringPlace(e.target.value);
+                    }}
+                    className="w-full p-2 rounded text-black"
+                  >
+                    <option value="">Kies plaats</option>
+                    <option value="Kleedkamer X">Kleedkamer X</option>
+                    <option value="Parking KVE">Parking KVE</option>
+                    <option value="__custom">Andere (manueel invullen)</option>
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    value={gatheringPlace}
+                    onChange={e => setGatheringPlace(e.target.value)}
+                    className="w-full p-2 rounded text-black"
+                    placeholder="Geef plaats op"
+                    onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
+                  />
+                )}
+              </li>
+
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">Opmerking (algemeen)</label>
+                <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
+              </li>
+            </ul>
+          </div>
+
+          {/* Keepers (NA wedstrijdinfo) */}
           <div className="mb-6">
-            <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers (eerst selecteren)</h3>
+            <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers</h3>
             <div className="rounded-xl bg-blue-50 overflow-x-auto">
               <table className="min-w-full">
                 <thead>
@@ -406,111 +496,6 @@ export default function App() {
                 </tbody>
               </table>
             </div>
-          </div>
-
-          {/* Wedstrijdgegevens */}
-          <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
-            <ul className="space-y-4">
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Type wedstrijd <span className="text-red-500">*</span></label>
-                <select value={matchType} onChange={e => setMatchType(e.target.value)} className="w-full p-2 rounded text-black">
-                  <option>Thuiswedstrijd</option>
-                  <option>Uitwedstrijd</option>
-                </select>
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Datum <span className="text-red-500">*</span></label>
-                <input type="date" value={date} onChange={e => handleDateChange(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Start wedstrijd <span className="text-red-500">*</span></label>
-                <input
-                  type="time"
-                  value={time}
-                  onChange={e => { setTime(e.target.value); setAutoArrivalEnabled(true); }}
-                  className="w-full p-2 rounded text-black"
-                />
-                <small className="text-blue-900 block mt-1 opacity-80">
-                  <strong>Aankomsttijd</strong> wordt automatisch op {AUTO_ARRIVAL_OFFSET_MIN} min vóór de aftrap gezet (kan je overschrijven).
-                </small>
-              </li>
-
-              {/* Aankomsttijd (auto) */}
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">
-                  {matchType === "Uitwedstrijd" ? "Aankomst bij tegenstander" : "Aankomst (kleedkamer)"}
-                </label>
-                <input
-                  type="time"
-                  value={arrivalTime}
-                  onChange={e => { setArrivalTime(e.target.value); setAutoArrivalEnabled(false); }}
-                  className="w-full p-2 rounded text-black"
-                />
-              </li>
-
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Tegenstander <span className="text-red-500">*</span></label>
-                <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
-                <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-
-              {matchType === "Uitwedstrijd" && (
-                <>
-                  <li>
-                    <label className="block font-semibold mb-1 text-blue-800">Adres</label>
-                    <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
-                  </li>
-                </>
-              )}
-
-              {/* Verzamelen (altijd handmatig) */}
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Verzameltijd</label>
-                <input
-                  type="time"
-                  value={gatheringTime}
-                  onChange={e => setGatheringTime(e.target.value)}
-                  className="w-full p-2 rounded text-black"
-                />
-              </li>
-
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Verzamelplaats</label>
-                {!customGatheringPlace ? (
-                  <select
-                    value={gatheringPlace}
-                    onChange={e => {
-                      if (e.target.value === "__custom") setCustomGatheringPlace(true);
-                      else setGatheringPlace(e.target.value);
-                    }}
-                    className="w-full p-2 rounded text-black"
-                  >
-                    <option value="">Kies verzamelplaats</option>
-                    <option value="Kleedkamer X">Kleedkamer X</option>
-                    <option value="Parking KVE">Parking KVE</option>
-                    <option value="__custom">Andere (manueel invullen)</option>
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={gatheringPlace}
-                    onChange={e => setGatheringPlace(e.target.value)}
-                    className="w-full p-2 rounded text-black"
-                    placeholder="Geef verzamelplaats op"
-                    onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
-                  />
-                )}
-              </li>
-
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">Opmerking (algemeen)</label>
-                <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
-              </li>
-            </ul>
           </div>
 
           {/* Tellers & checks */}
@@ -586,9 +571,7 @@ export default function App() {
                               ))}
                             </select>
                           </td>
-                          <td className="p-2">
-                            {player}{isKeeper(player) ? <em style={{ marginLeft: 6, fontSize: "0.9em", color: "#1769aa" }}>(keeper)</em> : null}
-                          </td>
+                          <td className="p-2">{player}</td>
                           <td className="p-2 text-center">
                             <input
                               type="radio"
@@ -693,7 +676,7 @@ export default function App() {
       {/* Inline CSS voor breathing effect */}
       <style>{`
         @keyframes watermark-fade {
-          0% { opacity: 0.18; transform: scale(0.98); }
+          0% { opacity: 0.18; transform: scale(0.985); }
           50% { opacity: 0.38; transform: scale(1.015); }
           100% { opacity: 0.2; transform: scale(0.99); }
         }
