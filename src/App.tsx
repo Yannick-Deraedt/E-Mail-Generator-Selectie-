@@ -4,10 +4,9 @@ import Confetti from "./Confetti";
 import clublogo from "./assets/clublogo.png";
 
 // ====== SETTINGS ======
-const MAX_PLAYERS = 15; // exact 15 totaal (14 veldspelers + 1 keeper)
-const AUTO_ARRIVE_OFFSET_MIN = 75; // 1u15
+const MAX_PLAYERS = 15; // 14 veldspelers + 1 keeper
+const AUTO_ARRIVAL_OFFSET_MIN = 75; // 1u15 voor aftrap
 
-// ====== DATA (dynamisch uit public/*.txt) ======
 // Rugnummers: 1..17 + 25 (tweede keeperstrui)
 const jerseyNumbers = Array.from({ length: 17 }, (_, i) => (i + 1).toString()).concat("25");
 const nonSelectionReasons = [
@@ -18,9 +17,7 @@ const nonSelectionReasons = [
 const days = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
 
 // ====== HELPERS ======
-function pad2(n: number) {
-  return n < 10 ? `0${n}` : `${n}`;
-}
+function pad2(n: number) { return n < 10 ? `0${n}` : `${n}`; }
 function timeMinusMinutes(hhmm: string, minutes: number): string {
   if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return "";
   const [h, m] = hhmm.split(":").map(Number);
@@ -60,9 +57,12 @@ export default function App() {
   const [day, setDay] = useState("");
   const [time, setTime] = useState("");
 
-  // Automatische verzameltijd (kan handmatig overschreven worden)
+  // Verzameltijd is ALTIJD handmatig (geen auto meer)
   const [gatheringTime, setGatheringTime] = useState("");
-  const [autoGatherEnabled, setAutoGatherEnabled] = useState(true);
+
+  // Aankomsttijd wordt automatisch = start - 75' (maar kan manueel overschreven)
+  const [arrivalTime, setArrivalTime] = useState("");
+  const [autoArrivalEnabled, setAutoArrivalEnabled] = useState(true);
   const prevTimeRef = useRef<string>("");
 
   const [opponent, setOpponent] = useState("");
@@ -70,7 +70,6 @@ export default function App() {
   const [address, setAddress] = useState("");
   const [gatheringPlace, setGatheringPlace] = useState("");
   const [customGatheringPlace, setCustomGatheringPlace] = useState(false);
-  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!");
 
@@ -94,7 +93,7 @@ export default function App() {
     setDay(days[parsed.getDay()]);
   };
 
-  // Automatische verzamelplaats zoals eerder
+  // Automatische verzamelplaats
   useEffect(() => {
     if (!customGatheringPlace) {
       if (matchType === "Uitwedstrijd") {
@@ -109,32 +108,30 @@ export default function App() {
     }
   }, [matchType, customGatheringPlace, gatheringPlace]);
 
-  // Automatische verzameltijd = 1u15 voor kickoff (alleen als autoGatherEnabled true is of als tijd net veranderd is)
+  // Automatische AANKOMSTtijd = 1u15 voor kickoff (blijft aan tot je 'm manueel wijzigt)
   useEffect(() => {
     if (!time) return;
-    if (autoGatherEnabled || prevTimeRef.current !== time) {
-      const autoTime = timeMinusMinutes(time, AUTO_ARRIVE_OFFSET_MIN);
-      setGatheringTime(autoTime);
+    if (autoArrivalEnabled || prevTimeRef.current !== time) {
+      const auto = timeMinusMinutes(time, AUTO_ARRIVAL_OFFSET_MIN);
+      setArrivalTime(auto);
       prevTimeRef.current = time;
     }
-  }, [time, autoGatherEnabled]);
+  }, [time, autoArrivalEnabled]);
 
   // ====== LOGICA ======
   const isKeeper = (name: string) => keeperList.includes(name);
 
-  const allNotSelected = [
-    ...playerList.filter(p => !(p in selectedPlayers)),
-    ...keeperList.filter(k => !(k in selectedPlayers) && (nonSelectedReasons[k] || nonSelectedComments[k]))
-  ];
-
-  let sortedNotSelected = [...allNotSelected];
+  // Niet-geselecteerd (veldspelers) – keepers beheren we apart in een eigen sectie
+  const allNotSelectedField = playerList.filter(p => !(p in selectedPlayers));
+  let sortedNotSelectedField = [...allNotSelectedField];
   if (searchSelect.trim()) {
     const s = searchSelect.toLowerCase();
-    const top = sortedNotSelected.filter(p => p.toLowerCase().includes(s));
-    const rest = sortedNotSelected.filter(p => !p.toLowerCase().includes(s));
-    sortedNotSelected = [...top, ...rest];
+    const top = sortedNotSelectedField.filter(p => p.toLowerCase().includes(s));
+    const rest = sortedNotSelectedField.filter(p => !p.toLowerCase().includes(s));
+    sortedNotSelectedField = [...top, ...rest];
   }
 
+  // Keepers die nog niet geselecteerd zijn
   const availableKeepers = keeperList.filter(k => !(k in selectedPlayers));
 
   const selected = Object.keys(selectedPlayers).sort(
@@ -147,18 +144,12 @@ export default function App() {
 
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "" }));
-    setNonSelectedReasons(prev => {
-      const n = { ...prev }; delete n[player]; return n;
-    });
-    setNonSelectedComments(prev => {
-      const n = { ...prev }; delete n[player]; return n;
-    });
+    setNonSelectedReasons(prev => { const n = { ...prev }; delete n[player]; return n; });
+    setNonSelectedComments(prev => { const n = { ...prev }; delete n[player]; return n; });
     setSearchSelect("");
   }
   function removeSelected(player: string) {
-    setSelectedPlayers(prev => {
-      const n = { ...prev }; delete n[player]; return n;
-    });
+    setSelectedPlayers(prev => { const n = { ...prev }; delete n[player]; return n; });
   }
   function handleRugnummer(player: string, nummer: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: nummer }));
@@ -178,15 +169,13 @@ export default function App() {
     setSelectedPlayers(prev => {
       const nieuw = { ...prev };
       for (const p of Object.keys(nieuw)) {
-        if (!nieuw[p] && vrije[i]) {
-          nieuw[p] = vrije[i++];
-        }
+        if (!nieuw[p] && vrije[i]) nieuw[p] = vrije[i++];
       }
       return nieuw;
     });
   }
 
-  // Kopiëren + confetti (blijft zoals je gewend bent)
+  // Kopiëren + confetti
   const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
     if (el && navigator.clipboard && (window as any).ClipboardItem) {
@@ -213,6 +202,9 @@ export default function App() {
     }
     const hoofdKleur = matchType === "Uitwedstrijd" ? "#1679bc" : "#142c54";
 
+    // label voor aankomst
+    const arrivalLabel = matchType === "Uitwedstrijd" ? "Aankomst bij tegenstander" : "Aankomst (kleedkamer)";
+
     let detailsRows = `
       <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
       <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
@@ -221,13 +213,14 @@ export default function App() {
         <td><strong>${new Date(date).toLocaleDateString("nl-BE", { day: "numeric", month: "long", year: "numeric" })}</strong></td>
       </tr>
       <tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>
+      <tr><td style="font-weight:600;">${arrivalLabel}:</td><td><strong>${arrivalTime || "-"}</strong></td></tr>
       <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
       <tr><td style="font-weight:600;">Terrein:</td><td>${field}</td></tr>
     `;
+
     if (matchType === "Uitwedstrijd") {
       detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
-        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
         <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
       `;
     } else {
@@ -236,16 +229,11 @@ export default function App() {
       `;
     }
 
-    const carpoolText = matchType === "Uitwedstrijd"
-      ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
-          <strong>Vervoer:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
-        </div>` : "";
-
     const selectionTableRows = selected.map(player => `
       <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">
-          ${player}${isKeeper(player) ? ' <span style="display:inline-block;padding:2px 6px;border-radius:8px;background:#e8f4ff;color:#1769aa;border:1px solid #bcdcff;font-size:0.85em;margin-left:6px;">keeper</span>' : ""}
+          ${player}${keeperList.includes(player) ? ' <span style="display:inline-block;padding:2px 6px;border-radius:8px;background:#e8f4ff;color:#1769aa;border:1px solid #bcdcff;font-size:0.85em;margin-left:6px;">keeper</span>' : ""}
         </td>
         <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
           ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
@@ -253,13 +241,15 @@ export default function App() {
       </tr>
     `).join("");
 
-    const nonSelectedTableRows = allNotSelected.map(player => `
-      <tr>
-        <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${player}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedReasons[player] || "-"}</td>
-        <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedComments[player] || ""}</td>
-      </tr>
-    `).join("");
+    const nonSelectedTableRows = playerList
+      .filter(p => !(p in selectedPlayers))
+      .map(player => `
+        <tr>
+          <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${player}</td>
+          <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedReasons[player] || "-"}</td>
+          <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedComments[player] || ""}</td>
+        </tr>
+      `).join("");
 
     const html = `
       <div style="font-family:sans-serif;line-height:1.6;max-width:640px;margin:auto;background:#fff;color:#222;border-radius:16px;box-shadow:0 8px 32px #284cff11;">
@@ -275,7 +265,6 @@ export default function App() {
           <table style="width:100%;border-collapse:collapse;">
             ${detailsRows}
           </table>
-          ${carpoolText}
         </div>
         <div style="background:#f1ffe9;border-radius:11px;padding:15px 22px;margin-bottom:16px;">
           <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#178530;">Selectie</h2>
@@ -291,7 +280,7 @@ export default function App() {
           </table>
         </div>
         <div style="background:#fff7f7;border-radius:11px;padding:15px 22px;margin-bottom:14px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
+          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#e66472;">Niet geselecteerd (veldspelers)</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#ffd7d7;">
@@ -320,15 +309,14 @@ export default function App() {
     // eslint-disable-next-line
   }, [
     matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
-    arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day
+    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day, arrivalTime
   ]);
 
   // ====== CONFETTI TRIGGER: exact 14 veldspelers + 1 keeper ======
   useEffect(() => {
     const total = selected.length;
-    const keepersInSelection = selected.filter(isKeeper).length;
+    const keepersInSelection = selected.filter(p => isKeeper(p)).length;
     const fieldPlayers = total - keepersInSelection;
-
     const exactlyDesired = (total === 15 && keepersInSelection === 1 && fieldPlayers === 14);
     if (exactlyDesired) {
       setShowConfetti(true);
@@ -360,7 +348,9 @@ export default function App() {
 
       <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0" style={{ position: "relative", zIndex: 1 }}>
         {/* LINKERDEEL */}
-        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
+        <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-10 flex flex-col">
+
+          {/* Titel */}
           <div className="flex items-center mb-4" style={{ position: "relative", zIndex: 2 }}>
             <img src={clublogo} alt="clublogo" style={{ height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55" }} />
             <span style={{ fontSize: "2.1rem", fontWeight: 900, letterSpacing: "1.5px", color: "#142c54",
@@ -369,6 +359,56 @@ export default function App() {
             </span>
           </div>
 
+          {/* Keepers (eerst selecteren) */}
+          <div className="mb-6">
+            <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers (eerst selecteren)</h3>
+            <div className="rounded-xl bg-blue-50 overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr>
+                    <th className="p-2 text-left">Selecteer</th>
+                    <th className="p-2 text-left">Naam keeper</th>
+                    <th className="p-2 text-left">Reden niet geselecteerd & opmerking</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {availableKeepers.map(keeper => (
+                    <tr key={keeper}>
+                      <td className="p-2">
+                        <input
+                          type="checkbox"
+                          className="w-6 h-6"
+                          checked={false}
+                          onChange={() => handleSelect(keeper)}
+                          aria-label={`Selecteer ${keeper}`}
+                        />
+                      </td>
+                      <td className="p-2">{keeper}</td>
+                      <td className="p-2">
+                        <select
+                          className="w-full text-black"
+                          value={nonSelectedReasons[keeper] || ""}
+                          onChange={e => handleNonSelectedReason(keeper, e.target.value)}
+                        >
+                          <option value="">Reden niet geselecteerd</option>
+                          {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
+                        </select>
+                        <input
+                          type="text"
+                          className="w-full mt-1 p-1 rounded text-black"
+                          placeholder="Extra opmerking (optioneel)"
+                          value={nonSelectedComments[keeper] || ""}
+                          onChange={e => handleNonSelectedComment(keeper, e.target.value)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Wedstrijdgegevens */}
           <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
             <ul className="space-y-4">
               <li>
@@ -387,20 +427,32 @@ export default function App() {
                 <input
                   type="time"
                   value={time}
-                  onChange={e => {
-                    setTime(e.target.value);
-                    setAutoGatherEnabled(true); // bij wijziging tijd weer auto laten updaten
-                  }}
+                  onChange={e => { setTime(e.target.value); setAutoArrivalEnabled(true); }}
                   className="w-full p-2 rounded text-black"
                 />
                 <small className="text-blue-900 block mt-1 opacity-80">
-                  Verzameltijd wordt automatisch op {AUTO_ARRIVE_OFFSET_MIN} min vóór de aftrap gezet (kan je nadien overschrijven).
+                  <strong>Aankomsttijd</strong> wordt automatisch op {AUTO_ARRIVAL_OFFSET_MIN} min vóór de aftrap gezet (kan je overschrijven).
                 </small>
               </li>
+
+              {/* Aankomsttijd (auto) */}
+              <li>
+                <label className="block font-semibold mb-1 text-blue-800">
+                  {matchType === "Uitwedstrijd" ? "Aankomst bij tegenstander" : "Aankomst (kleedkamer)"}
+                </label>
+                <input
+                  type="time"
+                  value={arrivalTime}
+                  onChange={e => { setArrivalTime(e.target.value); setAutoArrivalEnabled(false); }}
+                  className="w-full p-2 rounded text-black"
+                />
+              </li>
+
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Tegenstander <span className="text-red-500">*</span></label>
                 <input type="text" value={opponent} onChange={e => setOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
+
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
@@ -412,27 +464,18 @@ export default function App() {
                     <label className="block font-semibold mb-1 text-blue-800">Adres</label>
                     <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
                   </li>
-                  <li>
-                    <label className="block font-semibold mb-1 text-blue-800">Aankomstuur bij tegenstander</label>
-                    <input type="time" value={arrivalTimeOpponent} onChange={e => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
-                  </li>
                 </>
               )}
 
+              {/* Verzamelen (altijd handmatig) */}
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Verzameltijd</label>
                 <input
                   type="time"
                   value={gatheringTime}
-                  onChange={e => {
-                    setGatheringTime(e.target.value);
-                    setAutoGatherEnabled(false); // handmatige override
-                  }}
+                  onChange={e => setGatheringTime(e.target.value)}
                   className="w-full p-2 rounded text-black"
                 />
-                <small className="text-blue-900 block mt-1 opacity-80">
-                  Handmatig aangepast? Dan blijft dit tijdstip behouden, ook als de aftrap wijzigt.
-                </small>
               </li>
 
               <li>
@@ -470,6 +513,7 @@ export default function App() {
             </ul>
           </div>
 
+          {/* Tellers & checks */}
           <div className="mb-2 text-lg text-blue-900">
             Geselecteerd: <span className="font-bold">{selected.length}</span> / {MAX_PLAYERS}
             {selected.length > MAX_PLAYERS &&
@@ -486,6 +530,7 @@ export default function App() {
             </div>
           )}
 
+          {/* Selectie tabel */}
           <button className="font-bold mb-2 px-2 py-1 bg-blue-700 hover:bg-blue-900 rounded text-white transition-all"
             onClick={() => setShowSelection(s => !s)}>
             {showSelection ? "▼" : "►"} Selectie ({selected.length})
@@ -564,9 +609,10 @@ export default function App() {
             </div>
           )}
 
+          {/* Niet-geselecteerden (veldspelers) */}
           <button className="font-bold mb-2 px-2 py-1 bg-red-700 hover:bg-red-900 rounded text-white transition-all"
             onClick={() => setShowNotSelected(s => !s)}>
-            {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
+            {showNotSelected ? "▼" : "►"} Niet-geselecteerden (veldspelers) ({sortedNotSelectedField.length})
           </button>
 
           {showNotSelected && (
@@ -590,7 +636,7 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedNotSelected.map(player => (
+                    {sortedNotSelectedField.map(player => (
                       <tr key={player}>
                         <td className="p-2">
                           <input
@@ -630,59 +676,6 @@ export default function App() {
               </div>
             </div>
           )}
-
-          {/* Keepers-sectie voor overzicht/selectie */}
-          <div className="mb-10">
-            <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers</h3>
-            <div className="rounded-xl bg-blue-50 overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th className="p-2 text-left">Selecteer</th>
-                    <th className="p-2 text-left">Naam keeper</th>
-                    <th className="p-2 text-left">Reden niet geselecteerd & opmerking</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {availableKeepers.map(keeper => (
-                    <tr key={keeper}>
-                      <td className="p-2">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6"
-                          checked={false}
-                          onChange={() => handleSelect(keeper)}
-                          aria-label={`Selecteer ${keeper}`}
-                        />
-                      </td>
-                      <td className="p-2">
-                        <span className={keeper.toLowerCase().includes(searchSelect.toLowerCase()) && searchSelect ? "bg-yellow-200 px-1 rounded" : ""}>
-                          {keeper}
-                        </span>
-                      </td>
-                      <td className="p-2">
-                        <select
-                          className="w-full text-black"
-                          value={nonSelectedReasons[keeper] || ""}
-                          onChange={e => handleNonSelectedReason(keeper, e.target.value)}
-                        >
-                          <option value="">Reden niet geselecteerd</option>
-                          {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                        <input
-                          type="text"
-                          className="w-full mt-1 p-1 rounded text-black"
-                          placeholder="Extra opmerking (optioneel)"
-                          value={nonSelectedComments[keeper] || ""}
-                          onChange={e => handleNonSelectedComment(keeper, e.target.value)}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
 
         </div>
 
