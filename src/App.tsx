@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import FloatingCopyButton from "./FloatingCopyButton";
 import Confetti from "./Confetti";
 import clublogo from "./assets/clublogo.png";
 
-// ------- DATA
-const maxSpelers = 16;
+// ====== SETTINGS ======
+const MAX_PLAYERS = 15; // exact 15 totaal (14 veldspelers + 1 keeper)
+const AUTO_ARRIVE_OFFSET_MIN = 75; // 1u15
 
-const jerseyNumbers = Array.from({length:17}, (_, i) => i + 1)
-jerseyNumbers.push(25) //tweede keeperstrui
+// ====== DATA (dynamisch uit public/*.txt) ======
+// Rugnummers: 1..17 + 25 (tweede keeperstrui)
+const jerseyNumbers = Array.from({ length: 17 }, (_, i) => (i + 1).toString()).concat("25");
 const nonSelectionReasons = [
   "Geblesseerd", "Ziek", "Afwezig", "Beurtrol", "Op vakantie",
   "GU15","Stand-by GU15", "1x getraind", "Schoolverplichtingen",
@@ -15,69 +17,68 @@ const nonSelectionReasons = [
 ];
 const days = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
 
+// ====== HELPERS ======
+function pad2(n: number) {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+function timeMinusMinutes(hhmm: string, minutes: number): string {
+  if (!hhmm || !/^\d{2}:\d{2}$/.test(hhmm)) return "";
+  const [h, m] = hhmm.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  d.setMinutes(d.getMinutes() - minutes);
+  return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+}
+
 export default function App() {
-  // STATES
-
-  // kernspelers laden uit public/squad_players.txt
+  // ====== Kernspelers & keepers laden ======
   const [playerList, setPlayerList] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetch("/squad_players.txt")
-        .then((res) => res.text())
-        .then((text) => {
-          const players = text
-              .split("\n")
-              .map((p) => p.trim())
-              .filter(Boolean); // remove empty lines
-          const uniqueSorted = Array.from(new Set(players)).sort();
-          setPlayerList(uniqueSorted);
-        })
-        .catch((err) => console.error("Error loading squad_players.txt:", err));
-  }, []);
-
-  // lijst van alle keepers laden uit public/keepers.txt
   const [keeperList, setKeeperList] = useState<string[]>([]);
 
   useEffect(() => {
+    fetch("/squad_players.txt")
+      .then(r => r.text())
+      .then(t => {
+        const arr = t.split("\n").map(s => s.trim()).filter(Boolean);
+        setPlayerList(Array.from(new Set(arr)).sort());
+      })
+      .catch(e => console.error("Error loading squad_players.txt:", e));
+  }, []);
+  useEffect(() => {
     fetch("/keepers.txt")
-        .then((res) => res.text())
-        .then((text) => {
-          const keepers = text
-              .split("\n")
-              .map((k) => k.trim())
-              .filter(Boolean);
-          const uniqueSorted = Array.from(new Set(keepers)).sort();
-          setKeeperList(uniqueSorted);
-        })
-        .catch((err) => console.error("Error loading keepers.txt:", err));
+      .then(r => r.text())
+      .then(t => {
+        const arr = t.split("\n").map(s => s.trim()).filter(Boolean);
+        setKeeperList(Array.from(new Set(arr)).sort());
+      })
+      .catch(e => console.error("Error loading keepers.txt:", e));
   }, []);
 
-
+  // ====== STATE ======
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
   const [day, setDay] = useState("");
-
-  // zorgt voor automatische update van weekdag bij update datum:
-  const handleDateChange = (date: string) => {
-    setDate(date);
-    const parsed = new Date(date);
-    setDay(days[parsed.getDay()]);
-  }
-
   const [time, setTime] = useState("");
+
+  // Automatische verzameltijd (kan handmatig overschreven worden)
+  const [gatheringTime, setGatheringTime] = useState("");
+  const [autoGatherEnabled, setAutoGatherEnabled] = useState(true);
+  const prevTimeRef = useRef<string>("");
+
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
   const [gatheringPlace, setGatheringPlace] = useState("");
   const [customGatheringPlace, setCustomGatheringPlace] = useState(false);
-  const [gatheringTime, setGatheringTime] = useState("");
   const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!");
+
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
 
+  // selectie
   const [selectedPlayers, setSelectedPlayers] = useState<Record<string, string>>({});
   const [nonSelectedReasons, setNonSelectedReasons] = useState<Record<string, string>>({});
   const [nonSelectedComments, setNonSelectedComments] = useState<Record<string, string>>({});
@@ -86,7 +87,14 @@ export default function App() {
   const [showSelection, setShowSelection] = useState(true);
   const [showNotSelected, setShowNotSelected] = useState(true);
 
-  // Automatische verzamelplaats
+  // Weekdag syncen bij datum
+  const handleDateChange = (val: string) => {
+    setDate(val);
+    const parsed = new Date(val);
+    setDay(days[parsed.getDay()]);
+  };
+
+  // Automatische verzamelplaats zoals eerder
   useEffect(() => {
     if (!customGatheringPlace) {
       if (matchType === "Uitwedstrijd") {
@@ -101,21 +109,32 @@ export default function App() {
     }
   }, [matchType, customGatheringPlace, gatheringPlace]);
 
-  // --------- SELECTIE LOGICA ---------
+  // Automatische verzameltijd = 1u15 voor kickoff (alleen als autoGatherEnabled true is of als tijd net veranderd is)
+  useEffect(() => {
+    if (!time) return;
+    if (autoGatherEnabled || prevTimeRef.current !== time) {
+      const autoTime = timeMinusMinutes(time, AUTO_ARRIVE_OFFSET_MIN);
+      setGatheringTime(autoTime);
+      prevTimeRef.current = time;
+    }
+  }, [time, autoGatherEnabled]);
+
+  // ====== LOGICA ======
+  const isKeeper = (name: string) => keeperList.includes(name);
+
   const allNotSelected = [
     ...playerList.filter(p => !(p in selectedPlayers)),
     ...keeperList.filter(k => !(k in selectedPlayers) && (nonSelectedReasons[k] || nonSelectedComments[k]))
   ];
 
-
   let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
-    const top = sortedNotSelected.filter(p => p.toLowerCase().includes(searchSelect.toLowerCase()));
-    const rest = sortedNotSelected.filter(p => !p.toLowerCase().includes(searchSelect.toLowerCase()));
+    const s = searchSelect.toLowerCase();
+    const top = sortedNotSelected.filter(p => p.toLowerCase().includes(s));
+    const rest = sortedNotSelected.filter(p => !p.toLowerCase().includes(s));
     sortedNotSelected = [...top, ...rest];
   }
 
-  // alleen keepers die nog niet geselecteerd zijn
   const availableKeepers = keeperList.filter(k => !(k in selectedPlayers));
 
   const selected = Object.keys(selectedPlayers).sort(
@@ -123,28 +142,22 @@ export default function App() {
   );
   const usedNumbers = new Set(Object.values(selectedPlayers).filter(Boolean));
   const alleRugnummersUniek =
-    selected.length === new Set(Object.values(selectedPlayers).filter(Boolean)).size
-    && !selected.some(p => !selectedPlayers[p]);
+    selected.length === new Set(Object.values(selectedPlayers).filter(Boolean)).size &&
+    !selected.some(p => !selectedPlayers[p]);
 
   function handleSelect(player: string) {
     setSelectedPlayers(prev => ({ ...prev, [player]: "" }));
     setNonSelectedReasons(prev => {
-      const updated = { ...prev };
-      delete updated[player];
-      return updated;
+      const n = { ...prev }; delete n[player]; return n;
     });
     setNonSelectedComments(prev => {
-      const updated = { ...prev };
-      delete updated[player];
-      return updated;
+      const n = { ...prev }; delete n[player]; return n;
     });
     setSearchSelect("");
   }
   function removeSelected(player: string) {
     setSelectedPlayers(prev => {
-      const updated = { ...prev };
-      delete updated[player];
-      return updated;
+      const n = { ...prev }; delete n[player]; return n;
     });
   }
   function handleRugnummer(player: string, nummer: string) {
@@ -160,66 +173,52 @@ export default function App() {
     setResponsible(player);
   }
   function autoToewijzen() {
-    const vrijeNummers = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n.toString()));
+    const vrije = jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n));
     let i = 0;
     setSelectedPlayers(prev => {
-      const nieuw = {...prev};
+      const nieuw = { ...prev };
       for (const p of Object.keys(nieuw)) {
-        if (!nieuw[p] && vrijeNummers[i]){
-          nieuw[p] = vrijeNummers[i].toString();
-          i += 1;
+        if (!nieuw[p] && vrije[i]) {
+          nieuw[p] = vrije[i++];
         }
       }
       return nieuw;
     });
   }
 
-  // hulpfunctie om te checken of iemand een keeper is
-  function isKeeper(name:string){
-    return keeperList.includes(name);
-  }
-
-  // ---------- KOPIEER + KONFETTI ----------
+  // Kopiëren + confetti (blijft zoals je gewend bent)
   const copyToClipboard = async () => {
     const el = document.querySelector("#mailpreview-only");
-    if (el && navigator.clipboard && window.ClipboardItem) {
-      const html = el.innerHTML;
+    if (el && navigator.clipboard && (window as any).ClipboardItem) {
+      const html = (el as HTMLElement).innerHTML;
       await navigator.clipboard.write([
-        new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }) }),
+        new (window as any).ClipboardItem({
+          "text/html": new Blob([html], { type: "text/html" }),
+        }),
       ]);
       setSuccess(true);
       setShowConfetti(true);
-      setTimeout(() => setSuccess(false), 2500);
-      setTimeout(() => setShowConfetti(false), 15000);
+      window.setTimeout(() => setSuccess(false), 2500);
+      window.setTimeout(() => setShowConfetti(false), 15000);
     } else {
       alert("Kopiëren niet ondersteund in deze browser.");
     }
   };
 
-  // -------- GENERATE EMAIL & LIVE PREVIEW --------
+  // ====== EMAIL PREVIEW ======
   function generateEmail() {
     if (!date || !time || !opponent) {
       setPreview(`<div style="padding:16px;text-align:center;color:#a00;">Vul datum, tijd en tegenstander in.</div>`);
       return;
     }
-    // Themekleur afhankelijk van matchtype
-    const hoofdKleur = matchType === "Uitwedstrijd"
-      ? "#1679bc"
-      : "#142c54";
+    const hoofdKleur = matchType === "Uitwedstrijd" ? "#1679bc" : "#142c54";
 
-    // Details in correcte volgorde (en logica)
     let detailsRows = `
       <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
       <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
       <tr>
         <td style="font-weight:600;">Datum:</td>
-        <td><strong>
-          ${new Date(date).toLocaleDateString("nl-BE", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })}
-        </strong></td>
+        <td><strong>${new Date(date).toLocaleDateString("nl-BE", { day: "numeric", month: "long", year: "numeric" })}</strong></td>
       </tr>
       <tr><td style="font-weight:600;">Start wedstrijd:</td><td><strong>${time}</strong></td></tr>
       <tr><td style="font-weight:600;">Tegenstander:</td><td><strong>${opponent}</strong></td></tr>
@@ -228,8 +227,8 @@ export default function App() {
     if (matchType === "Uitwedstrijd") {
       detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
-        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
-        <tr><td style="font-weight:600;">Meerijden?</td><td>Om <strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
+        <tr><td style="font-weight:600;">Verzamelen:</td><td><strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
       `;
     } else {
       detailsRows += `
@@ -239,21 +238,20 @@ export default function App() {
 
     const carpoolText = matchType === "Uitwedstrijd"
       ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
-          <strong>Vervoer:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll. 
+          <strong>Vervoer:</strong> We vragen om samen te vertrekken vanaf de parking van KVE Drongen. Dit versterkt de teamgeest en biedt de mogelijkheid om te carpoolen. Voor ouders voor wie dit een omweg is van meer dan 15 minuten, is het toegestaan om rechtstreeks te rijden. Laat dit wel weten via de WhatsApp-poll.
         </div>` : "";
 
     const selectionTableRows = selected.map(player => `
-  <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
-    <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
-    <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">
-      ${player}${isKeeper(player) ? " (k)" : ""}
-    </td>
-    <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
-      ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
-    </td>
-  </tr>
-`).join("");
-
+      <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
+        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
+        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">
+          ${player}${isKeeper(player) ? ' <span style="display:inline-block;padding:2px 6px;border-radius:8px;background:#e8f4ff;color:#1769aa;border:1px solid #bcdcff;font-size:0.85em;margin-left:6px;">keeper</span>' : ""}
+        </td>
+        <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
+          ${responsible === player ? "✅ Verantwoordelijk voor was, fruit & chocomelk" : ""}
+        </td>
+      </tr>
+    `).join("");
 
     const nonSelectedTableRows = allNotSelected.map(player => `
       <tr>
@@ -322,21 +320,27 @@ export default function App() {
     // eslint-disable-next-line
   }, [
     matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
-    arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
+    arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day
   ]);
 
-  // --------- EASTER EGG: Squad complete! ----------
+  // ====== CONFETTI TRIGGER: exact 14 veldspelers + 1 keeper ======
   useEffect(() => {
-    if (selected.length === 15) {
-      setShowConfetti(true);
-      setTimeout(() => setShowConfetti(false), 15000);
-    }
-  }, [selected.length]);
+    const total = selected.length;
+    const keepersInSelection = selected.filter(isKeeper).length;
+    const fieldPlayers = total - keepersInSelection;
 
-  // --------- RENDER ---------
+    const exactlyDesired = (total === 15 && keepersInSelection === 1 && fieldPlayers === 14);
+    if (exactlyDesired) {
+      setShowConfetti(true);
+      const t = window.setTimeout(() => setShowConfetti(false), 15000);
+      return () => window.clearTimeout(t);
+    }
+  }, [selected]);
+
+  // ====== RENDER ======
   return (
     <>
-      {/* Clublogo als watermerk/canvas, met subtiele fade-animatie */}
+      {/* Watermerk met duidelijke "breathing" */}
       <div
         aria-hidden
         style={{
@@ -345,27 +349,26 @@ export default function App() {
           zIndex: 0,
           background: `url(${clublogo}) center center no-repeat`,
           backgroundSize: "56vw",
-          opacity: 0.3,
-          animation: "watermark-fade 7s ease-in-out infinite alternate",
+          opacity: 0.28,
+          animation: "watermark-fade 6.5s ease-in-out infinite alternate",
           pointerEvents: "none"
         }}
       />
-      {/* Confetti */}
+
+      {/* Confetti-layer */}
       <Confetti active={showConfetti} duration={15000} />
+
       <div className="flex flex-col md:flex-row gap-4 w-full p-0 m-0" style={{ position: "relative", zIndex: 1 }}>
-        {/* LINKERDEEL: INPUT */}
+        {/* LINKERDEEL */}
         <div className="w-full md:w-1/2 p-3 md:pl-8 pt-6 md:pt-12 flex flex-col">
           <div className="flex items-center mb-4" style={{ position: "relative", zIndex: 2 }}>
-            <img src={clublogo} alt="clublogo" style={{
-              height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55"
-            }} />
-            <span style={{
-              fontSize: "2.1rem", fontWeight: 900, letterSpacing: "1.5px", color: "#142c54",
-              textShadow: "0 1px 16px #fff7, 0 1px 2px #0d183799", padding: "2px 7px", borderRadius: "8px"
-            }}>
+            <img src={clublogo} alt="clublogo" style={{ height: 54, marginRight: 16, borderRadius: 14, boxShadow: "0 1px 8px #2166aa55" }} />
+            <span style={{ fontSize: "2.1rem", fontWeight: 900, letterSpacing: "1.5px", color: "#142c54",
+              textShadow: "0 1px 16px #fff7, 0 1px 2px #0d183799", padding: "2px 7px", borderRadius: "8px" }}>
               E-mail Generator – KVE Drongen
             </span>
           </div>
+
           <div className="bg-blue-50 rounded-xl p-4 shadow mb-6">
             <ul className="space-y-4">
               <li>
@@ -381,7 +384,18 @@ export default function App() {
               </li>
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Start wedstrijd <span className="text-red-500">*</span></label>
-                <input type="time" value={time} onChange={e => setTime(e.target.value)} className="w-full p-2 rounded text-black" />
+                <input
+                  type="time"
+                  value={time}
+                  onChange={e => {
+                    setTime(e.target.value);
+                    setAutoGatherEnabled(true); // bij wijziging tijd weer auto laten updaten
+                  }}
+                  className="w-full p-2 rounded text-black"
+                />
+                <small className="text-blue-900 block mt-1 opacity-80">
+                  Verzameltijd wordt automatisch op {AUTO_ARRIVE_OFFSET_MIN} min vóór de aftrap gezet (kan je nadien overschrijven).
+                </small>
               </li>
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Tegenstander <span className="text-red-500">*</span></label>
@@ -391,6 +405,7 @@ export default function App() {
                 <label className="block font-semibold mb-1 text-blue-800">Terrein</label>
                 <input type="text" value={field} onChange={e => setField(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
+
               {matchType === "Uitwedstrijd" && (
                 <>
                   <li>
@@ -403,10 +418,23 @@ export default function App() {
                   </li>
                 </>
               )}
+
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Verzameltijd</label>
-                <input type="time" value={gatheringTime} onChange={e => setGatheringTime(e.target.value)} className="w-full p-2 rounded text-black" />
+                <input
+                  type="time"
+                  value={gatheringTime}
+                  onChange={e => {
+                    setGatheringTime(e.target.value);
+                    setAutoGatherEnabled(false); // handmatige override
+                  }}
+                  className="w-full p-2 rounded text-black"
+                />
+                <small className="text-blue-900 block mt-1 opacity-80">
+                  Handmatig aangepast? Dan blijft dit tijdstip behouden, ook als de aftrap wijzigt.
+                </small>
               </li>
+
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Verzamelplaats</label>
                 {!customGatheringPlace ? (
@@ -434,148 +462,209 @@ export default function App() {
                   />
                 )}
               </li>
+
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Opmerking (algemeen)</label>
                 <input type="text" value={remark} onChange={e => setRemark(e.target.value)} className="w-full p-2 rounded text-black" />
               </li>
             </ul>
           </div>
+
           <div className="mb-2 text-lg text-blue-900">
-            Geselecteerd: <span className="font-bold">{selected.length}</span> / {maxSpelers}
-            {selected.length > maxSpelers &&
-              <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">⚠️ Meer dan {maxSpelers.toString()} geselecteerd!</span>
+            Geselecteerd: <span className="font-bold">{selected.length}</span> / {MAX_PLAYERS}
+            {selected.length > MAX_PLAYERS &&
+              <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">
+                ⚠️ Meer dan {MAX_PLAYERS} geselecteerd!
+              </span>
             }
           </div>
+
           {selected.length > 0 && (
             <div className={`mb-2 px-2 py-1 rounded font-bold 
-              ${alleRugnummersUniek 
-              ? 'bg-green-200 text-green-900' 
-              : 'bg-red-200 text-red-900 animate-pulse'}`}>
-              {alleRugnummersUniek
-                ? '✅ Alle rugnummers zijn uniek'
-                : '❌ Er zijn dubbele of ontbrekende rugnummers'}
+              ${alleRugnummersUniek ? 'bg-green-200 text-green-900' : 'bg-red-200 text-red-900 animate-pulse'}`}>
+              {alleRugnummersUniek ? '✅ Alle rugnummers zijn uniek' : '❌ Er zijn dubbele of ontbrekende rugnummers'}
             </div>
           )}
+
           <button className="font-bold mb-2 px-2 py-1 bg-blue-700 hover:bg-blue-900 rounded text-white transition-all"
             onClick={() => setShowSelection(s => !s)}>
             {showSelection ? "▼" : "►"} Selectie ({selected.length})
           </button>
+
           {showSelection && (
-          <div className="mb-6">
-            <div className="mb-2 flex flex-col md:flex-row gap-2 items-center">
-              <input
-                type="text"
-                className="p-2 rounded text-black w-40"
-                placeholder="Zoek rugnummer..."
-                value={searchRugnummer}
-                onChange={e => setSearchRugnummer(e.target.value)}
-              />
-              <button
-                onClick={autoToewijzen}
-                className="bg-blue-600 text-white px-3 py-2 rounded ml-2 font-bold hover:bg-blue-900 transition-all"
-              >
-                Vul rugnummers op volgorde
-              </button>
-            </div>
-            <div className="rounded-xl bg-green-50 overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                  <tr>
-                    <th className="p-2 text-left">Selectie</th>
-                    <th className="p-2 text-left">Rugnummer</th>
-                    <th className="p-2 text-left">Naam speler</th>
-                    <th className="p-2 text-left">Verantwoordelijk</th>
-                    <th></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selected
-                    .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
-                    .map(player => (
-                    <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
-                      <td className="p-2">
-                        <input
-                          type="checkbox"
-                          className="w-6 h-6"
-                          checked={true}
-                          onChange={() => removeSelected(player)}
-                          aria-label={`Verwijder ${player} uit selectie`}
-                        />
-                      </td>
-                      <td className="p-2">
-                        <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
-                          <option value="">--</option>
-                          {jerseyNumbers.map(n => (
-                            <option key={n} value={n} disabled={usedNumbers.has(n.toString()) && selectedPlayers[player] !== n.toString()}>{n}</option>
-                          ))}
-                        </select>
-                      </td>
-                      <td className="p-2">{player}</td>
-                      <td className="p-2 text-center">
-                        <input
-                          type="radio"
-                          name="verantwoordelijke"
-                          checked={responsible === player}
-                          onChange={() => handleResponsible(player)}
-                        />
-                        {responsible === player && (
-                          <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
-                        )}
-                      </td>
-                      <td className="p-2"></td>
+            <div className="mb-6">
+              <div className="mb-2 flex flex-col md:flex-row gap-2 items-center">
+                <input
+                  type="text"
+                  className="p-2 rounded text-black w-40"
+                  placeholder="Zoek rugnummer..."
+                  value={searchRugnummer}
+                  onChange={e => setSearchRugnummer(e.target.value)}
+                />
+                <button
+                  onClick={autoToewijzen}
+                  className="bg-blue-600 text-white px-3 py-2 rounded ml-2 font-bold hover:bg-blue-900 transition-all"
+                >
+                  Vul rugnummers op volgorde
+                </button>
+              </div>
+              <div className="rounded-xl bg-green-50 overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="p-2 text-left">Selectie</th>
+                      <th className="p-2 text-left">Rugnummer</th>
+                      <th className="p-2 text-left">Naam speler</th>
+                      <th className="p-2 text-left">Verantwoordelijk</th>
+                      <th></th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {selected
+                      .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
+                      .map(player => (
+                        <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
+                          <td className="p-2">
+                            <input
+                              type="checkbox"
+                              className="w-6 h-6"
+                              checked={true}
+                              onChange={() => removeSelected(player)}
+                              aria-label={`Verwijder ${player} uit selectie`}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <select className="w-14 text-black" value={selectedPlayers[player]} onChange={e => handleRugnummer(player, e.target.value)}>
+                              <option value="">--</option>
+                              {jerseyNumbers.map(n => (
+                                <option key={n} value={n} disabled={usedNumbers.has(n) && selectedPlayers[player] !== n}>{n}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="p-2">
+                            {player}{isKeeper(player) ? <em style={{ marginLeft: 6, fontSize: "0.9em", color: "#1769aa" }}>(keeper)</em> : null}
+                          </td>
+                          <td className="p-2 text-center">
+                            <input
+                              type="radio"
+                              name="verantwoordelijke"
+                              checked={responsible === player}
+                              onChange={() => handleResponsible(player)}
+                            />
+                            {responsible === player && (
+                              <span className="ml-2">✅ Verantwoordelijk voor was, fruit & chocomelk</span>
+                            )}
+                          </td>
+                          <td className="p-2"></td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
           )}
+
           <button className="font-bold mb-2 px-2 py-1 bg-red-700 hover:bg-red-900 rounded text-white transition-all"
             onClick={() => setShowNotSelected(s => !s)}>
             {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
           </button>
+
           {showNotSelected && (
+            <div className="mb-8">
+              <h3 className="font-semibold mb-1 text-blue-900">Zoek en selecteer spelers</h3>
+              <input
+                type="text"
+                placeholder="Zoek speler..."
+                value={searchSelect}
+                onChange={e => setSearchSelect(e.target.value)}
+                className="p-2 rounded text-black w-full mb-2"
+                autoComplete="off"
+              />
+              <div className="rounded-xl bg-red-50 overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="p-2 text-left">Selecteer</th>
+                      <th className="p-2 text-left">Naam speler</th>
+                      <th className="p-2 text-left">Reden niet geselecteerd & Opmerking</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sortedNotSelected.map(player => (
+                      <tr key={player}>
+                        <td className="p-2">
+                          <input
+                            type="checkbox"
+                            className="w-6 h-6"
+                            checked={false}
+                            onChange={() => handleSelect(player)}
+                            aria-label={`Selecteer ${player}`}
+                          />
+                        </td>
+                        <td className="p-2">
+                          <span className={player.toLowerCase().includes(searchSelect.toLowerCase()) && searchSelect ? "bg-yellow-200 px-1 rounded" : ""}>
+                            {player}
+                          </span>
+                        </td>
+                        <td className="p-2">
+                          <select
+                            className="w-full text-black"
+                            value={nonSelectedReasons[player] || ""}
+                            onChange={e => handleNonSelectedReason(player, e.target.value)}
+                          >
+                            <option value="">Reden niet geselecteerd</option>
+                            {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
+                          </select>
+                          <input
+                            type="text"
+                            className="w-full mt-1 p-1 rounded text-black"
+                            placeholder="Extra opmerking (optioneel)"
+                            value={nonSelectedComments[player] || ""}
+                            onChange={e => handleNonSelectedComment(player, e.target.value)}
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Keepers-sectie voor overzicht/selectie */}
           <div className="mb-10">
-            <h3 className="font-semibold mb-1 text-blue-900">Zoek en selecteer spelers</h3>
-            <input
-              type="text"
-              placeholder="Zoek speler..."
-              value={searchSelect}
-              onChange={e => setSearchSelect(e.target.value)}
-              className="p-2 rounded text-black w-full mb-2"
-              autoComplete="off"
-            />
-            <div className="rounded-xl bg-red-50 overflow-x-auto">
+            <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers</h3>
+            <div className="rounded-xl bg-blue-50 overflow-x-auto">
               <table className="min-w-full">
                 <thead>
                   <tr>
                     <th className="p-2 text-left">Selecteer</th>
-                    <th className="p-2 text-left">Naam speler</th>
-                    <th className="p-2 text-left">Reden niet geselecteerd & Opmerking</th>
+                    <th className="p-2 text-left">Naam keeper</th>
+                    <th className="p-2 text-left">Reden niet geselecteerd & opmerking</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedNotSelected.map(player => (
-                    <tr key={player}>
+                  {availableKeepers.map(keeper => (
+                    <tr key={keeper}>
                       <td className="p-2">
                         <input
                           type="checkbox"
                           className="w-6 h-6"
                           checked={false}
-                          onChange={() => handleSelect(player)}
-                          aria-label={`Selecteer ${player}`}
+                          onChange={() => handleSelect(keeper)}
+                          aria-label={`Selecteer ${keeper}`}
                         />
                       </td>
                       <td className="p-2">
-                        <span className={player.toLowerCase().includes(searchSelect.toLowerCase()) && searchSelect ? "bg-yellow-200 px-1 rounded" : ""}>
-                          {player}
+                        <span className={keeper.toLowerCase().includes(searchSelect.toLowerCase()) && searchSelect ? "bg-yellow-200 px-1 rounded" : ""}>
+                          {keeper}
                         </span>
                       </td>
                       <td className="p-2">
                         <select
                           className="w-full text-black"
-                          value={nonSelectedReasons[player] || ""}
-                          onChange={e => handleNonSelectedReason(player, e.target.value)}
+                          value={nonSelectedReasons[keeper] || ""}
+                          onChange={e => handleNonSelectedReason(keeper, e.target.value)}
                         >
                           <option value="">Reden niet geselecteerd</option>
                           {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
@@ -584,8 +673,8 @@ export default function App() {
                           type="text"
                           className="w-full mt-1 p-1 rounded text-black"
                           placeholder="Extra opmerking (optioneel)"
-                          value={nonSelectedComments[player] || ""}
-                          onChange={e => handleNonSelectedComment(player, e.target.value)}
+                          value={nonSelectedComments[keeper] || ""}
+                          onChange={e => handleNonSelectedComment(keeper, e.target.value)}
                         />
                       </td>
                     </tr>
@@ -594,104 +683,29 @@ export default function App() {
               </table>
             </div>
           </div>
-          )}
-          {selected.some(p => !selectedPlayers[p]) && (
-            <p className="text-yellow-400 font-semibold mb-2 animate-pulse">⚠️ Sommige spelers hebben nog geen rugnummer!</p>
-          )}
 
-          {/* Keepers sectie */}
-          <div className="mb-6">
-            <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers</h3>
-            <div className="rounded-xl bg-blue-50 overflow-x-auto">
-              <table className="min-w-full">
-                <thead>
-                <tr>
-                  <th className="p-2 text-left">Selecteer</th>
-                  <th className="p-2 text-left">Naam keeper</th>
-                  <th className="p-2 text-left">Reden niet geselecteerd & opmerking</th>
-                </tr>
-                </thead>
-                <tbody>
-                {availableKeepers.map(keeper => (
-                    <tr key={keeper}>
-                      <td className="p-2">
-                        <input
-                            type="checkbox"
-                            className="w-6 h-6"
-                            checked={false}
-                            onChange={() => handleSelect(keeper)}
-                            aria-label={`Selecteer ${keeper}`}
-                        />
-                      </td>
-                      <td className="p-2">
-                        <span
-                            className={keeper.toLowerCase().includes(searchSelect.toLowerCase()) && searchSelect ? "bg-yellow-200 px-1 rounded" : ""}>
-                          {keeper}
-                        </span>
-                      </td>
-                      <td className="p-2">
-                        <select
-                            className="w-full text-black"
-                            value={nonSelectedReasons[keeper] || ""}
-                            onChange={e => handleNonSelectedReason(keeper, e.target.value)}
-                        >
-                          <option value=""> Reden niet geselecteerd</option>
-                          {nonSelectionReasons.map(r => <option key={r} value={r}>{r}</option>)}
-                        </select>
-                        <input
-                            type="text"
-                            className="w-full mt-1 p-1 rounded text-black"
-                            placeholder="Extra opmerking (optioneel)"
-                            value={nonSelectedComments[keeper] || ""}
-                            onChange={e => handleNonSelectedComment(keeper, e.target.value)}
-                        />
-                      </td>
-                    </tr>
-                ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
         </div>
-        {/* RECHTS: LIVE PREVIEW */}
+
+        {/* RECHTS: PREVIEW */}
         <div className="w-full md:w-1/2 p-2 md:pr-8 pt-7 flex flex-col">
-          <div className="bg-white text-black p-4 rounded-2xl shadow-xl border border-blue-200"
-               style={{minHeight: 420, transition: "box-shadow 0.33s" }}>
+          <div className="bg-white text-black p-4 rounded-2xl shadow-xl border border-blue-200" style={{ minHeight: 420, transition: "box-shadow 0.33s" }}>
             <div id="mailpreview-only" dangerouslySetInnerHTML={{ __html: preview }} />
           </div>
         </div>
       </div>
-      {/* Sticky kopieerknop */}
+
+      {/* Kopieerknop */}
       <FloatingCopyButton onClick={copyToClipboard} success={success} />
-      {/* Kleine CSS extra voor animatie */}
+
+      {/* Inline CSS voor breathing effect */}
       <style>{`
         @keyframes watermark-fade {
-          0% { opacity: 0.13; }
-          50% { opacity: 0.44; }
-          100% { opacity: 0.13; }
+          0% { opacity: 0.18; transform: scale(0.98); }
+          50% { opacity: 0.38; transform: scale(1.015); }
+          100% { opacity: 0.2; transform: scale(0.99); }
         }
-        .shadow-xl {
-          box-shadow: 0 8px 32px #2166aa18, 0 2px 16px #284cff17 !important;
-        }
-        .rounded-2xl {
-          border-radius: 18px !important;
-        }
-        button[aria-label="Kopieer e-mail"] {
-          animation: ${success ? "copy-pulse 1.2s" : "none"};
-        }
-        @keyframes copy-pulse {
-          0% { box-shadow: 0 0 0 0 #4ec5fc66; }
-          70% { box-shadow: 0 0 0 10px #4ec5fc00; }
-          100% { box-shadow: 0 0 0 0 #4ec5fc00; }
-        }
-        /* Hover effects knoppen */
-        button, select, input[type="button"], input[type="submit"] {
-          transition: box-shadow 0.15s, background 0.17s;
-        }
-        button:hover:not(:disabled) {
-          box-shadow: 0 2px 10px #1469a155 !important;
-          background: #1c58b022 !important;
-        }
+        .shadow-xl { box-shadow: 0 8px 32px #2166aa18, 0 2px 16px #284cff17 !important; }
+        .rounded-2xl { border-radius: 18px !important; }
       `}</style>
     </>
   );
