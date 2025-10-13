@@ -65,8 +65,12 @@ export default function App() {
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
+
+  // Verzamelplaats + Verzameltijd (alleen bij Uitwedstrijd tonen in UI en mail)
   const [gatheringPlace, setGatheringPlace] = useState("");
   const [customGatheringPlace, setCustomGatheringPlace] = useState(false);
+  const [gatheringTime, setGatheringTime] = useState(""); // <-- terug toegevoegd
+
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!");
 
@@ -90,7 +94,7 @@ export default function App() {
     setDay(days[parsed.getDay()]);
   };
 
-  // Automatische verzamelplaats
+  // Automatische plaats (zoals je had)
   useEffect(() => {
     if (!customGatheringPlace) {
       if (matchType === "Uitwedstrijd") {
@@ -118,7 +122,7 @@ export default function App() {
   // ====== LOGICA ======
   const isKeeper = (name: string) => keeperList.includes(name);
 
-  // Niet-geselecteerd (veldspelers) – keepers beheren apart
+  // Niet-geselecteerd (veldspelers) – keepers apart
   const allNotSelectedField = playerList.filter(p => !(p in selectedPlayers));
   let sortedNotSelectedField = [...allNotSelectedField];
   if (searchSelect.trim()) {
@@ -217,6 +221,7 @@ export default function App() {
       detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
         <tr><td style="font-weight:600;">Verzamelplaats:</td><td><strong>${gatheringPlace}</strong></td></tr>
+        <tr><td style="font-weight:600;">Verzameltijd (parking):</td><td><strong>${gatheringTime || "-"}</strong></td></tr>
       `;
     } else {
       detailsRows += `
@@ -299,10 +304,9 @@ export default function App() {
 
   useEffect(() => {
     generateEmail();
-    // eslint-disable-next-line
   }, [
     matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace,
-    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day, arrivalTime
+    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day, arrivalTime, gatheringTime
   ]);
 
   // ====== CONFETTI TRIGGER: exact 14 veldspelers + 1 keeper ======
@@ -316,7 +320,7 @@ export default function App() {
       const t = window.setTimeout(() => setShowConfetti(false), 15000);
       return () => window.clearTimeout(t);
     }
-  }, [selected]);
+  }, [selected, keeperList]);
 
   // ====== RENDER ======
   return (
@@ -408,39 +412,72 @@ export default function App() {
                     <label className="block font-semibold mb-1 text-blue-800">Adres</label>
                     <input type="text" value={address} onChange={e => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
                   </li>
+                  <li>
+                    <label className="block font-semibold mb-1 text-blue-800">Verzamelplaats</label>
+                    {!customGatheringPlace ? (
+                      <select
+                        value={gatheringPlace}
+                        onChange={e => {
+                          if (e.target.value === "__custom") setCustomGatheringPlace(true);
+                          else setGatheringPlace(e.target.value);
+                        }}
+                        className="w-full p-2 rounded text-black"
+                      >
+                        <option value="">Kies plaats</option>
+                        <option value="Parking KVE">Parking KVE</option>
+                        <option value="__custom">Andere (manueel invullen)</option>
+                      </select>
+                    ) : (
+                      <input
+                        type="text"
+                        value={gatheringPlace}
+                        onChange={e => setGatheringPlace(e.target.value)}
+                        className="w-full p-2 rounded text-black"
+                        placeholder="Geef plaats op"
+                        onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
+                      />
+                    )}
+                  </li>
+                  <li>
+                    <label className="block font-semibold mb-1 text-blue-800">Verzameltijd (parking)</label>
+                    <input
+                      type="time"
+                      value={gatheringTime}
+                      onChange={e => setGatheringTime(e.target.value)}
+                      className="w-full p-2 rounded text-black"
+                    />
+                  </li>
                 </>
               )}
 
-              {/* Verzamelplaats (blijft bestaan, zonder tijd) */}
-              <li>
-                <label className="block font-semibold mb-1 text-blue-800">
-                  {matchType === "Uitwedstrijd" ? "Verzamelplaats" : "Kleedkamer"}
-                </label>
-                {!customGatheringPlace ? (
-                  <select
-                    value={gatheringPlace}
-                    onChange={e => {
-                      if (e.target.value === "__custom") setCustomGatheringPlace(true);
-                      else setGatheringPlace(e.target.value);
-                    }}
-                    className="w-full p-2 rounded text-black"
-                  >
-                    <option value="">Kies plaats</option>
-                    <option value="Kleedkamer X">Kleedkamer X</option>
-                    <option value="Parking KVE">Parking KVE</option>
-                    <option value="__custom">Andere (manueel invullen)</option>
-                  </select>
-                ) : (
-                  <input
-                    type="text"
-                    value={gatheringPlace}
-                    onChange={e => setGatheringPlace(e.target.value)}
-                    className="w-full p-2 rounded text-black"
-                    placeholder="Geef plaats op"
-                    onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
-                  />
-                )}
-              </li>
+              {matchType === "Thuiswedstrijd" && (
+                <li>
+                  <label className="block font-semibold mb-1 text-blue-800">Kleedkamer</label>
+                  {!customGatheringPlace ? (
+                    <select
+                      value={gatheringPlace}
+                      onChange={e => {
+                        if (e.target.value === "__custom") setCustomGatheringPlace(true);
+                        else setGatheringPlace(e.target.value);
+                      }}
+                      className="w-full p-2 rounded text-black"
+                    >
+                      <option value="">Kies kleedkamer</option>
+                      <option value="Kleedkamer X">Kleedkamer X</option>
+                      <option value="__custom">Andere (manueel invullen)</option>
+                    </select>
+                  ) : (
+                    <input
+                      type="text"
+                      value={gatheringPlace}
+                      onChange={e => setGatheringPlace(e.target.value)}
+                      className="w-full p-2 rounded text-black"
+                      placeholder="Geef kleedkamer op"
+                      onBlur={() => { if (!gatheringPlace) setCustomGatheringPlace(false); }}
+                    />
+                  )}
+                </li>
+              )}
 
               <li>
                 <label className="block font-semibold mb-1 text-blue-800">Opmerking (algemeen)</label>
@@ -449,7 +486,7 @@ export default function App() {
             </ul>
           </div>
 
-          {/* Keepers (NA wedstrijdinfo) */}
+          {/* Keepers */}
           <div className="mb-6">
             <h3 className="font-bold text-lg text-blue-900 mb-2">Keepers</h3>
             <div className="rounded-xl bg-blue-50 overflow-x-auto">
