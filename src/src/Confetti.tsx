@@ -1,189 +1,170 @@
 import React, { useEffect, useRef, useState } from "react";
 
-type ConfettiParticle = {
+type Particle = {
   x: number;
   y: number;
-  r: number;
-  d: number;
+  w: number;     // breedte
+  h: number;     // hoogte
+  vy: number;    // verticale snelheid
+  vxA: number;   // amplitude voor zigzag (sinus)
+  vxW: number;   // frequentie voor zigzag
+  phase: number; // startfase voor sinus
   color: string;
-  tilt: number;
-  tiltAngle: number;
-  tiltAngleIncremental: number;
-  vy: number; // verticale snelheid
   settled: boolean; // ligt op de bodem
 };
 
 const COLORS = [
-  "#f44336","#e91e63","#9c27b0","#673ab7","#3f51b5",
-  "#2196f3","#03a9f4","#00bcd4","#009688","#4caf50",
-  "#8bc34a","#cddc39","#ffeb3b","#ffc107","#ff9800","#ff5722"
+  "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5",
+  "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50",
+  "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
 ];
 
-function randomColor() {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
+function rand(min: number, max: number) {
+  return Math.random() * (max - min) + min;
 }
-function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+function pick<T>(arr: T[]) {
+  return arr[Math.floor(Math.random() * arr.length)];
 }
 
-interface ConfettiProps {
+interface Props {
   active: boolean;
-  duration: number; // ms totale tijd (inclusief 2s settle + 0.5s fade)
+  /** totale duur in ms (inclusief 2s liggen + fade) */
+  duration: number;
 }
 
-const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
+const Confetti: React.FC<Props> = ({ active, duration }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const rafRef = useRef<number | null>(null);
-  const stopTimer = useRef<number | null>(null);
-  const [visible, setVisible] = useState(false);
-  const [fade, setFade] = useState(false);
+  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    if (!active) {
-      // netjes opruimen en unmounten
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      if (stopTimer.current) window.clearTimeout(stopTimer.current);
-      stopTimer.current = null;
-      setFade(false);
-      setVisible(false);
-      return;
-    }
+    if (!active) return;
 
-    setVisible(true);
-    setFade(false);
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const count = Math.max(180, Math.floor(W / 4)); // véél confetti
-    const particles: ConfettiParticle[] = [];
+    // full screen + resize
+    const setSize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    setSize();
+    window.addEventListener("resize", setSize);
 
+    // particles genereren (meer op brede schermen)
+    const count = Math.max(160, Math.floor(window.innerWidth * 0.25));
+    const parts: Particle[] = [];
     for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * W,
-        y: Math.random() * H - H,
-        r: randomInt(7, 15),
-        d: randomInt(10, 40),
-        color: randomColor(),
-        tilt: Math.floor(Math.random() * 10) - 10,
-        tiltAngle: Math.random() * Math.PI,
-        tiltAngleIncremental: Math.random() * 0.07 + 0.05,
-        vy: 1 + Math.random() * 2.2,
+      parts.push({
+        x: Math.random() * canvas.width,
+        y: -rand(0, canvas.height),           // vanaf boven verspreid
+        w: rand(6, 12),
+        h: rand(10, 18),
+        vy: rand(2.2, 3.6),
+        vxA: rand(0.6, 1.4) * (Math.random() < 0.5 ? -1 : 1), // zigzag amplitude (px per frame via sin)
+        vxW: rand(0.012, 0.025),              // zigzag frequentie
+        phase: Math.random() * Math.PI * 2,
+        color: pick(COLORS),
         settled: false,
       });
     }
 
-    let angle = 0;
-    let settledTimeStart: number | null = null;
+    let t0 = performance.now();
+    let phaseTime = 0; // voor sin-beweging
+    let lingerStart: number | null = null; // moment dat alles ligt
 
-    const draw = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    const draw = (now: number) => {
+      const elapsed = now - t0;
+      phaseTime += 1; // incrementele tijd voor zijwaarts sin
 
-      ctx.clearRect(0, 0, W, H);
-
-      // tekenen (rechthoek-stroken met tilt)
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        ctx.beginPath();
-        ctx.lineWidth = p.r;
-        ctx.strokeStyle = p.color;
-        ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
-        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 3);
-        ctx.stroke();
-      }
-
-      update();
-
-      rafRef.current = requestAnimationFrame(draw);
-    };
-
-    const update = () => {
-      angle += 0.02;
-
+      // update
       let allSettled = true;
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-
+      for (const p of parts) {
         if (!p.settled) {
-          // zig-zag dalen
-          p.y += p.vy + (Math.cos(angle + p.d) + 3 + p.r / 3) / 3;
-          p.x += Math.sin(angle) * 1.2;
-          p.tiltAngle += p.tiltAngleIncremental;
-          p.tilt = Math.sin(p.tiltAngle) * 15;
-
-          // bodem check
-          if (p.y >= H - 2) {
-            p.y = H - 2;
+          // zigzag
+          const vx = Math.sin(p.phase + phaseTime * p.vxW) * p.vxA;
+          p.x += vx;
+          p.y += p.vy;
+          // bodem?
+          const bottom = canvas.height - p.h / 2;
+          if (p.y >= bottom) {
+            p.y = bottom;
             p.settled = true;
           } else {
             allSettled = false;
           }
         }
+        // aan randen re-bounce zachtjes zodat alles zichtbaar blijft
+        if (p.x < -20) p.x = -20;
+        if (p.x > canvas.width + 20) p.x = canvas.width + 20;
       }
 
-      // als alles ligt, 2s laten liggen en dan fade-out
-      if (allSettled && settledTimeStart === null) {
-        settledTimeStart = performance.now();
+      // tekenen
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      // lichte overall fade als fadeOut aanstaat
+      if (fadeOut) {
+        ctx.globalAlpha = 0.0; // canvas opacity geregeld via style, dus hier 1 laten
       }
-      if (settledTimeStart !== null) {
-        const elapsed = performance.now() - settledTimeStart;
-        if (elapsed >= 2000) {
-          // start fade-out en stop snel daarna
-          setFade(true);
-          // na 500ms (fade), onzichtbaar + cleanup
-          if (!stopTimer.current) {
-            stopTimer.current = window.setTimeout(() => {
-              if (rafRef.current) cancelAnimationFrame(rafRef.current);
-              rafRef.current = null;
-              setVisible(false);
-              setFade(false);
-            }, 500);
-          }
+      for (const p of parts) {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x, p.y, p.w, p.h);
+      }
+      ctx.restore();
+
+      // als alles ligt -> 2s laten liggen, daarna fade starten (als dat nog niet gestart is)
+      if (allSettled && lingerStart === null) {
+        lingerStart = now;
+      }
+      if (lingerStart !== null && !fadeOut) {
+        if (now - lingerStart >= 2000) {
+          setFadeOut(true);
         }
       }
+
+      // stop criteria: totale duur voorbij
+      if (elapsed >= duration) {
+        cleanup();
+        return;
+      }
+
+      rafRef.current = requestAnimationFrame(draw);
     };
 
-    draw();
-
-    // complete hard-stop als extra vangnet (na duration)
-    const hardStop = window.setTimeout(() => {
-      setFade(true);
+    const cleanup = () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      window.setTimeout(() => {
-        setVisible(false);
-        setFade(false);
-      }, 500);
-    }, Math.max(1000, duration)); // minimaal 1s
+      window.removeEventListener("resize", setSize);
+      setFadeOut(false);
+      // canvas leegmaken
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    rafRef.current = requestAnimationFrame(draw);
+
+    // safety stop (fallback) exact op duration
+    const hardStop = setTimeout(() => {
+      cleanup();
+    }, duration + 50);
 
     return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-      window.clearTimeout(hardStop);
-      if (stopTimer.current) window.clearTimeout(stopTimer.current);
-      stopTimer.current = null;
-      setFade(false);
+      clearTimeout(hardStop);
+      cleanup();
     };
   }, [active, duration]);
 
-  if (!visible) return null;
+  if (!active) return null;
 
   return (
     <canvas
       ref={canvasRef}
-      width={window.innerWidth}
-      height={window.innerHeight}
       style={{
         position: "fixed",
-        left: 0,
-        top: 0,
+        inset: 0,
         pointerEvents: "none",
         zIndex: 9999,
-        opacity: fade ? 0 : 1,
-        transition: "opacity 0.5s linear",
+        opacity: fadeOut ? 0 : 1,
+        transition: "opacity 0.8s linear",
       }}
     />
   );
