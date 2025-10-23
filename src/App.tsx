@@ -18,6 +18,23 @@ const nonSelectionReasons = [
 
 const days = ["Zondag", "Maandag", "Dinsdag", "Woensdag", "Donderdag", "Vrijdag", "Zaterdag"];
 
+// ------- HULP: tijdformat & -berekening
+function pad(n: number) {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+function formatHHMM(d: Date) {
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+/** time: "HH:MM", returns "HH:MM" minus 75 minutes (date component is irrelevant for display) */
+function minus75min(timeHHMM: string) {
+  if (!timeHHMM) return "";
+  const [hh, mm] = timeHHMM.split(":").map((x) => parseInt(x, 10));
+  const base = new Date();
+  base.setHours(hh, mm, 0, 0);
+  base.setMinutes(base.getMinutes() - 75);
+  return formatHHMM(base);
+}
+
 export default function App() {
   // ------- KERN- & KEEPERSLIJSTEN
   const [playerList, setPlayerList] = useState<string[]>([]);
@@ -49,7 +66,6 @@ export default function App() {
   const [matchType, setMatchType] = useState("Thuiswedstrijd");
   const [date, setDate] = useState("");
   const [day, setDay] = useState("");
-
   const handleDateChange = (d: string) => {
     setDate(d);
     const parsed = new Date(d);
@@ -59,11 +75,13 @@ export default function App() {
   const [time, setTime] = useState("");
   const [opponent, setOpponent] = useState("");
   const [field, setField] = useState("");
-  const [address, setAddress] = useState("");
+
+  // Uit: gathering (parking)
   const [gatheringPlace, setGatheringPlace] = useState("");
   const [customGatheringPlace, setCustomGatheringPlace] = useState(false);
   const [gatheringTime, setGatheringTime] = useState("");
-  const [arrivalTimeOpponent, setArrivalTimeOpponent] = useState("");
+  const [address, setAddress] = useState("");
+
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!");
   const [preview, setPreview] = useState("");
@@ -87,9 +105,7 @@ export default function App() {
           setGatheringPlace("Parking KVE");
         }
       } else {
-        if (!gatheringPlace || gatheringPlace.trim().toLowerCase().includes("parking")) {
-          setGatheringPlace("Kleedkamer X");
-        }
+        // Thuis gebruiken we geen gatheringPlace, dus niets forceren
       }
     }
   }, [matchType, customGatheringPlace, gatheringPlace]);
@@ -99,7 +115,6 @@ export default function App() {
     return keeperList.includes(name);
   }
 
-  // Niet-geselecteerden (alle spelers + alle keepers die niet in selectie zitten)
   const allNotSelected: string[] = [
     ...playerList.filter((p) => !(p in selectedPlayers)),
     ...keeperList.filter((k) => !(k in selectedPlayers)),
@@ -113,10 +128,8 @@ export default function App() {
     sortedNotSelected = [...top, ...rest];
   }
 
-  // Alleen keepers die nog niet geselecteerd zijn (voor de “keepers”-sectie)
   const availableKeepers: string[] = keeperList.filter((k) => !(k in selectedPlayers));
 
-  // Geselecteerde namen gesorteerd op rugnummer
   const selected: string[] = Object.keys(selectedPlayers).sort(
     (a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b])
   );
@@ -206,8 +219,9 @@ export default function App() {
     }
 
     const hoofdKleur = matchType === "Uitwedstrijd" ? "#1679bc" : "#142c54";
+    const arrivalAtVenue = minus75min(time); // 1u15 voor aftrap
 
-    // Wedstrijddetails in correcte volgorde
+    // Wedstrijddetails
     let detailsRows = `
       <tr><td style="font-weight:600;width:175px;">Dag:</td><td><strong>${day}</strong></td></tr>
       <tr><td style="font-weight:600;">Type wedstrijd:</td><td><strong>${matchType}</strong></td></tr>
@@ -223,8 +237,12 @@ export default function App() {
     if (matchType === "Uitwedstrijd") {
       detailsRows += `
         <tr><td style="font-weight:600;">Adres:</td><td>${address}</td></tr>
-        ${arrivalTimeOpponent ? `<tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalTimeOpponent} (${opponent})</strong></td></tr>` : ""}
+        <tr><td style="font-weight:600;">Aankomst tegenstander:</td><td><strong>${arrivalAtVenue} (${opponent})</strong></td></tr>
         <tr><td style="font-weight:600;">Verzamelen (parking):</td><td>Om <strong>${gatheringTime}</strong> aan <strong>${gatheringPlace}</strong></td></tr>
+      `;
+    } else {
+      detailsRows += `
+        <tr><td style="font-weight:600;">Aankomst kleedkamer:</td><td><strong>${arrivalAtVenue} (KVE Drongen)</strong></td></tr>
       `;
     }
 
@@ -235,7 +253,7 @@ export default function App() {
           </div>`
         : "";
 
-    // Selectie-rijen (zonder “(k)” label in mail)
+    // Selectie-rijen
     const selectionTableRows = selected
       .map((player: string) => `
         <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
@@ -249,7 +267,7 @@ export default function App() {
       .join("");
 
     // Niet-geselecteerden (keepers + veldspelers)
-    const nonSelectedTableRows = allNotSelected
+    const nonSelectedTableRows = [...allNotSelected]
       .map((player: string) => `
         <tr>
           <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${player}</td>
@@ -322,15 +340,15 @@ export default function App() {
     // eslint-disable-next-line
   }, [
     matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
-    arrivalTimeOpponent, responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
+    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments
   ]);
 
-  // --------- EASTER EGG: exact 14 veldspelers + 1 keeper
+  // --------- EASTER EGG: confetti bij 15 totaal met ≥1 keeper
   useEffect(() => {
     const names = Object.keys(selectedPlayers);
     const keepersSel = names.filter((n) => isKeeper(n)).length;
-    const fieldSel = names.length - keepersSel;
-    if (fieldSel === 14 && keepersSel === 1) {
+    const total = names.length;
+    if (total === 15 && keepersSel >= 1) {
       setShowConfetti(true);
       const t = setTimeout(() => setShowConfetti(false), 15000);
       return () => clearTimeout(t);
@@ -400,10 +418,6 @@ export default function App() {
                   <li>
                     <label className="block font-semibold mb-1 text-blue-800">Adres</label>
                     <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} className="w-full p-2 rounded text-black" />
-                  </li>
-                  <li>
-                    <label className="block font-semibold mb-1 text-blue-800">Aankomstuur bij tegenstander</label>
-                    <input type="time" value={arrivalTimeOpponent} onChange={(e) => setArrivalTimeOpponent(e.target.value)} className="w-full p-2 rounded text-black" />
                   </li>
                   <li>
                     <label className="block font-semibold mb-1 text-blue-800">Verzamelen (parking)</label>
