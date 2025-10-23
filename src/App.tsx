@@ -66,10 +66,10 @@ export default function App() {
   const [field, setField] = useState("");
   const [address, setAddress] = useState("");
 
-  // Verzamelplaats + Verzameltijd (alleen bij Uitwedstrijd tonen in UI en mail)
+  // Verzamelplaats + Verzameltijd (alleen bij Uitwedstrijd)
   const [gatheringPlace, setGatheringPlace] = useState("");
   const [customGatheringPlace, setCustomGatheringPlace] = useState(false);
-  const [gatheringTime, setGatheringTime] = useState(""); // <-- terug toegevoegd
+  const [gatheringTime, setGatheringTime] = useState("");
 
   const [responsible, setResponsible] = useState("");
   const [remark, setRemark] = useState("Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!");
@@ -122,18 +122,21 @@ export default function App() {
   // ====== LOGICA ======
   const isKeeper = (name: string) => keeperList.includes(name);
 
-  // Niet-geselecteerd (veldspelers) – keepers apart
-  const allNotSelectedField = playerList.filter(p => !(p in selectedPlayers));
-  let sortedNotSelectedField = [...allNotSelectedField];
+  // Keepers die nog niet geselecteerd zijn (voor de Keepers-sectie)
+  const availableKeepers = keeperList.filter(k => !(k in selectedPlayers));
+
+  // Niet-geselecteerden = spelers + keepers
+  const allPool = [...playerList, ...keeperList];
+  const allNotSelected = allPool.filter(p => !(p in selectedPlayers));
+
+  // zoeken prioritiseren
+  let sortedNotSelected = [...allNotSelected];
   if (searchSelect.trim()) {
     const s = searchSelect.toLowerCase();
-    const top = sortedNotSelectedField.filter(p => p.toLowerCase().includes(s));
-    const rest = sortedNotSelectedField.filter(p => !p.toLowerCase().includes(s));
-    sortedNotSelectedField = [...top, ...rest];
+    const top = sortedNotSelected.filter(p => p.toLowerCase().includes(s));
+    const rest = sortedNotSelected.filter(p => !p.toLowerCase().includes(s));
+    sortedNotSelected = [...top, ...rest];
   }
-
-  // Keepers die nog niet geselecteerd zijn
-  const availableKeepers = keeperList.filter(k => !(k in selectedPlayers));
 
   const selected = Object.keys(selectedPlayers).sort(
     (a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b])
@@ -239,12 +242,13 @@ export default function App() {
       </tr>
     `).join("");
 
-    const nonSelectedTableRows = playerList
+    // Niet-geselecteerd = spelers + keepers
+    const nonSelectedTableRows = [...playerList, ...keeperList]
       .filter(p => !(p in selectedPlayers))
       .map(player => `
         <tr>
           <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${player}</td>
-          <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedReasons[player] || "-"}</td>
+          <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectionReasons[player] || "-"}</td>
           <td style="padding:6px 12px;border-bottom:1px solid #ffe2e2;">${nonSelectedComments[player] || ""}</td>
         </tr>
       `).join("");
@@ -278,7 +282,7 @@ export default function App() {
           </table>
         </div>
         <div style="background:#fff7f7;border-radius:11px;padding:15px 22px;margin-bottom:14px;">
-          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#e66472;">Niet geselecteerd (veldspelers)</h2>
+          <h2 style="margin:0 0 8px 0;font-size:1.08em;font-weight:700;color:#e66472;">Niet geselecteerd</h2>
           <table style="width:100%;border-collapse:collapse;">
             <thead>
               <tr style="background:#ffd7d7;">
@@ -306,26 +310,26 @@ export default function App() {
     generateEmail();
   }, [
     matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace,
-    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day, arrivalTime, gatheringTime
+    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, day, arrivalTime, gatheringTime, keeperList, playerList
   ]);
 
   // ====== CONFETTI TRIGGER: exact 14 veldspelers + 1 keeper ======
   useEffect(() => {
-    const total = selected.length;
-    const keepersInSelection = selected.filter(p => isKeeper(p)).length;
-    const fieldPlayers = total - keepersInSelection;
-    const exactlyDesired = (total === 15 && keepersInSelection === 1 && fieldPlayers === 14);
+    const total = Object.keys(selectedPlayers).length;
+    const keepersIn = Object.keys(selectedPlayers).filter(p => isKeeper(p)).length;
+    const fieldsIn = total - keepersIn;
+    const exactlyDesired = (total === 15 && keepersIn === 1 && fieldsIn === 14);
     if (exactlyDesired) {
       setShowConfetti(true);
       const t = window.setTimeout(() => setShowConfetti(false), 15000);
       return () => window.clearTimeout(t);
     }
-  }, [selected, keeperList]);
+  }, [selectedPlayers, keeperList]);
 
   // ====== RENDER ======
   return (
     <>
-      {/* Watermerk met duidelijke "breathing" */}
+      {/* Watermerk met "breathing" */}
       <div
         aria-hidden
         style={{
@@ -537,15 +541,15 @@ export default function App() {
 
           {/* Tellers & checks */}
           <div className="mb-2 text-lg text-blue-900">
-            Geselecteerd: <span className="font-bold">{selected.length}</span> / {MAX_PLAYERS}
-            {selected.length > MAX_PLAYERS &&
+            Geselecteerd: <span className="font-bold">{Object.keys(selectedPlayers).length}</span> / {MAX_PLAYERS}
+            {Object.keys(selectedPlayers).length > MAX_PLAYERS &&
               <span className="ml-2 px-2 py-1 rounded bg-yellow-300 text-yellow-900 font-bold animate-bounce">
                 ⚠️ Meer dan {MAX_PLAYERS} geselecteerd!
               </span>
             }
           </div>
 
-          {selected.length > 0 && (
+          {Object.keys(selectedPlayers).length > 0 && (
             <div className={`mb-2 px-2 py-1 rounded font-bold 
               ${alleRugnummersUniek ? 'bg-green-200 text-green-900' : 'bg-red-200 text-red-900 animate-pulse'}`}>
               {alleRugnummersUniek ? '✅ Alle rugnummers zijn uniek' : '❌ Er zijn dubbele of ontbrekende rugnummers'}
@@ -555,7 +559,7 @@ export default function App() {
           {/* Selectie tabel */}
           <button className="font-bold mb-2 px-2 py-1 bg-blue-700 hover:bg-blue-900 rounded text-white transition-all"
             onClick={() => setShowSelection(s => !s)}>
-            {showSelection ? "▼" : "►"} Selectie ({selected.length})
+            {showSelection ? "▼" : "►"} Selectie ({Object.keys(selectedPlayers).length})
           </button>
 
           {showSelection && (
@@ -587,7 +591,8 @@ export default function App() {
                     </tr>
                   </thead>
                   <tbody>
-                    {selected
+                    {Object.keys(selectedPlayers)
+                      .sort((a, b) => Number(selectedPlayers[a]) - Number(selectedPlayers[b]))
                       .filter(player => !searchRugnummer.trim() || (selectedPlayers[player] && selectedPlayers[player].includes(searchRugnummer)))
                       .map(player => (
                         <tr key={player} className={`transition-all ${responsible === player ? "bg-green-200" : "hover:bg-green-100"}`}>
@@ -629,10 +634,10 @@ export default function App() {
             </div>
           )}
 
-          {/* Niet-geselecteerden (veldspelers) */}
+          {/* Niet-geselecteerden (spelers + keepers) */}
           <button className="font-bold mb-2 px-2 py-1 bg-red-700 hover:bg-red-900 rounded text-white transition-all"
             onClick={() => setShowNotSelected(s => !s)}>
-            {showNotSelected ? "▼" : "►"} Niet-geselecteerden (veldspelers) ({sortedNotSelectedField.length})
+            {showNotSelected ? "▼" : "►"} Niet-geselecteerden ({sortedNotSelected.length})
           </button>
 
           {showNotSelected && (
@@ -651,12 +656,12 @@ export default function App() {
                   <thead>
                     <tr>
                       <th className="p-2 text-left">Selecteer</th>
-                      <th className="p-2 text-left">Naam speler</th>
+                      <th className="p-2 text-left">Naam</th>
                       <th className="p-2 text-left">Reden niet geselecteerd & Opmerking</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sortedNotSelectedField.map(player => (
+                    {sortedNotSelected.map(player => (
                       <tr key={player}>
                         <td className="p-2">
                           <input
