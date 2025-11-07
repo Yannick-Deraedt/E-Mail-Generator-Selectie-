@@ -7,15 +7,30 @@
 - Ga naar het bestand package.json en voer het dev script uit (groene driehoekje ernaast)
 - Open de lokale website (localhost/...)
 
-## Hoe voeg ik spelers toe?
-- Pas het bestand public/squad_players.txt aan
-- Per lijn zet je de volledige naam van een speler
-- Keepers voeg je op dezelfde manier toe in het bestand public/keepers.txt
-  - Keepers worden enkel getoond in de niet-selectie als ze een reden of opmerking hebben
+## Hoe vul ik de gegevens van mijn ploeg in
+- Het bestand public/squad_info.json bevat alle data die het programma gebruikt. Je moet die data aanpassen
+- Dit is de huidige data die je kan ingeven:
 
-## Hoe voeg ik extra redenen toe voor niet-selectie
-- De lijst staat in het bestand src/App.tsx
-- Je kan zelf elementen toevoegen/verwijderen/aanpassen
+| Definitie                | Uitleg                                                                           | standaardwaarde (als je niets invult)           |
+|--------------------------|----------------------------------------------------------------------------------|-------------------------------------------------|
+| clubName                 | naam van de club                                                                 | leeg                                            |
+| teamName                 | naam/leeftijdscategorie van het team                                             | leeg                                            |
+| trainerName              | volledige naam van de trainer                                                    | Trainer                                         |
+| trainerPhone             | telefoonnummer van de trainer                                                    | leeg                                            |
+| squadPlayers             | lijst van alle veldspelers van het team                                          | leeg                                            |
+| squadKeepers             | lijst van alle keepers van het team                                              | leeg                                            |
+| maxPlayers               | max aantal spelers per selectie                                                  | 16                                              |
+| jerseyNumbers            | lijst van alle beschikbare rugnummers                                            | [1, 2, 3, ... , 16, 17]                         |
+| arrivalPeriodMinutesHome | aantal minuten op voorhand dat de spelers aanwezig moeten zijn voor thuismatchen | 60                                              |
+| arrivalPeriodMinutesAway | aantal minuten op voorhand dat de spelers aanwezig moeten zijn voor uitmatchen   | 60                                              |
+| nonSelectionReasons      | lijst met redenen voor non-selectie                                              | [Geblesseerd, Ziek, ...]                        |
+| defaultRemark            | algemene Opmerking                                                               | Vergeet jullie ID niet...                       |
+| carpoolRemark            | opmerking voor meerijden/afspreken/carpoolen                                     | Gelieve onderling te carpoolen indien mogelijk. |
+| responsibleRemark        | opmerking voor speler die verantwoordelijk is (voor was/fruit/...)               | Verantwoordelijk voor was van de shirts         |
+| closingRemark            | afsluiting                                                                       | met sportieve groeten,                          |
+| captainIcon              | icoontje in mail om kapitein aan te duiden                                       | (C)                                             |
+| keeperIcon               | icoontje in mail om keeper aan te duiden                                         | (GK)                                            |
+ 
 
 ## Hoe deel ik dit op ProSoccerData?
 - Vul alles in
