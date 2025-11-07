@@ -1,41 +1,22 @@
 {
-  "clubName": "KVE Drongen",
-  "teamName": "GU15",
-  "trainerName": "Arne Dierick",
-  "trainerPhone": "0495279260",
+  "clubName": "",
+  "teamName": "",
+  "trainerName": "Trainer",
+  "trainerPhone": "",
 
   "squadPlayers": [
-    "Aron D'Hoore",
-    "Simon De Clercq",
-    "Mauro Dewitte",
-    "Kiyaan El Houari",
-    "Alexander Genbrugge",
-    "Louie Hoet",
-    "Emile Hofman",
-    "Jef Lambers",
-    "Rémi Lippens",
-    "Aarón Ruiz Van Steenberge",
-    "Moussa Sabir",
-    "Marwan Tahri",
-    "Evan Tinyih",
-    "Sam Van De Gehuchte",
-    "Karel Van Iseghem",
-    "Stijn Van Iseghem",
-    "Maxime Vermeiren",
-    "Mathis Vindevogel",
-    "Marouane Zyadi"
+    "Alice",
+    "Bob",
+    "Charlie"
   ],
   "squadKeepers": [
-    "Lucca Ciepluch",
-    "Mats Danckaert",
-    "Leon De Backer",
-    "Lander Helderweirt",
-    "Thias Van Holle"
+    "Devon",
+    "Elliot"
   ],
 
   "maxPlayers": 16,
-  "jerseyNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 31],
-  "arrivalPeriodMinutesHome": 65,
+  "jerseyNumbers": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17],
+  "arrivalPeriodMinutesHome": 60,
   "arrivalPeriodMinutesAway": 60,
 
   "nonSelectionReasons": [
@@ -48,15 +29,13 @@
     "Schoolverplichtingen",
     "Te laat afgemeld/niet verwittigd",
     "Geschorst",
-    "Andere reden",
-    "IP14",
-    "IP15"
+    "Andere reden"
   ],
 
-  "defaultRemark": "Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!",
-  "carpoolRemark": "Jongens die willen meerijden kunnen een berichtje sturen. Gelieve ook onderling te carpoolen indien mogelijk.",
-  "responsibleRemark": "✅ Verantwoordelijk voor was van de shirts na de wedstrijd",
-  "closingRemark": "Sportieve groeten,",
+  "defaultRemark": "Vergeet jullie ID niet! ",
+  "carpoolRemark": "Gelieve onderling te carpoolen indien mogelijk.",
+  "responsibleRemark": "Verantwoordelijk voor was van de shirts",
+  "closingRemark": "met sportieve groeten,",
   "captainIcon": "(C)",
   "keeperIcon": "(GK)"
 }

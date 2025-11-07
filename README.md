@@ -24,7 +24,7 @@
 | arrivalPeriodMinutesHome | aantal minuten op voorhand dat de spelers aanwezig moeten zijn voor thuismatchen | 60                                              |
 | arrivalPeriodMinutesAway | aantal minuten op voorhand dat de spelers aanwezig moeten zijn voor uitmatchen   | 60                                              |
 | nonSelectionReasons      | lijst met redenen voor non-selectie                                              | [Geblesseerd, Ziek, ...]                        |
-| defaultRemark            | algemene Opmerking                                                               | Vergeet jullie ID niet...                       |
+| defaultRemark            | algemene Opmerking                                                               | Vergeet jullie ID niet!                         |
 | carpoolRemark            | opmerking voor meerijden/afspreken/carpoolen                                     | Gelieve onderling te carpoolen indien mogelijk. |
 | responsibleRemark        | opmerking voor speler die verantwoordelijk is (voor was/fruit/...)               | Verantwoordelijk voor was van de shirts         |
 | closingRemark            | afsluiting                                                                       | met sportieve groeten,                          |
