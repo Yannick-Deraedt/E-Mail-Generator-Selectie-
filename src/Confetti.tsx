@@ -1,17 +1,18 @@
+// src/Confetti.tsx
 import React, { useEffect, useRef, useState } from "react";
 
-type ConfettiParticle = {
+type Particle = {
   x: number;
   y: number;
-  r: number;
-  d: number;
+  vx: number;
+  vy: number;
+  size: number;         // dikte/lengte van “snipper”
   color: string;
-  tilt: number;
-  tiltAngle: number;
-  tiltAngleIncremental: number;
-  landed: boolean;
-  landedTime: number | null;
-  opacity: number;
+  angle: number;        // rotatie in radialen
+  spin: number;         // rotatiesnelheid
+  life: number;         // frame-teller
+  phase: number;        // voor unieke zigzag-fase
+  settled: boolean;     // ligt op de grond?
 };
 
 const COLORS = [
@@ -20,159 +21,178 @@ const COLORS = [
   "#8bc34a", "#cddc39", "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
 ];
 
-function randomColor() {
-  return COLORS[Math.floor(Math.random() * COLORS.length)];
+function rand(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+function pick<T>(arr: T[]) {
+  return arr[(Math.random() * arr.length) | 0];
 }
 
-function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-interface ConfettiProps {
+interface Props {
   active: boolean;
-  duration: number; // in ms
+  /** duur in milliseconden (tijdens deze tijd blijven ze vallen) */
+  duration: number;
 }
 
-const Confetti: React.FC<ConfettiProps> = ({ active, duration }) => {
+const Confetti: React.FC<Props> = ({ active, duration }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const rafRef = useRef<number | null>(null);
   const [fade, setFade] = useState(false);
 
   useEffect(() => {
     if (!active) return;
+
     setFade(false);
 
-    const W = window.innerWidth;
-    const H = window.innerHeight;
-    const count = Math.floor(W / 8); // responsive aantal
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    // Instellingen voor liggen en uitfaden
-    const LANDING_DURATION = 2000; // 2 sec blijven liggen
-    const FADE_DURATION = 600;     // 0.6 sec fade out
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const particles: ConfettiParticle[] = [];
+    // Afmetingen + responsive resize
+    const setSize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      canvas.width = Math.floor(w * dpr);
+      canvas.height = Math.floor(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    setSize();
+    const onResize = () => setSize();
+    window.addEventListener("resize", onResize);
 
-    for (let i = 0; i < count; i++) {
-      particles.push({
-        x: Math.random() * W,
-        y: Math.random() * H - H,
-        r: randomInt(7, 15),
-        d: randomInt(10, 40),
-        color: randomColor(),
-        tilt: Math.floor(Math.random() * 10) - 10,
-        tiltAngle: 0,
-        tiltAngleIncremental: Math.random() * 0.07 + 0.05,
-        landed: false,
-        landedTime: null,
-        opacity: 1
-      });
-    }
+    // Fysica-parameters
+    const W = () => canvas.clientWidth;
+    const H = () => canvas.clientHeight;
+    const gravity = 0.18;        // zwaartekracht
+    const drag = 0.0025;         // luchtweerstand
+    const windAmp = 0.9;         // zigzag amplitude
+    const windFreq = 0.07;       // zigzag frequentie
+    const groundBounce = 0.22;   // bouncesterkte
+    const groundFriction = 0.90; // wrijving op de bodem
+    const settleSpeed = 0.25;    // drempel om “settled” te worden
 
-    let angle = 0;
-    let animationFrame: number;
+    // Hoeveel confetti? (responsief op scherm-oppervlak)
+    const baseCount = Math.round((W() * H()) / 1200); // meer = drukker
+    const particles: Particle[] = new Array(baseCount).fill(0).map(() => ({
+      x: rand(0, W()),
+      y: rand(-H(), 0),
+      vx: rand(-0.6, 0.6),
+      vy: rand(0.2, 1.4),
+      size: rand(6, 14),
+      color: pick(COLORS),
+      angle: rand(0, Math.PI * 2),
+      spin: rand(-0.15, 0.15),
+      life: 0,
+      phase: rand(0, Math.PI * 2),
+      settled: false,
+    }));
 
-    const draw = () => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
+    // Timer voor fade en stop
+    const fadeTimer: number = window.setTimeout(() => setFade(true), Math.max(0, duration - 600));
+    const stopTimer: number = window.setTimeout(() => {
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      setFade(false);
+      // laatste clear zodat er zeker niets blijft staan
+      ctx.clearRect(0, 0, W(), H());
+    }, duration + 650); // laat fade (600ms) uitspelen
 
-      ctx.clearRect(0, 0, W, H);
+    let t = 0;
 
-      const now = Date.now();
+    const step = () => {
+      ctx.clearRect(0, 0, W(), H());
+      t += 1;
 
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
-        // Set opacity (for fade-out)
-        ctx.globalAlpha = p.opacity;
+        // WIND (zigzag) – verandert vx lichtjes over tijd
+        const wind = Math.sin(p.phase + t * windFreq) * windAmp;
 
-        // Draw confetti as lines (zoals origineel)
-        ctx.beginPath();
-        ctx.lineWidth = p.r;
-        ctx.strokeStyle = p.color;
-        ctx.moveTo(p.x + p.tilt + p.r / 3, p.y);
-        ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r / 3);
-        ctx.stroke();
+        if (!p.settled) {
+          // snelheid updaten met zwaartekracht + wind + drag
+          p.vx += wind * 0.03;
+          p.vy += gravity * (1 - drag * p.vy); // drag iets afhankelijk van snelheid
 
-        ctx.globalAlpha = 1; // reset voor volgende particle
+          // positie
+          p.x += p.vx;
+          p.y += p.vy;
 
-        // Update particle logic
-        if (!p.landed) {
-          // Beweeg zigzag naar beneden
-          p.y += (Math.cos(angle + p.d) + 3 + p.r / 3) / 2;
-          p.x += Math.sin(angle);
-          p.tiltAngle += p.tiltAngleIncremental;
-          p.tilt = Math.sin(p.tiltAngle) * 15;
-          // Check bodem
-          if (p.y + p.r > H) {
-            p.y = H - p.r;
-            p.landed = true;
-            p.landedTime = now;
-            p.opacity = 1;
-          }
-        } else {
-          // Ligt op bodem: eerst wachten, dan langzaam uitfaden
-          if (p.landedTime && now - p.landedTime > LANDING_DURATION) {
-            const fadeElapsed = now - p.landedTime - LANDING_DURATION;
-            p.opacity = Math.max(0, 1 - fadeElapsed / FADE_DURATION);
-            if (p.opacity <= 0) {
-              // reset particle van bovenaf opnieuw
-              p.x = Math.random() * W;
-              p.y = -20;
-              p.landed = false;
-              p.landedTime = null;
-              p.opacity = 1;
-              // kleine randomization voor variatie
-              p.r = randomInt(7, 15);
-              p.d = randomInt(10, 40);
-              p.color = randomColor();
-              p.tilt = Math.floor(Math.random() * 10) - 10;
-              p.tiltAngle = 0;
-              p.tiltAngleIncremental = Math.random() * 0.07 + 0.05;
+          // rotatie
+          p.angle += p.spin;
+
+          // links/rechts scherm verlaten? wrap-around
+          if (p.x < -20) p.x = W() + 20;
+          if (p.x > W() + 20) p.x = -20;
+
+          // bodem – lichte bounce & dan “settle”
+          if (p.y >= H() - 2) {
+            p.y = H() - 2;
+            p.vy = -Math.abs(p.vy) * groundBounce; // bounce omhoog
+            p.vx *= groundFriction;
+
+            if (Math.abs(p.vy) < settleSpeed) {
+              p.vy = 0;
+              p.vx *= 0.85;
+              p.settled = true; // ligt stil
             }
           }
+        } else {
+          // kleine wrijving zodat hij echt stil komt
+          p.vx *= 0.92;
+          p.x += p.vx;
+          if (Math.abs(p.vx) < 0.02) p.vx = 0;
         }
+
+        // TEKENEN – als rechthoekige snipper met rotatie
+        ctx.save();
+        ctx.translate(p.x, p.y);
+        ctx.rotate(p.angle);
+        ctx.fillStyle = p.color;
+        // teken een smalle rechthoek (liggend strookje confetti)
+        const w = p.size * 1.4;
+        const h = p.size * 0.35;
+        ctx.fillRect(-w / 2, -h / 2, w, h);
+        ctx.restore();
+
+        p.life++;
       }
 
-      angle += 0.02;
-      animationFrame = requestAnimationFrame(draw);
+      rafRef.current = requestAnimationFrame(step);
     };
 
-    draw();
-
-    // Fade-out laten starten laatste 500ms (optioneel, mag je weglaten)
-    const fadeTimeout = setTimeout(() => setFade(true), duration - 500);
-    // Stop en clean-up na duration
-    const stopTimeout = setTimeout(() => {
-      cancelAnimationFrame(animationFrame);
-      setFade(false);
-    }, duration);
+    step();
 
     return () => {
-      clearTimeout(fadeTimeout);
-      clearTimeout(stopTimeout);
-      cancelAnimationFrame(animationFrame);
+      window.removeEventListener("resize", onResize);
+      if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(stopTimer);
       setFade(false);
+      ctx.clearRect(0, 0, W(), H());
     };
   }, [active, duration]);
 
-  // canvas altijd op top van layout
-  return active ? (
+  if (!active) return null;
+
+  return (
     <canvas
       ref={canvasRef}
-      width={window.innerWidth}
-      height={window.innerHeight}
+      // width/height door JS gezet; hier alleen stijl
       style={{
         position: "fixed",
-        left: 0,
-        top: 0,
+        inset: 0,
         pointerEvents: "none",
         zIndex: 9999,
         opacity: fade ? 0 : 1,
-        transition: "opacity 0.5s linear",
+        transition: "opacity 0.6s linear",
       }}
     />
-  ) : null;
+  );
 };
 
 export default Confetti;
