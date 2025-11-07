@@ -47,7 +47,7 @@ const defaultConfig: SquadConfig = {
   arrivalPeriodMinutesHome: 60,
   arrivalPeriodMinutesAway: 60,
   teamName: "",
-  carpoolRemark:"Jongens die willen meerijden kunnen een berichtje sturen. Gelieve ook onderling te carpoolen indien mogelijk.",
+  carpoolRemark:"Gelieve onderling te carpoolen indien mogelijk.",
   closingRemark:"met sportieve groeten,"
 };
 

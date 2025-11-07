@@ -52,15 +52,6 @@
     "IP14",
     "IP15"
   ],
-  "days": [
-    "Zondag",
-    "Maandag",
-    "Dinsdag",
-    "Woensdag",
-    "Donderdag",
-    "Vrijdag",
-    "Zaterdag"
-  ],
 
   "defaultRemark": "Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!",
   "carpoolRemark": "Jongens die willen meerijden kunnen een berichtje sturen. Gelieve ook onderling te carpoolen indien mogelijk.",
