@@ -63,7 +63,9 @@
   ],
 
   "defaultRemark": "Vergeet jullie ID niet mee te nemen! Geen ID = Niet spelen!",
+  "carpoolRemark": "Jongens die willen meerijden kunnen een berichtje sturen. Gelieve ook onderling te carpoolen indien mogelijk.",
   "responsibleRemark": "✅ Verantwoordelijk voor was van de shirts na de wedstrijd",
+  "closingRemark": "Sportieve groeten,",
   "captainIcon": "(C)",
   "keeperIcon": "(GK)"
 }

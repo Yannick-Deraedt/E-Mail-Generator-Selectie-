@@ -21,6 +21,8 @@ interface SquadConfig {
   arrivalPeriodMinutesHome: number;
   arrivalPeriodMinutesAway: number;
   teamName: string;
+  carpoolRemark: string;
+  closingRemark: string;
 }
 
 // Standaard configuratie als fallback
@@ -44,7 +46,9 @@ const defaultConfig: SquadConfig = {
   keeperIcon: "(GK)",
   arrivalPeriodMinutesHome: 60,
   arrivalPeriodMinutesAway: 60,
-  teamName: ""
+  teamName: "",
+  carpoolRemark:"Jongens die willen meerijden kunnen een berichtje sturen. Gelieve ook onderling te carpoolen indien mogelijk.",
+  closingRemark:"met sportieve groeten,"
 };
 
 // Hulpfunctie om tijd te berekenen
@@ -122,6 +126,7 @@ export default function App() {
   const [arrivalMinutesHome, setArrivalMinutesHome] = useState(config.arrivalPeriodMinutesHome);
   const [arrivalMinutesAway, setArrivalMinutesAway] = useState(config.arrivalPeriodMinutesAway);
   const [responsible, setResponsible] = useState("");
+  const [captain, setCaptain] = useState("");
   const [remark, setRemark] = useState(config.defaultRemark);
   const [preview, setPreview] = useState("");
   const [success, setSuccess] = useState(false);
@@ -218,6 +223,9 @@ export default function App() {
   function handleResponsible(player: string) {
     setResponsible(player);
   }
+  function handleCaptain(player: string) {
+    setCaptain(player);
+  }
   function autoToewijzen() {
     const vrijeNummers = config.jerseyNumbers.filter(n => !Object.values(selectedPlayers).includes(n.toString()));
     let i = 0;
@@ -298,14 +306,14 @@ export default function App() {
 
     const carpoolText = matchType === "Uitwedstrijd"
         ? `<div style="margin-top:10px;background:#e8f4fc;padding:10px;border-radius:6px;border:1px solid #c0e6fa;">
-          <strong>Vervoer:</strong> Jongens die willen meerijden kunnen een berichtje sturen. Gelieve ook onderling te carpoolen indien mogelijk.
+          <strong>Vervoer:</strong> ${config.carpoolRemark}
         </div>` : "";
 
     const selectionTableRows = selected.map(player => `
   <tr style="${responsible === player ? 'background:#e6ffe6;box-shadow:0 0 0 2px #39f7;filter:drop-shadow(0 0 6px #80ee90);' : ''}">
     <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">#${selectedPlayers[player] || "-"}</td>
     <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;">
-      ${player}${isKeeper(player) ? ` ${config.keeperIcon}` : ""}
+      ${player}${isKeeper(player) ? ` ${config.keeperIcon}` : ""}${captain === player ? ` ${config.captainIcon}` : ""}
     </td>
     <td style="padding:6px 12px;border-bottom:1px solid #e0e0e0;text-align:center;">
       ${responsible === player ? config.responsibleRemark : ""}
@@ -368,7 +376,7 @@ export default function App() {
           <p style="margin:0;"><strong>Opmerking:</strong> ${remark}</p>
         </div>
         <br/><br/>
-        <p style="margin-top:34px;margin-bottom:6px;">Sportieve groeten,</p>
+        <p style="margin-top:34px;margin-bottom:6px;">${config.closingRemark}</p>
         <p style="margin:0;font-weight:600;">${config.trainerName}<br/>Trainer ${config.teamName} – ${config.clubName}</p>
         <p style="margin:0;font-weight:600;">${config.trainerPhone}</p>
       </div>
@@ -381,7 +389,7 @@ export default function App() {
     // eslint-disable-next-line
   }, [
     matchType, date, time, opponent, field, address, gatheringPlace, customGatheringPlace, gatheringTime,
-    responsible, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, config,
+    responsible, captain, remark, selectedPlayers, nonSelectedReasons, nonSelectedComments, config,
     arrivalMinutesHome, arrivalMinutesAway, calculatedGatheringTime, calculatedArrivalTime
   ]);
 
@@ -485,22 +493,22 @@ export default function App() {
                       <li>
                         <label className="block font-semibold mb-1 text-blue-800">
                           Aankomst bij tegenstander
-                          <input
-                              type="number"
-                              value={arrivalMinutesAway}
-                              onChange={e => setArrivalMinutesAway(parseInt(e.target.value) || 0)}
-                              className="w-full p-2 rounded text-black"
-                              min="0"
-                              max="180"
-                              step="5"
-                          />
-                          minuten voor aanvang
-                          {calculatedArrivalTime && (
-                              <span className="text-sm font-normal text-gray-600 ml-2">
-                              → wordt {calculatedArrivalTime}
-                            </span>
-                          )}
                         </label>
+                        <input
+                            type="number"
+                            value={arrivalMinutesAway}
+                            onChange={e => setArrivalMinutesAway(parseInt(e.target.value) || 0)}
+                            className="p-2 rounded text-black w-20"
+                            min="0"
+                            max="180"
+                            step="5"
+                        />
+                        <span>minuten voor aanvang</span>
+                        {calculatedArrivalTime && (
+                            <span className="text-sm font-normal text-gray-600 ml-2">
+                            → wordt {calculatedArrivalTime}
+                          </span>
+                        )}
                       </li>
                     </>
                 )}
@@ -509,22 +517,22 @@ export default function App() {
                       <>
                         <label className="block font-semibold mb-1 text-blue-800">
                           Verzamelen
-                          <input
-                              type="number"
-                              value={arrivalMinutesHome}
-                              onChange={e => setArrivalMinutesHome(parseInt(e.target.value) || 0)}
-                              className="w-full p-2 rounded text-black"
-                              min="0"
-                              max="180"
-                              step="5"
-                          />
-                          minuten voor aanvang
-                          {calculatedGatheringTime && (
-                              <span className="text-sm font-normal text-gray-600 ml-2">
-                            → wordt {calculatedGatheringTime}
-                          </span>
-                          )}
                         </label>
+                        <input
+                            type="number"
+                            value={arrivalMinutesHome}
+                            onChange={e => setArrivalMinutesHome(parseInt(e.target.value) || 0)}
+                            className="p-2 rounded text-black w-20"
+                            min="0"
+                            max="180"
+                            step="5"
+                        />
+                        <span>minuten voor aanvang</span>
+                        {calculatedGatheringTime && (
+                            <span className="text-sm font-normal text-gray-600 ml-2">
+                          → wordt {calculatedGatheringTime}
+                        </span>
+                        )}
                       </>
                   ) : (
                       <>
@@ -615,7 +623,7 @@ export default function App() {
                         <th className="p-2 text-left">Selectie</th>
                         <th className="p-2 text-left">Rugnummer</th>
                         <th className="p-2 text-left">Naam speler</th>
-                        <th className="p-2 text-left">Verantwoordelijk</th>
+                        <th className="p-2 text-left">Verantwoordelijk & Kapitein</th>
                         <th></th>
                       </tr>
                       </thead>
@@ -643,18 +651,34 @@ export default function App() {
                                 </td>
                                 <td className="p-2">
                                   {player}
-                                  {isKeeper(player) && <span className="ml-1 text-blue-600 font-semibold">{config.keeperIcon}</span>}
+                                  {isKeeper(player) && <span className="ml-1 text-blue-600 font-semibold"> {config.keeperIcon}</span>}
+                                  {captain === player && <span className="ml-1 text-orange-600 font-semibold"> {config.captainIcon}</span>}
                                 </td>
                                 <td className="p-2 text-center">
-                                  <input
-                                      type="radio"
-                                      name="verantwoordelijke"
-                                      checked={responsible === player}
-                                      onChange={() => handleResponsible(player)}
-                                  />
-                                  {responsible === player && (
-                                      <span className="ml-2">{config.responsibleRemark}</span>
-                                  )}
+                                  <div className="flex flex-col items-center gap-1">
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                          type="radio"
+                                          name="verantwoordelijke"
+                                          checked={responsible === player}
+                                          onChange={() => handleResponsible(player)}
+                                      />
+                                      {responsible === player && (
+                                          <span className="text-sm">{config.responsibleRemark}</span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <input
+                                          type="radio"
+                                          name="kapitein"
+                                          checked={captain === player}
+                                          onChange={() => handleCaptain(player)}
+                                      />
+                                      {captain === player && (
+                                          <span className="text-sm">Kapitein</span>
+                                      )}
+                                    </div>
+                                  </div>
                                 </td>
                                 <td className="p-2"></td>
                               </tr>
